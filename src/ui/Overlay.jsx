@@ -14,6 +14,7 @@ import {
   ContactContent,
   ControlsContent,
   CreditsContent,
+  LabContent,
   LeaderboardContent,
   ProjectContent,
   SkillsContent,
@@ -492,6 +493,7 @@ function Modal() {
   else if (modal.type === 'contact') content = <ContactContent />
   else if (modal.type === 'project') content = <ProjectContent id={modal.id} />
   else if (modal.type === 'credits') content = <CreditsContent />
+  else if (modal.type === 'lab') content = <LabContent />
   else content = <ControlsContent />
 
   return (
@@ -737,6 +739,7 @@ function MenuPanel() {
   const headlights = useStore((s) => s.headlights)
   const cameraMode = useStore((s) => s.cameraMode)
   const weatherMode = useStore((s) => s.weatherMode)
+  const music = useStore((s) => s.music)
   if (!open) return null
   return (
     <Panel id="menu" title={t('menu')}>
@@ -750,6 +753,16 @@ function MenuPanel() {
           {['high', 'low'].map((q) => (
             <button key={q} className={quality === q ? 'active' : ''} onClick={() => setQuality(q)} aria-pressed={quality === q}>
               {q === 'high' ? t('qualityHigh') : t('qualityLow')}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="menu-row">
+        <span>{t('music')}</span>
+        <div className="lang-switch">
+          {[true, false].map((m) => (
+            <button key={String(m)} className={music === m ? 'active' : ''} onClick={() => useStore.getState().setMusicOn(m)} aria-pressed={music === m}>
+              {t(m ? 'on' : 'off')}
             </button>
           ))}
         </div>

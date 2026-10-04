@@ -11,7 +11,7 @@ import { bakedGeometry } from './geometry.js'
 import TurboFlame from './TurboFlame.jsx'
 import { buildRacer, paintHex } from './cars.js'
 import { useStore } from '../store.js'
-import { playHonk, playSplash, playThud, setMuted, updateEngine } from '../audio.js'
+import { playHonk, playSplash, playThud, setMuted, setMusic, updateAmbience, updateEngine } from '../audio.js'
 
 export const CAR_URL = '/models/car.glb'
 
@@ -203,8 +203,10 @@ export default function Vehicle() {
   // Ses açık/kapalı
   useEffect(() => {
     setMuted(useStore.getState().muted)
+    setMusic(useStore.getState().music)
     return useStore.subscribe((s, prev) => {
       if (s.muted !== prev.muted) setMuted(s.muted)
+      if (s.music !== prev.music) setMusic(s.music)
     })
   }, [])
 
@@ -386,6 +388,15 @@ export default function Vehicle() {
     vehicleState.forward.y = _forward.y
     vehicleState.forward.z = _forward.z
 
+    // Gizli kod: 30 sn gökkuşağı boya
+    if (store.rainbow > performance.now()) {
+      car.paint.forEach((m) => m.color.setHSL((state.clock.elapsedTime * 0.35) % 1, 0.75, 0.55))
+      vehicleState.rainbowWas = true
+    } else if (vehicleState.rainbowWas) {
+      vehicleState.rainbowWas = false
+      car.paint.forEach((m) => m.color.set(paintHex(store.carColor)))
+    }
+
     // Gece farlar
     const night = worldTime.night
     const lights = store.headlights === 'on' ? 1 : store.headlights === 'off' ? 0 : night
@@ -448,8 +459,9 @@ export default function Vehicle() {
     }
 
     // Motor sesi
-    if (store.started && !store.muted) updateEngine(speed, store.modal ? 0 : vehicleState.throttle)
+    if (store.started && !store.muted) updateEngine(speed, store.modal ? 0 : vehicleState.throttle, vehicleState.slip, vehicleState.grounded)
     else updateEngine(0, 0)
+    updateAmbience(worldTime.night, worldTime.wet ?? 0, store.started ? speed : 0)
 
     // Kamera takibi
     const o = orbit.current

@@ -15,6 +15,7 @@ import Race from './Race.jsx'
 import Collectibles from './Collectibles.jsx'
 import Zones from './Zones.jsx'
 import Bowling from './Bowling.jsx'
+import Showcase from './Showcase.jsx'
 import Dust from './Dust.jsx'
 import Skids from './Skids.jsx'
 import Atmosphere from './Atmosphere.jsx'
@@ -91,6 +92,7 @@ export default function Game() {
           <Collectibles />
           <Zones />
           <Bowling />
+          <Showcase />
           <Vehicle />
         </Physics>
         <Grass count={high ? 115000 : 28000} />

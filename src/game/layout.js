@@ -33,6 +33,8 @@ export const AREAS = [
   { id: 'soccer', label: 'areaSoccer', center: [78, 0, 78], radius: 20, color: '#4fd99a', spawn: [60, 1.2, 60], yaw: -Math.PI / 4, pad: 'field', outer: true },
   { id: 'drift', label: 'areaDrift', center: [-78, 0, 78], radius: 20, color: COLORS.coral, spawn: [-60, 1.2, 60], yaw: (-3 * Math.PI) / 4, pad: 'asphalt', outer: true },
   { id: 'offroad', label: 'areaOffroad', center: [-78, 0, -78], radius: 20, color: '#c58b4a', spawn: [-60, 1.2, -60], yaw: (3 * Math.PI) / 4, pad: 'dirt', outer: true },
+  { id: 'lab', label: 'areaLab', center: [0, 0, -108], radius: 18, color: '#2ec4b6', spawn: [0, 1.2, -86], yaw: Math.PI / 2, pad: 'alley', outer: true },
+  { id: 'career', label: 'areaCareer', center: [-106, 0, 0], radius: 18, color: COLORS.amber, spawn: [-84, 1.2, 0], yaw: Math.PI, pad: 'alley', outer: true },
   { id: 'bowling', label: 'areaBowling', center: [108, 0, 0], radius: 18, color: '#ff8a3d', spawn: [86, 1.2, 0], yaw: 0, pad: 'alley', outer: true },
   { id: 'lookout', label: 'areaLookout', center: [78, 0, -78], radius: 14, color: COLORS.violet, spawn: [60, 1.2, -60], yaw: Math.PI / 4, pad: 'hill', outer: true },
 ]
@@ -79,6 +81,7 @@ export const SPOTS = [
   { id: 'skills', label: 'spotSkills', action: 'spotSkillsAction', position: [35, 0, 6], color: COLORS.teal },
   { id: 'contact', label: 'areaContact', action: 'spotContactAction', position: [-45, 0, 6], color: COLORS.violet },
   { id: 'race', label: 'spotRace', action: 'spotRaceAction', position: [9, 0, RING_RADIUS - 8], color: COLORS.amber },
+  { id: 'lab', label: 'areaLab', action: 'spotLabAction', position: [0, 0, -95], color: '#2ec4b6' },
   { id: 'bowling', label: 'areaBowling', action: 'spotBowlingAction', position: [93, 0, -6], color: '#ff8a3d' },
   { id: 'lookout', label: 'areaLookout', action: 'spotLookoutAction', position: [78, 0, -78], color: COLORS.violet },
   { id: 'credits', label: 'spotCredits', action: 'spotCreditsAction', position: [-16, 0, 20], color: '#c9b6ff' },
@@ -110,6 +113,8 @@ export const PATHS = [
   { from: [0, 55.8], to: [0, RING_RADIUS - RING_WIDTH / 2] },
   { from: [-8, 8], to: [-22, 22] },
   { from: [RING_RADIUS + RING_WIDTH / 2, 0], to: [90, 0], outer: true },
+  { from: [-(RING_RADIUS + RING_WIDTH / 2), 0], to: [-88, 0], outer: true },
+  { from: [0, -(RING_RADIUS + RING_WIDTH / 2)], to: [0, -90], outer: true },
   // Çevre yoldan dış bölgelere: tepeleri yararak geçen yollar
   ...[
     [1, 1, 20],
@@ -158,4 +163,5 @@ export const CLEARINGS = [
   ...AREAS.map((a) => ({ x: a.center[0], z: a.center[2], r: a.radius + 3 })),
   { x: 0, z: -9, r: 11 },
   { x: -16, z: 20, r: 4 },
+  { x: -16, z: -16, r: 6 }, // heykel
 ]

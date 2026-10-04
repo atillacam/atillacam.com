@@ -1,5 +1,7 @@
 import { useStore } from '../store.js'
 
+const translateKonami = (lang) => (lang === 'tr' ? 'Hile kodu etkin!' : 'Cheat code activated!')
+
 // Klavye, dokunmatik ve gamepad aynı nesneye yazar; araç her fizik adımında buradan okur.
 export const input = {
   keys: { forward: false, backward: false, left: false, right: false, boost: false, brake: false },
@@ -56,11 +58,23 @@ function isTyping(event) {
   return el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)
 }
 
+// ↑↑↓↓←→←→BA
+const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA']
+let konamiIndex = 0
+
 export function bindKeyboard() {
   const onDown = (event) => {
     if (isTyping(event)) return
     const store = useStore.getState()
     if (store.view !== '3d') return
+    if (!event.repeat) {
+      konamiIndex = event.code === KONAMI[konamiIndex] ? konamiIndex + 1 : event.code === KONAMI[0] ? 1 : 0
+      if (konamiIndex === KONAMI.length) {
+        konamiIndex = 0
+        store.activateKonami()
+        store.toast('🌈', translateKonami(store.lang))
+      }
+    }
 
     if (event.code === 'Escape') {
       store.closeAll()

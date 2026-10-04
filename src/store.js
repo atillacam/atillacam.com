@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { profile, projects } from './content.js'
-import { playChime } from './audio.js'
+import { playChime, playSecret } from './audio.js'
 import { AREAS, COLLECTIBLES } from './game/layout.js'
 
 const COLLECTIBLE_COUNT = COLLECTIBLES.length
@@ -22,6 +22,8 @@ export const ACHIEVEMENTS = [
   { id: 'night', title: { tr: 'Gece kuşu', en: 'Night owl' }, text: { tr: 'Geceyi gör.', en: 'Witness the night.' } },
   { id: 'turtle', title: { tr: 'Kaplumbağa', en: 'Turtle' }, text: { tr: 'Arabayı ters çevir.', en: 'Flip the car upside down.' } },
   { id: 'honk', title: { tr: 'Korna ustası', en: 'Honk master' }, text: { tr: '10 kez korna çal.', en: 'Honk 10 times.' }, goal: 10 },
+  { id: 'statue', title: { tr: 'Devrim!', en: 'Revolution!' }, text: { tr: 'Mühendis heykelini devir.', en: 'Topple the engineer statue.' } },
+  { id: 'konami', title: { tr: 'Eski usul', en: 'Old school' }, text: { tr: 'Gizli kodu gir.', en: 'Enter the secret code.' } },
   { id: 'boom', title: { tr: 'Dinamit', en: 'Dynamite' }, text: { tr: 'Bütün TNT kasalarını patlat.', en: 'Blow up every TNT crate.' }, goal: 8 },
   { id: 'rain', title: { tr: 'Yağmurda dans', en: 'Singing in the rain' }, text: { tr: 'Yağmurlu havayı gör.', en: 'Witness the rain.' } },
   { id: 'snow', title: { tr: 'Kardan adam', en: 'Snow day' }, text: { tr: 'Karlı havayı gör.', en: 'Witness the snow.' } },
@@ -74,7 +76,7 @@ function detectQuality() {
 }
 
 const saved = readJSON(STORAGE_KEY, { unlocked: {}, progress: {}, times: [], driftBest: 0 })
-const settings = readJSON(SETTINGS_KEY, { quality: detectQuality(), muted: false, carId: 'ae86', carColor: 'white' })
+const settings = { quality: detectQuality(), muted: false, music: true, carId: 'ae86', carColor: 'white', ...readJSON(SETTINGS_KEY, {}) }
 let toastId = 0
 
 const idleRace = { active: false, countdown: 0, start: 0, next: 0, finishedAt: 0, lastTime: 0 }
@@ -86,6 +88,7 @@ export const useStore = create((set, get) => ({
   ready: false,
   started: false,
   muted: settings.muted,
+  music: settings.music,
   night: false,
   spot: null,
   area: 'home',
@@ -102,6 +105,7 @@ export const useStore = create((set, get) => ({
   carColor: settings.carColor,
   headlights: 'auto', // 'auto' | 'on' | 'off'
   cameraMode: 'follow', // 'follow' | 'chase'
+  rainbow: 0, // > performance.now() ise araba gökkuşağı renginde
   navTarget: null, // GPS hedefi: { id, x, z, radius, label, color }
   pinsDown: 0,
   bowlingReset: 0, // değişince lobutlar yeniden dizilir
@@ -113,7 +117,7 @@ export const useStore = create((set, get) => ({
   persist: () => {
     const s = get()
     writeJSON(STORAGE_KEY, { unlocked: s.unlocked, progress: s.progress, times: s.times, driftBest: s.driftBest })
-    writeJSON(SETTINGS_KEY, { quality: s.quality, muted: s.muted, carId: s.carId, carColor: s.carColor })
+    writeJSON(SETTINGS_KEY, { quality: s.quality, muted: s.muted, music: s.music, carId: s.carId, carColor: s.carColor })
   },
 
   setView: (view) => set({ view, modal: null, panel: null }),
@@ -140,6 +144,10 @@ export const useStore = create((set, get) => ({
   toggleDayNight: () => set((s) => ({ timeRequest: { target: s.night ? 0.36 : 0.86, id: Date.now() } })),
   toggleMuted: () => {
     set((s) => ({ muted: !s.muted }))
+    get().persist()
+  },
+  setMusicOn: (music) => {
+    set({ music })
     get().persist()
   },
   setSpot: (spot) => set({ spot }),
@@ -225,6 +233,11 @@ export const useStore = create((set, get) => ({
   startCinematic: (ms = 9000) => set({ cinematic: performance.now() + ms }),
   setPinsDown: (pinsDown) => set({ pinsDown }),
   setNavTarget: (navTarget) => set({ navTarget }),
+  activateKonami: () => {
+    set({ rainbow: performance.now() + 30000 })
+    if (!get().muted) playSecret()
+    get().unlock('konami')
+  },
   setWeatherMode: (weatherMode) => set({ weatherMode }),
   setWeather: (weather) => {
     set({ weather })

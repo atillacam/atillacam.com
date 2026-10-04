@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { experience, profile, projects, skills } from '../content.js'
+import { experience, labExperiments, profile, projects, skills } from '../content.js'
 import credits from '../game/credits.json'
 import { useT } from '../i18n.js'
 import { useStore } from '../store.js'
@@ -275,6 +275,24 @@ export function LeaderboardContent() {
         </ol>
       )}
       <p className="muted">{t('raceHint')}</p>
+    </>
+  )
+}
+
+export function LabContent() {
+  const { t, L } = useT()
+  return (
+    <>
+      <p className="eyebrow">{t('areaLab')}</p>
+      <h2>{t('sub_lab')}</h2>
+      <ul className="bullets">
+        {labExperiments.map((e) => (
+          <li key={e.id}>
+            <strong>{L(e.title)}</strong> — {L(e.text)}
+          </li>
+        ))}
+      </ul>
+      <p className="muted">Three.js · GLSL · React Three Fiber</p>
     </>
   )
 }

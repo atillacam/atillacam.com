@@ -68,6 +68,24 @@ export const skills = [
 // Hakkımda bölgesinde itilebilir küpler olarak duran yetenekler
 export const skillCubes = ['Python', 'C++', 'C#', 'Java', 'TS', 'React', 'Docker', 'Linux', 'AI', 'SQL']
 
+// Kariyer Yolu kilometre taşları (dünyada batıdaki yol boyunca dizilir).
+// Yalnızca doğrulanabilen bilgiler var; eğitim ve iş deneyimini buraya ekleyebilirsin.
+export const career = [
+  { year: '2025', title: { tr: 'GitHub yolculuğu başladı', en: 'Started on GitHub' }, text: { tr: 'Açık kaynak projelerimi yayımlamaya başladım.', en: 'Began publishing my open-source work.' } },
+  { year: '2026', title: { tr: 'Yapay zekâ içerik hatları', en: 'AI content pipelines' }, text: { tr: 'Gemini ile uçtan uca video ve içerik üreten otomasyonlar.', en: 'End-to-end video and content automation with Gemini.' } },
+  { year: '2026', title: { tr: 'Mobil uygulama', en: 'Mobile app' }, text: { tr: 'Flutter ile öğrenciler için YKS uygulaması.', en: 'A Flutter exam-prep app for students.' } },
+  { year: '2026', title: { tr: 'Otomasyon ve CI', en: 'Automation & CI' }, text: { tr: 'GitHub Actions ile bulutta çalışan zamanlanmış görevler.', en: 'Scheduled cloud jobs with GitHub Actions.' } },
+  { year: '2026', title: { tr: 'atillacam.com', en: 'atillacam.com' }, text: { tr: 'Fizik motorlu, sürülebilir 3D portfolyo.', en: 'A drivable 3D portfolio with a physics engine.' } },
+]
+
+// Laboratuvar: sitenin içinde gerçek zamanlı çalışan küçük deneyler
+export const labExperiments = [
+  { id: 'shader', title: { tr: 'Gürültü Küresi', en: 'Noise Sphere' }, text: { tr: 'GPU üzerinde gürültüyle şekil değiştiren küre (GLSL).', en: 'A sphere deformed by noise on the GPU (GLSL).' } },
+  { id: 'attractor', title: { tr: 'Lorenz Çekicisi', en: 'Lorenz Attractor' }, text: { tr: 'Kaos teorisinin ünlü çekicisi, binlerce parçacıkla.', en: 'The famous chaos-theory attractor, with thousands of particles.' } },
+  { id: 'fractal', title: { tr: 'Fraktal Küp', en: 'Fractal Cube' }, text: { tr: 'Kendini tekrar eden Menger süngeri.', en: 'A self-similar Menger sponge.' } },
+  { id: 'speed', title: { tr: 'Hız Görselleştirici', en: 'Speed Visualiser' }, text: { tr: 'Arabanın hızına ve motoruna tepki veren çubuklar.', en: 'Bars reacting to your car speed and engine.' } },
+]
+
 // Doğrulanmış bir iş geçmişi eklemek istersen burayı doldur; boşsa bölüm görünmez.
 export const experience = []
 
