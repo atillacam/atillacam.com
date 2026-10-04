@@ -22,6 +22,9 @@ export const ACHIEVEMENTS = [
   { id: 'night', title: { tr: 'Gece kuşu', en: 'Night owl' }, text: { tr: 'Geceyi gör.', en: 'Witness the night.' } },
   { id: 'turtle', title: { tr: 'Kaplumbağa', en: 'Turtle' }, text: { tr: 'Arabayı ters çevir.', en: 'Flip the car upside down.' } },
   { id: 'honk', title: { tr: 'Korna ustası', en: 'Honk master' }, text: { tr: '10 kez korna çal.', en: 'Honk 10 times.' }, goal: 10 },
+  { id: 'boom', title: { tr: 'Dinamit', en: 'Dynamite' }, text: { tr: 'Bütün TNT kasalarını patlat.', en: 'Blow up every TNT crate.' }, goal: 8 },
+  { id: 'rain', title: { tr: 'Yağmurda dans', en: 'Singing in the rain' }, text: { tr: 'Yağmurlu havayı gör.', en: 'Witness the rain.' } },
+  { id: 'snow', title: { tr: 'Kardan adam', en: 'Snow day' }, text: { tr: 'Karlı havayı gör.', en: 'Witness the snow.' } },
   { id: 'goal', title: { tr: 'Gol!', en: 'Goal!' }, text: { tr: 'Futbol sahasında bir gol at.', en: 'Score a goal on the football pitch.' } },
   { id: 'hattrick', title: { tr: 'Hat-trick', en: 'Hat-trick' }, text: { tr: 'Toplam 3 gol at.', en: 'Score 3 goals in total.' }, goal: 3 },
   { id: 'drifter', title: { tr: 'Drift ustası', en: 'Drift king' }, text: { tr: 'Tek seferde 3000 drift puanı topla.', en: 'Score 3000 drift points in one combo.' } },
@@ -99,6 +102,10 @@ export const useStore = create((set, get) => ({
   carColor: settings.carColor,
   headlights: 'auto', // 'auto' | 'on' | 'off'
   cameraMode: 'follow', // 'follow' | 'chase'
+  pinsDown: 0,
+  bowlingReset: 0, // değişince lobutlar yeniden dizilir
+  weatherMode: 'auto', // 'auto' | 'clear' | 'rain' | 'snow'
+  weather: 'clear', // şu anki hava
   toasts: [],
   race: idleRace,
 
@@ -153,6 +160,8 @@ export const useStore = create((set, get) => ({
       const social = profile.socials.find((s) => `social:${s.id}` === spot.id)
       if (social) window.open(social.url, '_blank', 'noopener,noreferrer')
       get().unlock('social')
+    } else if (spot.id === 'bowling') {
+      set({ bowlingReset: Date.now() })
     } else if (spot.id === 'lookout') {
       get().startCinematic()
     } else if (spot.id === 'race') {
@@ -213,6 +222,13 @@ export const useStore = create((set, get) => ({
   cycleHeadlights: () => set((s) => ({ headlights: s.headlights === 'auto' ? 'on' : s.headlights === 'on' ? 'off' : 'auto' })),
   toggleCamera: () => set((s) => ({ cameraMode: s.cameraMode === 'follow' ? 'chase' : 'follow' })),
   startCinematic: (ms = 9000) => set({ cinematic: performance.now() + ms }),
+  setPinsDown: (pinsDown) => set({ pinsDown }),
+  setWeatherMode: (weatherMode) => set({ weatherMode }),
+  setWeather: (weather) => {
+    set({ weather })
+    if (weather === 'rain') get().unlock('rain')
+    if (weather === 'snow') get().unlock('snow')
+  },
 
   // ---------- Toplanabilirler ----------
   collect: (id) => get().addToSet('collector', id),

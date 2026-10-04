@@ -223,11 +223,18 @@ function GameHud() {
   const drift = useStore((s) => s.drift)
   const driftBest = useStore((s) => s.driftBest)
   const goals = useStore((s) => s.soccerSession)
+  const pinsDown = useStore((s) => s.pinsDown)
   const speed = useRef()
+  const recover = useRef()
   useEffect(() => {
     let frame
     const loop = () => {
       if (speed.current) speed.current.textContent = Math.round(Math.abs(vehicleState.speed) * 3.6)
+      if (recover.current) {
+        const k = vehicleState.recovering
+        recover.current.style.opacity = k > 0.15 ? 1 : 0
+        recover.current.style.setProperty('--k', k)
+      }
       frame = requestAnimationFrame(loop)
     }
     loop()
@@ -246,6 +253,18 @@ function GameHud() {
           <small>
             {t('driftBest')}: {driftBest}
           </small>
+        </div>
+      )}
+      <div className="recover" ref={recover} aria-hidden="true">
+        <span className="recover-ring" />
+        {t('recovering')}
+      </div>
+      {area === 'bowling' && (
+        <div className="game-hud bowling">
+          <span>🎳 {t('pins')}</span>
+          <strong>
+            {pinsDown} / 10
+          </strong>
         </div>
       )}
       {area === 'soccer' && (
@@ -282,6 +301,22 @@ function AreaTitleCard({ id }) {
   )
 }
 
+// Bölge ikonları (harita ve lejant)
+const AREA_ICONS = {
+  home: '🏠',
+  projects: '💼',
+  about: '👤',
+  contact: '✉️',
+  playground: '🎢',
+  lake: '🌊',
+  race: '🏁',
+  soccer: '⚽',
+  drift: '🌀',
+  offroad: '🚙',
+  lookout: '⛰️',
+  bowling: '🎳',
+}
+
 // Harita çizimi: büyük harita ve mini harita aynı katmanları kullanır
 function MapLayers({ collected, visited, onArea, labels = true, t }) {
   return (
@@ -302,9 +337,13 @@ function MapLayers({ collected, visited, onArea, labels = true, t }) {
           tabIndex={onArea ? 0 : undefined}
           onKeyDown={onArea ? (e) => e.key === 'Enter' && onArea(a) : undefined}
         >
-          <circle cx={a.center[0]} cy={a.center[2]} r={Math.max(a.radius, 9)} fill={a.color} opacity={visited.includes(a.id) ? 0.9 : 0.5} />
+          <circle cx={a.center[0]} cy={a.center[2]} r={Math.max(a.radius, 9)} fill={a.color} opacity={visited.includes(a.id) ? 0.9 : 0.45} />
+          <circle cx={a.center[0]} cy={a.center[2]} r={Math.max(a.radius, 9)} className="map-area-ring" />
+          <text x={a.center[0]} y={a.center[2] - (labels ? 1.5 : 0)} textAnchor="middle" dominantBaseline="middle" className="map-icon">
+            {AREA_ICONS[a.id]}
+          </text>
           {labels && (
-            <text x={a.center[0]} y={a.center[2]} textAnchor="middle" dominantBaseline="middle">
+            <text x={a.center[0]} y={a.center[2] + 6.5} textAnchor="middle" dominantBaseline="middle">
               {t(a.label)}
             </text>
           )}
@@ -492,6 +531,9 @@ function MapPanel() {
             <path d="M5 0 L-4 -4 L-2 0 L-4 4 Z" className="map-car" />
           </g>
         </svg>
+        <div className="map-compass" aria-hidden="true">
+          <span>N</span>
+        </div>
         <div className="map-tools">
           <button className="icon-button" onClick={() => setView((v) => clampView({ ...v, size: v.size * 0.8 }))} aria-label="+">
             +
@@ -509,6 +551,27 @@ function MapPanel() {
           </button>
         </div>
       </div>
+      <div className="map-stats">
+        <span>
+          🧭 {visited.length}/{AREAS.length} {t('areasLabel')}
+        </span>
+        <span>
+          💠 {collected.length}/{COLLECTIBLES.length}
+        </span>
+      </div>
+      <ul className="map-legend">
+        {AREAS.map((a) => (
+          <li key={a.id}>
+            <button onClick={() => go(a)} title={t('teleport')}>
+              <span className="legend-icon" style={{ background: a.color }}>
+                {AREA_ICONS[a.id]}
+              </span>
+              <span className="legend-name">{t(a.label)}</span>
+              {visited.includes(a.id) && <span className="legend-check">✓</span>}
+            </button>
+          </li>
+        ))}
+      </ul>
       {selected ? (
         <div className="map-card" style={{ '--area': selected.color }}>
           <div>
@@ -583,6 +646,7 @@ function MenuPanel() {
   const setView = useStore((s) => s.setView)
   const headlights = useStore((s) => s.headlights)
   const cameraMode = useStore((s) => s.cameraMode)
+  const weatherMode = useStore((s) => s.weatherMode)
   if (!open) return null
   return (
     <Panel id="menu" title={t('menu')}>
@@ -616,6 +680,16 @@ function MenuPanel() {
           {['follow', 'chase'].map((c) => (
             <button key={c} className={cameraMode === c ? 'active' : ''} onClick={() => useStore.setState({ cameraMode: c })} aria-pressed={cameraMode === c}>
               {t(c === 'follow' ? 'camFollow' : 'camChase')}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="menu-row">
+        <span>{t('weather')}</span>
+        <div className="lang-switch">
+          {['auto', 'clear', 'rain', 'snow'].map((w) => (
+            <button key={w} className={weatherMode === w ? 'active' : ''} onClick={() => useStore.getState().setWeatherMode(w)} aria-pressed={weatherMode === w}>
+              {t(w === 'auto' ? 'wAuto' : w === 'clear' ? 'wClear' : w === 'rain' ? 'wRain' : 'wSnow')}
             </button>
           ))}
         </div>

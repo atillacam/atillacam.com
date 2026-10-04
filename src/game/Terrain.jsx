@@ -244,7 +244,7 @@ export default function Terrain() {
       </mesh>
 
       {/* Bölge zeminleri */}
-      {AREAS.filter((a) => a.id !== 'lake' && a.id !== 'race' && !a.pad).map((a) => (
+      {AREAS.filter((a) => a.id !== 'lake' && a.id !== 'race' && (!a.pad || a.pad === 'alley')).map((a) => (
         <group key={a.id} position={[a.center[0], 0, a.center[2]]}>
           {/* Taş kaplama meydan + bölge renginde ince kenar */}
           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.016, 0]} receiveShadow>

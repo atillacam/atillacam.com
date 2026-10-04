@@ -10,6 +10,7 @@ import { useStore } from '../store.js'
 const _top = new THREE.Color()
 const _horizon = new THREE.Color()
 const _sunColor = new THREE.Color()
+const _grey = new THREE.Color()
 const WARM = new THREE.Color('#ffb070')
 const NOON = new THREE.Color('#fff4e2')
 const MOON = new THREE.Color('#9db4ff')
@@ -148,7 +149,19 @@ export default function DayNight({ shadows = true }) {
     world.night = 1 - THREE.MathUtils.smoothstep(elevation, -0.12, 0.12)
 
     skyColors(t, _top, _horizon)
-    if (scene.fog) scene.fog.color.copy(_horizon).lerp(_top, 0.25)
+    // Kötü havada gökyüzü griye döner, şimşekte bir anlığına aydınlanır
+    const overcast = Math.max(world.wet, world.snowy * 0.7)
+    _top.lerp(_grey.setRGB(0.32, 0.35, 0.4), overcast * 0.7)
+    _horizon.lerp(_grey.setRGB(0.55, 0.58, 0.62), overcast * 0.6)
+    if (world.flash > 0) {
+      _top.lerp(_grey.setRGB(0.85, 0.88, 1), world.flash * 0.6)
+      _horizon.lerp(_grey.setRGB(0.9, 0.92, 1), world.flash * 0.5)
+    }
+    if (scene.fog) {
+      scene.fog.color.copy(_horizon).lerp(_top, 0.25)
+      scene.fog.near = THREE.MathUtils.lerp(70, 25, overcast)
+      scene.fog.far = THREE.MathUtils.lerp(230, 120, overcast)
+    }
     scene.environmentIntensity = THREE.MathUtils.lerp(0.4, 0.08, world.night)
 
     // Gündüz güneş, gece ay ışığı (aynı ışık, yön ve renk değişir)
@@ -169,13 +182,13 @@ export default function DayNight({ shadows = true }) {
       } else {
         _sunColor.copy(WARM).lerp(NOON, THREE.MathUtils.clamp(elevation * 2.2, 0, 1))
         light.color.copy(_sunColor)
-        light.intensity = 3.0 * THREE.MathUtils.clamp(elevation * 3 + 0.15, 0, 1)
+        light.intensity = 3.0 * THREE.MathUtils.clamp(elevation * 3 + 0.15, 0, 1) * (1 - overcast * 0.6)
       }
     }
     if (hemi.current) {
       hemi.current.color.copy(_top).lerp(NOON, 0.55)
       hemi.current.groundColor.set('#5b7a45').multiplyScalar(1 - world.night * 0.75)
-      hemi.current.intensity = THREE.MathUtils.lerp(0.85, 0.4, world.night)
+      hemi.current.intensity = THREE.MathUtils.lerp(0.85, 0.4, world.night) * (1 - overcast * 0.2) + world.flash * 2.2
     }
 
     const isNight = world.night > 0.5

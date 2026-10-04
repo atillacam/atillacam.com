@@ -117,3 +117,47 @@ export function playCheckpoint() {
   tone({ freq: 660, type: 'triangle', duration: 0.14, volume: 0.1 })
   tone({ freq: 990, type: 'triangle', duration: 0.2, volume: 0.1, delay: 0.1 })
 }
+
+export function playBoom() {
+  if (!ctx) return
+  // Alçak geçiren gürültü + düşen bas: patlama
+  const t = ctx.currentTime
+  const buffer = ctx.createBuffer(1, ctx.sampleRate * 1.2, ctx.sampleRate)
+  const data = buffer.getChannelData(0)
+  for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length) ** 2.5
+  const src = ctx.createBufferSource()
+  src.buffer = buffer
+  const filter = ctx.createBiquadFilter()
+  filter.type = 'lowpass'
+  filter.frequency.setValueAtTime(1400, t)
+  filter.frequency.exponentialRampToValueAtTime(120, t + 1)
+  const gain = ctx.createGain()
+  gain.gain.value = 0.55
+  src.connect(filter).connect(gain).connect(master)
+  src.start(t)
+  tone({ freq: 70, type: 'sine', duration: 0.6, volume: 0.25, slide: 0.4 })
+}
+
+export function playThunder() {
+  if (!ctx) return
+  // Uzak gök gürültüsü: uzun, alçak frekanslı gürültü
+  const t = ctx.currentTime
+  const len = 2.8
+  const buffer = ctx.createBuffer(1, ctx.sampleRate * len, ctx.sampleRate)
+  const data = buffer.getChannelData(0)
+  let last = 0
+  for (let i = 0; i < data.length; i++) {
+    last = last * 0.985 + (Math.random() * 2 - 1) * 0.15
+    const env = Math.min(i / (ctx.sampleRate * 0.08), 1) * (1 - i / data.length) ** 1.5
+    data[i] = last * env * 3
+  }
+  const src = ctx.createBufferSource()
+  src.buffer = buffer
+  const filter = ctx.createBiquadFilter()
+  filter.type = 'lowpass'
+  filter.frequency.value = 320
+  const gain = ctx.createGain()
+  gain.gain.value = 0.5
+  src.connect(filter).connect(gain).connect(master)
+  src.start(t)
+}

@@ -14,9 +14,11 @@ import Spots from './Spots.jsx'
 import Race from './Race.jsx'
 import Collectibles from './Collectibles.jsx'
 import Zones from './Zones.jsx'
+import Bowling from './Bowling.jsx'
 import Dust from './Dust.jsx'
 import Skids from './Skids.jsx'
 import Atmosphere from './Atmosphere.jsx'
+import Weather from './Weather.jsx'
 import Vehicle from './Vehicle.jsx'
 import Effects from './Effects.jsx'
 import { bindKeyboard, input, vehicleState } from './input.js'
@@ -86,12 +88,14 @@ export default function Game() {
           <Race />
           <Collectibles />
           <Zones />
+          <Bowling />
           <Vehicle />
         </Physics>
         <Grass count={high ? 115000 : 28000} />
         <Dust />
         <Skids />
         <Atmosphere />
+        <Weather />
         {high && <Effects />}
         <ReadySignal />
         <DebugHandle />

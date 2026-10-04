@@ -7,6 +7,9 @@ export const world = {
   target: null, // butonla geçişte hedef saat
   speed: 1 / 420, // tam gün ≈ 7 dakika
   night: 0, // 0 gündüz … 1 gece
+  wet: 0, // yağmur yoğunluğu 0..1
+  snowy: 0, // kar yoğunluğu 0..1
+  flash: 0, // şimşek parlaması 0..1
   sunDir: new THREE.Vector3(0, 1, 0),
   // Ortak shader değerleri: rüzgâr saati ve aracın konumu (görüş hattı şeffaflığı için)
   uniforms: { uTime: { value: 0 }, uCar: { value: new THREE.Vector3() } },

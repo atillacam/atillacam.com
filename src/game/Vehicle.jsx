@@ -159,6 +159,7 @@ export default function Vehicle() {
       vehicle.setWheelSideFrictionStiffness(i, 1.1)
     })
     controller.current = vehicle
+    if (import.meta.env.DEV) window.__portfolio = Object.assign(window.__portfolio ?? {}, { vehicleBody: body.current })
     return () => {
       controller.current = null
       world.removeVehicleController(vehicle)
@@ -371,7 +372,7 @@ export default function Vehicle() {
     vehicleState.heading = Math.atan2(-_forward.z, _forward.x)
     vehicleState.speed = speed
     vehicleState.upright = _up.y
-    _right.set(0, 0, 1).applyQuaternion(_quat)
+    _right.set(0, 0, 1).applyQuaternion(_quat) // aracın sağı (+z)
     vehicleState.slip = Math.abs(_vel.dot(_right))
     for (let i = 0; i < 2; i++) {
       const s = vehicle.wheelSuspensionLength(i + 2) ?? REST_LENGTH
@@ -427,15 +428,23 @@ export default function Vehicle() {
       if (Math.hypot(t.x - SPAWN.position[0], t.z - SPAWN.position[2]) > 20) store.unlock('start')
       if (t.y - heightAt(t.x, t.z) > 5.5) store.unlock('sky')
       if (night > 0.6) store.unlock('night')
+      // Kendini düzeltme: yan yatma, ters dönme ya da tekerlekleri yere değmeden takılı kalma
+      const slow = _vel.length() < 2.5
+      const tilted = _up.y < 0.45
+      const stuck = !vehicleState.grounded && _vel.length() < 0.6
       if (_up.y < -0.5) {
         s.upsideDown += dt
         if (s.upsideDown > 0.6) store.unlock('turtle')
-        // Uzun süre ters kalırsa kendiliğinden düzelt
-        if (s.upsideDown > 2) {
-          respawn([t.x, t.y + 1.5, t.z], vehicleState.heading)
-          s.upsideDown = 0
-        }
       } else s.upsideDown = 0
+      s.tilt = (tilted && slow) || stuck ? (s.tilt ?? 0) + dt : 0
+      vehicleState.recovering = Math.min((s.tilt ?? 0) / 1.3, 1)
+      if (s.tilt > (stuck && !tilted ? 2.5 : 1.3)) {
+        // Burun dikse yönü sağ vektörden al; değilse mevcut yönü koru
+        const yaw = Math.abs(_forward.y) > 0.8 ? Math.atan2(_right.x, _right.z) : vehicleState.heading
+        respawn([t.x, Math.max(t.y, heightAt(t.x, t.z)) + 1.6, t.z], yaw)
+        if (!store.muted) playThud(1.5)
+        s.tilt = 0
+      }
     }
 
     // Motor sesi

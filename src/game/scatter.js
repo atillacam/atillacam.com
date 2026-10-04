@@ -132,6 +132,7 @@ export function useScatter(density = 1) {
       // Dış bölgelere giden yolların geçtiği çaprazlarda boşluk bırak
       const diag = Math.abs(((a - Math.PI / 4) % (Math.PI / 2) + Math.PI / 2) % (Math.PI / 2) - Math.PI / 4)
       if (Math.PI / 4 - diag < 0.14) continue
+      if (Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) < 0.12) continue // doğu: bowling yolu
       const r = RING_RADIUS + RING_WIDTH / 2 + 4.5 + rand() * 1.5
       const x = Math.cos(a) * r
       const z = Math.sin(a) * r

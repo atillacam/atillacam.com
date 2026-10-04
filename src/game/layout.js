@@ -33,6 +33,7 @@ export const AREAS = [
   { id: 'soccer', label: 'areaSoccer', center: [78, 0, 78], radius: 20, color: '#4fd99a', spawn: [60, 1.2, 60], yaw: -Math.PI / 4, pad: 'field', outer: true },
   { id: 'drift', label: 'areaDrift', center: [-78, 0, 78], radius: 20, color: COLORS.coral, spawn: [-60, 1.2, 60], yaw: (-3 * Math.PI) / 4, pad: 'asphalt', outer: true },
   { id: 'offroad', label: 'areaOffroad', center: [-78, 0, -78], radius: 20, color: '#c58b4a', spawn: [-60, 1.2, -60], yaw: (3 * Math.PI) / 4, pad: 'dirt', outer: true },
+  { id: 'bowling', label: 'areaBowling', center: [108, 0, 0], radius: 18, color: '#ff8a3d', spawn: [86, 1.2, 0], yaw: 0, pad: 'alley', outer: true },
   { id: 'lookout', label: 'areaLookout', center: [78, 0, -78], radius: 14, color: COLORS.violet, spawn: [60, 1.2, -60], yaw: Math.PI / 4, pad: 'hill', outer: true },
 ]
 
@@ -78,6 +79,7 @@ export const SPOTS = [
   { id: 'skills', label: 'spotSkills', action: 'spotSkillsAction', position: [35, 0, 6], color: COLORS.teal },
   { id: 'contact', label: 'areaContact', action: 'spotContactAction', position: [-45, 0, 6], color: COLORS.violet },
   { id: 'race', label: 'spotRace', action: 'spotRaceAction', position: [9, 0, RING_RADIUS - 8], color: COLORS.amber },
+  { id: 'bowling', label: 'areaBowling', action: 'spotBowlingAction', position: [93, 0, -6], color: '#ff8a3d' },
   { id: 'lookout', label: 'areaLookout', action: 'spotLookoutAction', position: [78, 0, -78], color: COLORS.violet },
   { id: 'credits', label: 'spotCredits', action: 'spotCreditsAction', position: [-16, 0, 20], color: '#c9b6ff' },
   ...SOCIAL_PEDESTALS.map(({ social, position }) => ({
@@ -107,6 +109,7 @@ export const PATHS = [
   { from: [0, 0], to: [0, 24.2] },
   { from: [0, 55.8], to: [0, RING_RADIUS - RING_WIDTH / 2] },
   { from: [-8, 8], to: [-22, 22] },
+  { from: [RING_RADIUS + RING_WIDTH / 2, 0], to: [90, 0], outer: true },
   // Çevre yoldan dış bölgelere: tepeleri yararak geçen yollar
   ...[
     [1, 1, 20],

@@ -811,6 +811,117 @@ kbd {
   cursor: pointer;
 }
 
+/* Harita: ikonlar, pusula, lejant */
+.map-icon {
+  font-size: 7px;
+  pointer-events: none;
+}
+.map-area-ring {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.55);
+  stroke-width: 0.8;
+}
+.map-compass {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(10, 14, 26, 0.75);
+  border: 1px solid var(--border-strong);
+  font-weight: 900;
+  font-size: 0.75rem;
+  color: var(--coral);
+}
+.map-stats {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+.map-legend {
+  list-style: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.map-legend button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-align: left;
+  color: #d5dae8;
+  transition: background 0.15s, border-color 0.15s;
+}
+.map-legend button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--border-strong);
+}
+.legend-icon {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  flex: none;
+}
+.legend-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.legend-check {
+  color: var(--green);
+}
+
+/* Kendini düzeltme göstergesi */
+.recover {
+  position: fixed;
+  left: 50%;
+  bottom: 110px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px 8px 8px;
+  border-radius: 999px;
+  background: var(--surface);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--border-strong);
+  font-weight: 800;
+  font-size: 0.85rem;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+  z-index: 10;
+  --k: 0;
+}
+.recover-ring {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: conic-gradient(var(--primary-2) calc(var(--k) * 360deg), rgba(255, 255, 255, 0.12) 0);
+  mask: radial-gradient(circle, transparent 6px, #000 7px);
+  -webkit-mask: radial-gradient(circle, transparent 6px, #000 7px);
+}
+.game-hud.bowling strong {
+  color: #ff8a3d;
+}
+
 /* Yarış */
 .countdown {
   position: fixed;

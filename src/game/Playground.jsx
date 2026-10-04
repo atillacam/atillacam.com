@@ -1,86 +1,13 @@
-import { useMemo, useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
-import { BallCollider, CuboidCollider, CylinderCollider, RigidBody } from '@react-three/rapier'
+import { CuboidCollider, RigidBody } from '@react-three/rapier'
 import { RoundedBox, Text } from '@react-three/drei'
 import * as THREE from 'three'
 import { AREAS, COLORS } from './layout.js'
 import { fontBlack } from './fonts.js'
-import { useStore } from '../store.js'
 import { useT } from '../i18n.js'
+import Explosives from './Explosives.jsx'
 
 const _up = new THREE.Vector3()
 const _q = new THREE.Quaternion()
-
-function Bowling({ position }) {
-  const pins = useMemo(() => {
-    const list = []
-    const spacing = 0.75
-    for (let row = 0; row < 4; row++) {
-      for (let i = 0; i <= row; i++) {
-        list.push([(i - row / 2) * spacing, 0, -row * spacing * 0.9])
-      }
-    }
-    return list
-  }, [])
-  const refs = useRef([])
-  const timer = useRef(0)
-
-  useFrame((_, delta) => {
-    timer.current += delta
-    if (timer.current < 0.5) return
-    timer.current = 0
-    const store = useStore.getState()
-    if (store.unlocked.strike || !store.started) return
-    const allDown = refs.current.every((b) => {
-      if (!b) return false
-      const r = b.rotation()
-      _up.set(0, 1, 0).applyQuaternion(_q.set(r.x, r.y, r.z, r.w))
-      return _up.y < 0.6
-    })
-    if (allDown) store.unlock('strike')
-  })
-
-  return (
-    <group position={position}>
-      {/* Pist */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 4]} receiveShadow>
-        <planeGeometry args={[4.4, 14]} />
-        <meshStandardMaterial color="#e8c48f" roughness={0.6} />
-      </mesh>
-      {[-2.3, 2.3].map((x) => (
-        <mesh key={x} rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.035, 4]}>
-          <planeGeometry args={[0.2, 14]} />
-          <meshStandardMaterial color={COLORS.ink} />
-        </mesh>
-      ))}
-      {pins.map((p, i) => (
-        <RigidBody key={i} ref={(el) => (refs.current[i] = el)} colliders={false} position={[p[0], 0.55, p[2]]} friction={0.4} restitution={0.2}>
-          <CylinderCollider args={[0.55, 0.2]} mass={0.25} />
-          <mesh castShadow>
-            <cylinderGeometry args={[0.12, 0.2, 1.1, 12]} />
-            <meshStandardMaterial color={COLORS.cream} roughness={0.35} />
-          </mesh>
-          <mesh position={[0, 0.25, 0]}>
-            <cylinderGeometry args={[0.135, 0.15, 0.12, 12]} />
-            <meshStandardMaterial color={COLORS.coral} />
-          </mesh>
-          <mesh position={[0, 0.6, 0]} castShadow>
-            <sphereGeometry args={[0.14, 12, 10]} />
-            <meshStandardMaterial color={COLORS.cream} roughness={0.35} />
-          </mesh>
-        </RigidBody>
-      ))}
-      {/* Top */}
-      <RigidBody colliders={false} position={[0, 0.7, 8.5]} restitution={0.3} friction={0.6}>
-        <BallCollider args={[0.7]} mass={1.5} />
-        <mesh castShadow>
-          <sphereGeometry args={[0.7, 24, 18]} />
-          <meshStandardMaterial color={COLORS.blue} roughness={0.25} />
-        </mesh>
-      </RigidBody>
-    </group>
-  )
-}
 
 function Ramp({ position, rotation = 0 }) {
   const angle = 0.28
@@ -135,7 +62,8 @@ export default function Playground() {
   const [cx, , cz] = AREAS.find((a) => a.id === 'playground').center
   return (
     <group>
-      <Bowling position={[cx + 9, 0, cz + 2]} />
+      {/* Bowling kendi salonuna taşındı; burada patlayan TNT kasaları var */}
+      <Explosives origin={[cx + 8, cz]} />
       {/* Rampa güneye doğru yükselir; kuzeyden gelince zıplatır */}
       <Ramp position={[cx - 8, 0, cz]} rotation={Math.PI} />
       <Crates position={[cx - 8, 0, cz + 12]} />

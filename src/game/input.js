@@ -19,6 +19,7 @@ export const vehicleState = {
   slip: 0, // yanal kayma hızı (m/s)
   braking: false,
   handbrake: false,
+  recovering: 0, // 0..1 kendini düzeltme ilerlemesi
   rearWheels: [
     { x: 0, y: 0, z: 0 },
     { x: 0, y: 0, z: 0 },
