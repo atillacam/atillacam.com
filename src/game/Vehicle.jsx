@@ -9,6 +9,7 @@ import { world as worldTime } from './time.js'
 import { heightAt } from './terrain.js'
 import { bakedGeometry } from './geometry.js'
 import TurboFlame from './TurboFlame.jsx'
+import { buildRacer, paintHex } from './cars.js'
 import { useStore } from '../store.js'
 import { playHonk, playSplash, playThud, setMuted, updateEngine } from '../audio.js'
 
@@ -77,6 +78,7 @@ function useCarModel() {
     const body = new THREE.Group()
     const wheels = {}
     const glass = []
+    const paint = []
     scene.updateMatrixWorld(true)
     scene.traverse((o) => {
       if (!o.isMesh) return
@@ -97,6 +99,11 @@ function useCarModel() {
         mesh.geometry.translate(-center.x, -center.y, -center.z)
         wheels[wheelName] = mesh
       } else {
+        // Boya: gövde malzemesi garajdaki renge boyanır (doku ile çarpılır)
+        if (mesh.material.name === 'car_body') {
+          mesh.material = mesh.material.clone()
+          paint.push(mesh.material)
+        }
         if (mesh.material.name === 'headlight_glass') {
           mesh.material = mesh.material.clone()
           mesh.material.emissive = new THREE.Color('#fff2c6')
@@ -105,7 +112,7 @@ function useCarModel() {
         body.add(mesh)
       }
     })
-    return { body, wheels, glass }
+    return { body, wheels, glass, paint }
   }, [scene])
 }
 
@@ -120,7 +127,17 @@ export default function Vehicle() {
   const { world, rapier } = useRapier()
   const camera = useThree((s) => s.camera)
   const gl = useThree((s) => s.gl)
-  const car = useCarModel()
+  const glbCar = useCarModel()
+  const racer = useMemo(() => buildRacer(), [])
+  const carId = useStore((s) => s.carId)
+  const carColor = useStore((s) => s.carColor)
+  const car = carId === 'racer' ? racer : glbCar
+
+  // Seçilen boya rengini uygula
+  useEffect(() => {
+    const hex = paintHex(carColor)
+    car.paint.forEach((m) => m.color.set(hex))
+  }, [car, carColor])
 
   const steer = useRef(0)
   const lookTarget = useRef(new THREE.Vector3(...SPAWN.position))
@@ -192,7 +209,9 @@ export default function Vehicle() {
 
   const respawn = (position, yaw) => {
     const rb = body.current
-    rb.setTranslation({ x: position[0], y: position[1], z: position[2] }, true)
+    // Her zaman arazinin üstüne bırak (tepelerde zeminin içine doğmasın)
+    const y = Math.max(position[1], heightAt(position[0], position[2]) + 1.3)
+    rb.setTranslation({ x: position[0], y, z: position[2] }, true)
     rb.setRotation(yawQuaternion(yaw), true)
     rb.setLinvel({ x: 0, y: 0, z: 0 }, true)
     rb.setAngvel({ x: 0, y: 0, z: 0 }, true)
@@ -242,8 +261,11 @@ export default function Vehicle() {
       const headroom = THREE.MathUtils.clamp(1 - Math.abs(speed) / limit, 0, 1)
       engine = throttle * ENGINE_FORCE * (boost ? BOOST_MULTIPLIER : 1) * Math.min(1, headroom * 3)
     }
-    const brakeForce = brake || reversing ? BRAKE_FORCE : throttle === 0 ? 0.14 : 0
+    // El freni (B/Ctrl): arka tekerlekler kilitlenip tutuş azalır → kontrollü drift
+    const handbrake = brake && Math.abs(speed) > 3
+    const brakeForce = reversing ? BRAKE_FORCE : brake && !handbrake ? BRAKE_FORCE : throttle === 0 ? 0.14 : 0
     vehicleState.braking = brake || reversing
+    vehicleState.handbrake = handbrake
 
     // Hızlandıkça direksiyon açısı azalır: yüksek hızda kontrol kolaylaşır
     const steerLimit = THREE.MathUtils.lerp(MAX_STEER, 0.22, Math.min(Math.abs(speed) / MAX_BOOST_SPEED, 1))
@@ -253,7 +275,9 @@ export default function Vehicle() {
       // Rapier, bu aks yönünde pozitif kuvveti geriye uygular; bu yüzden işaret ters
       vehicle.setWheelEngineForce(i, WHEELS[i].front ? 0 : -engine)
       vehicle.setWheelSteering(i, WHEELS[i].front ? steer.current : 0)
-      vehicle.setWheelBrake(i, brakeForce)
+      vehicle.setWheelBrake(i, handbrake ? (WHEELS[i].front ? 0 : 0.22) : brakeForce)
+      vehicle.setWheelFrictionSlip(i, handbrake && !WHEELS[i].front ? 1.05 : 3.2)
+      vehicle.setWheelSideFrictionStiffness(i, handbrake && !WHEELS[i].front ? 0.5 : 1.1)
     }
 
     const ownCollider = collider.current
@@ -277,6 +301,17 @@ export default function Vehicle() {
     if (input.events.size) {
       if (input.events.has('jump') && grounded && active) {
         rb.applyImpulse({ x: 0, y: MASS * 5.5, z: 0 }, true)
+      }
+      for (let n = 1; n <= 5; n++) {
+        if (!input.events.has('hydro' + n) || !active || !grounded) continue
+        const r = rb.rotation()
+        _quat.set(r.x, r.y, r.z, r.w)
+        const tr = rb.translation()
+        const corners = n === 5 ? [0, 1, 2, 3] : [n - 1]
+        for (const c of corners) {
+          _wheel.set(WHEELS[c].position.x, 0, WHEELS[c].position.z).applyQuaternion(_quat)
+          rb.applyImpulseAtPoint({ x: 0, y: MASS * (n === 5 ? 1.4 : 2.4), z: 0 }, { x: tr.x + _wheel.x, y: tr.y + _wheel.y, z: tr.z + _wheel.z }, true)
+        }
       }
       if (input.events.has('honk') && active) {
         if (!store.muted) playHonk()
@@ -352,10 +387,11 @@ export default function Vehicle() {
 
     // Gece farlar
     const night = worldTime.night
-    car.glass.forEach((m) => (m.emissiveIntensity = night * 2.2))
+    const lights = store.headlights === 'on' ? 1 : store.headlights === 'off' ? 0 : night
+    car.glass.forEach((m) => (m.emissiveIntensity = lights * 2.2))
     if (headlight.current) {
-      headlight.current.intensity = night * 40
-      headlight.current.visible = night > 0.05
+      headlight.current.intensity = lights * 40
+      headlight.current.visible = lights > 0.05
     }
 
     // Dünyadan düşerse geri getir
@@ -395,7 +431,7 @@ export default function Vehicle() {
         s.upsideDown += dt
         if (s.upsideDown > 0.6) store.unlock('turtle')
         // Uzun süre ters kalırsa kendiliğinden düzelt
-        if (s.upsideDown > 3.5) {
+        if (s.upsideDown > 2) {
           respawn([t.x, t.y + 1.5, t.z], vehicleState.heading)
           s.upsideDown = 0
         }
@@ -408,8 +444,20 @@ export default function Vehicle() {
 
     // Kamera takibi
     const o = orbit.current
+    const cinematic = store.cinematic > performance.now()
+    const chase = store.cameraMode === 'chase' && !cinematic
     if (!store.started) {
       o.azimuth += dt * 0.08 // giriş ekranında yavaşça döner
+    } else if (cinematic) {
+      // Gözlem tepesi: dünyanın etrafında yavaş, geniş bir tur
+      o.azimuth += dt * 0.22
+      o.polar += (1.0 - o.polar) * (1 - Math.exp(-1.2 * dt))
+    } else if (chase && !o.dragging) {
+      // Takip kamerası: aracın arkasında, hareket yönüne döner
+      const behind = Math.atan2(-_forward.x, -_forward.z)
+      const diff = Math.atan2(Math.sin(behind - o.azimuth), Math.cos(behind - o.azimuth))
+      o.azimuth += diff * (1 - Math.exp(-3.5 * dt))
+      o.polar += (1.22 - o.polar) * (1 - Math.exp(-3 * dt))
     } else if (!o.dragging) {
       // Kullanıcı bırakınca kamera 2 sn sonra varsayılan açıya yumuşakça döner
       o.idle += dt
@@ -426,7 +474,7 @@ export default function Vehicle() {
     const lt = lookTarget.current
     // Dikey ekranda (telefon) görüş alanı dar; kamerayı uzaklaştır
     const speedAbs = Math.abs(speed)
-    const targetDistance = store.started ? o.baseDistance + Math.min(speedAbs * 0.18, 4.5) : 30
+    const targetDistance = !store.started ? 30 : cinematic ? 46 : chase ? 8.5 + Math.min(speedAbs * 0.12, 3) : o.baseDistance + Math.min(speedAbs * 0.18, 4.5)
     o.distance += (targetDistance - o.distance) * (1 - Math.exp(-(store.started ? 1.6 : 4) * dt))
     const distance = o.distance * (state.size.width < state.size.height ? 1.5 : 1)
     const targetFov = 45 + Math.min(speedAbs / MAX_BOOST_SPEED, 1) * 7

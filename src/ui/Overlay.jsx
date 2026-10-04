@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { profile } from '../content.js'
 import { ACHIEVEMENTS, progressOf, useStore } from '../store.js'
-import { AREAS, COLLECTIBLES, RACE, WORLD_HALF } from '../game/layout.js'
+import { AREAS, COLLECTIBLES, LAKE, PATHS, RACE, RING_RADIUS, WORLD_HALF } from '../game/layout.js'
 import { input, teleport, trigger, vehicleState } from '../game/input.js'
 import { initAudio } from '../audio.js'
 import { useT } from '../i18n.js'
 import { formatTime } from '../format.js'
 import { Icon } from './Icons.jsx'
+import { CARS, PAINTS } from '../game/cars.js'
 import {
   AboutContent,
   ContactContent,
@@ -30,6 +31,7 @@ export default function Overlay() {
       {started && <Prompt />}
       {started && <RaceHud />}
       {started && <AreaTitle />}
+      {started && <GameHud />}
       {started && !isTouchDevice() && <MiniMap />}
       {started && isTouchDevice() && <TouchControls />}
       <MapPanel />
@@ -214,6 +216,48 @@ function RaceHud() {
   )
 }
 
+// Hız göstergesi, canlı drift puanı ve futbol sahasında gol sayacı
+function GameHud() {
+  const { t } = useT()
+  const area = useStore((s) => s.area)
+  const drift = useStore((s) => s.drift)
+  const driftBest = useStore((s) => s.driftBest)
+  const goals = useStore((s) => s.soccerSession)
+  const speed = useRef()
+  useEffect(() => {
+    let frame
+    const loop = () => {
+      if (speed.current) speed.current.textContent = Math.round(Math.abs(vehicleState.speed) * 3.6)
+      frame = requestAnimationFrame(loop)
+    }
+    loop()
+    return () => cancelAnimationFrame(frame)
+  }, [])
+  return (
+    <>
+      <div className="speedo" aria-hidden="true">
+        <strong ref={speed}>0</strong>
+        <span>km/h</span>
+      </div>
+      {(area === 'drift' || drift.active) && (
+        <div className={drift.active ? 'game-hud drift active' : 'game-hud drift'}>
+          <span>{t('driftLabel')}</span>
+          <strong>{drift.combo}</strong>
+          <small>
+            {t('driftBest')}: {driftBest}
+          </small>
+        </div>
+      )}
+      {area === 'soccer' && (
+        <div className="game-hud soccer">
+          <span>⚽ {t('goals')}</span>
+          <strong>{goals}</strong>
+        </div>
+      )}
+    </>
+  )
+}
+
 // Bölgeye girerken beliren başlık kartı (her bölge değişiminde yeniden doğar)
 function AreaTitle() {
   const area = useStore((s) => s.area)
@@ -238,36 +282,80 @@ function AreaTitleCard({ id }) {
   )
 }
 
-// Köşede sürekli görünen mini harita; tıklayınca büyük harita açılır
-function MiniMap() {
-  const { t } = useT()
-  const togglePanel = useStore((s) => s.togglePanel)
-  const collected = useStore((s) => s.progress.collector ?? NONE)
-  const car = useRef()
+// Harita çizimi: büyük harita ve mini harita aynı katmanları kullanır
+function MapLayers({ collected, visited, onArea, labels = true, t }) {
+  return (
+    <>
+      <rect x={-WORLD_HALF} y={-WORLD_HALF} width={WORLD_HALF * 2} height={WORLD_HALF * 2} rx="14" className="map-ground" />
+      <circle cx="0" cy="0" r="98" className="map-hills" />
+      <circle cx="0" cy="0" r={RING_RADIUS} className="map-ring" />
+      {PATHS.map((p, i) => (
+        <line key={i} x1={p.from[0]} y1={p.from[1]} x2={p.to[0]} y2={p.to[1]} className="map-path" />
+      ))}
+      <circle cx={LAKE.x} cy={LAKE.z} r={LAKE.radius} className="map-lake" />
+      {AREAS.filter((a) => a.id !== 'lake').map((a) => (
+        <g
+          key={a.id}
+          className={onArea ? 'map-area clickable' : 'map-area'}
+          onClick={onArea ? () => onArea(a) : undefined}
+          role={onArea ? 'button' : undefined}
+          tabIndex={onArea ? 0 : undefined}
+          onKeyDown={onArea ? (e) => e.key === 'Enter' && onArea(a) : undefined}
+        >
+          <circle cx={a.center[0]} cy={a.center[2]} r={Math.max(a.radius, 9)} fill={a.color} opacity={visited.includes(a.id) ? 0.9 : 0.5} />
+          {labels && (
+            <text x={a.center[0]} y={a.center[2]} textAnchor="middle" dominantBaseline="middle">
+              {t(a.label)}
+            </text>
+          )}
+        </g>
+      ))}
+      {COLLECTIBLES.filter((c) => !collected.includes(c.id)).map((c) => (
+        <rect key={c.id} x={c.x - 2} y={c.z - 2} width="4" height="4" transform={'rotate(45 ' + c.x + ' ' + c.z + ')'} className="map-core" />
+      ))}
+    </>
+  )
+}
+
+function useCarMarker(ref, active = true) {
   useEffect(() => {
+    if (!active) return
     let frame
     const loop = () => {
       const { x, z } = vehicleState.position
       const deg = (-vehicleState.heading * 180) / Math.PI
-      car.current?.setAttribute('transform', `translate(${x} ${z}) rotate(${deg})`)
+      ref.current?.setAttribute('transform', 'translate(' + x + ' ' + z + ') rotate(' + deg + ')')
+      frame = requestAnimationFrame(loop)
+    }
+    loop()
+    return () => cancelAnimationFrame(frame)
+  }, [ref, active])
+}
+
+// Köşede sürekli görünen mini harita: araca odaklı yakın çevre; tıklayınca büyük harita
+function MiniMap() {
+  const { t } = useT()
+  const togglePanel = useStore((s) => s.togglePanel)
+  const collected = useStore((s) => s.progress.collector ?? NONE)
+  const visited = useStore((s) => s.progress.explorer ?? NONE)
+  const svg = useRef()
+  const car = useRef()
+  useCarMarker(car)
+  useEffect(() => {
+    let frame
+    const loop = () => {
+      const { x, z } = vehicleState.position
+      const r = 62
+      svg.current?.setAttribute('viewBox', x - r + ' ' + (z - r) + ' ' + r * 2 + ' ' + r * 2)
       frame = requestAnimationFrame(loop)
     }
     loop()
     return () => cancelAnimationFrame(frame)
   }, [])
-  const s = WORLD_HALF
   return (
-    <button className="minimap" onClick={() => togglePanel('map')} aria-label={t('openMap')} title={`${t('openMap')} (M)`}>
-      <svg viewBox={`${-s} ${-s} ${s * 2} ${s * 2}`}>
-        <circle cx="0" cy="0" r={s} className="mm-ground" />
-        <circle cx="0" cy="0" r="66" className="mm-ring" />
-        <path d="M0 0 V-30 M0 0 H28 M0 0 H-28 M0 0 V66 M-8 8 L-22 22" className="mm-path" />
-        {AREAS.map((a) => (
-          <circle key={a.id} cx={a.center[0]} cy={a.center[2]} r={Math.max(a.radius * 0.75, 6)} fill={a.color} opacity="0.75" />
-        ))}
-        {COLLECTIBLES.filter((c) => !collected.includes(c.id)).map((c) => (
-          <circle key={c.id} cx={c.x} cy={c.z} r="2.4" className="mm-core" />
-        ))}
+    <button className="minimap" onClick={() => togglePanel('map')} aria-label={t('openMap')} title={t('openMap') + ' (M)'}>
+      <svg ref={svg} viewBox="-62 -62 124 124">
+        <MapLayers collected={collected} visited={visited} labels={false} t={t} />
         <g ref={car}>
           <path d="M7 0 L-5 -5 L-2.5 0 L-5 5 Z" className="mm-car" />
         </g>
@@ -343,7 +431,15 @@ function Panel({ id, title, children }) {
   )
 }
 
-// Harita: canlı araç konumu + bölgelere ışınlanma
+// Büyük harita: tekerlekle yakınlaştır, sürükleyerek kaydır, bölgeye tıklayınca bilgi kartı ve ışınlanma
+const FULL_VIEW = { x: 0, y: 0, size: WORLD_HALF * 2 + 8 }
+
+function clampView(v) {
+  const size = Math.min(Math.max(v.size, 60), FULL_VIEW.size)
+  const lim = FULL_VIEW.size / 2 - size / 2
+  return { size, x: Math.min(Math.max(v.x, -lim), lim), y: Math.min(Math.max(v.y, -lim), lim) }
+}
+
 function MapPanel() {
   const { t } = useT()
   const open = useStore((s) => s.panel === 'map')
@@ -351,49 +447,81 @@ function MapPanel() {
   const visited = useStore((s) => s.progress.explorer ?? NONE)
   const collected = useStore((s) => s.progress.collector ?? NONE)
   const car = useRef()
-
-  useEffect(() => {
-    if (!open) return
-    let frame
-    const loop = () => {
-      const { x, z } = vehicleState.position
-      const deg = (-vehicleState.heading * 180) / Math.PI
-      car.current?.setAttribute('transform', `translate(${x} ${z}) rotate(${deg})`)
-      frame = requestAnimationFrame(loop)
-    }
-    loop()
-    return () => cancelAnimationFrame(frame)
-  }, [open])
+  const [view, setView] = useState(FULL_VIEW)
+  const [selected, setSelected] = useState(null)
+  const drag = useRef(null)
+  useCarMarker(car, open)
 
   if (!open) return null
   const go = (area) => {
     useStore.getState().cancelRace()
     teleport(area.spawn, area.yaw)
+    setSelected(null)
     togglePanel('map')
   }
-  const s = WORLD_HALF + 4
+  const onWheel = (e) => setView((v) => clampView({ ...v, size: v.size * (e.deltaY > 0 ? 1.15 : 0.87) }))
+  const onDown = (e) => (drag.current = { x: e.clientX, y: e.clientY, view, moved: false })
+  const onMove = (e) => {
+    const d = drag.current
+    if (!d) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const k = d.view.size / rect.width
+    if (Math.abs(e.clientX - d.x) + Math.abs(e.clientY - d.y) > 3) d.moved = true
+    setView(clampView({ ...d.view, x: d.view.x - (e.clientX - d.x) * k, y: d.view.y - (e.clientY - d.y) * k }))
+  }
+  const onUp = () => (drag.current = null)
+  const pick = (area) => {
+    if (drag.current?.moved) return
+    setSelected(area)
+  }
+
   return (
     <Panel id="map" title={t('map')}>
-      <svg viewBox={`${-s} ${-s} ${s * 2} ${s * 2}`} className="map">
-        <rect x={-WORLD_HALF} y={-WORLD_HALF} width={WORLD_HALF * 2} height={WORLD_HALF * 2} rx="10" className="map-ground" />
-        <circle cx="0" cy="0" r="66" className="map-ring" />
-        <path d="M0 0 V-30 M0 0 H28 M0 0 H-28 M0 0 V66 M-8 8 L-22 22" className="map-path" />
-        {COLLECTIBLES.filter((c) => !collected.includes(c.id)).map((c) => (
-          <rect key={c.id} x={c.x - 1.6} y={c.z - 1.6} width="3.2" height="3.2" transform={`rotate(45 ${c.x} ${c.z})`} className="map-core" />
-        ))}
-        {AREAS.map((a) => (
-          <g key={a.id} className="map-area" onClick={() => go(a)} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && go(a)}>
-            <circle cx={a.center[0]} cy={a.center[2]} r={Math.max(a.radius, 9)} fill={a.color} opacity={visited.includes(a.id) ? 0.85 : 0.45} />
-            <text x={a.center[0]} y={a.center[2]} textAnchor="middle" dominantBaseline="middle">
-              {t(a.label)}
-            </text>
+      <div className="map-wrap">
+        <svg
+          viewBox={view.x - view.size / 2 + ' ' + (view.y - view.size / 2) + ' ' + view.size + ' ' + view.size}
+          className="map"
+          onWheel={onWheel}
+          onPointerDown={onDown}
+          onPointerMove={onMove}
+          onPointerUp={onUp}
+          onPointerLeave={onUp}
+        >
+          <MapLayers collected={collected} visited={visited} onArea={pick} t={t} />
+          <g ref={car}>
+            <path d="M5 0 L-4 -4 L-2 0 L-4 4 Z" className="map-car" />
           </g>
-        ))}
-        <g ref={car}>
-          <path d="M4 0 L-3 -3 L-1.5 0 L-3 3 Z" className="map-car" />
-        </g>
-      </svg>
-      <p className="muted">{t('mapHint')}</p>
+        </svg>
+        <div className="map-tools">
+          <button className="icon-button" onClick={() => setView((v) => clampView({ ...v, size: v.size * 0.8 }))} aria-label="+">
+            +
+          </button>
+          <button className="icon-button" onClick={() => setView((v) => clampView({ ...v, size: v.size * 1.25 }))} aria-label="−">
+            −
+          </button>
+          <button
+            className="icon-button"
+            onClick={() => setView(clampView({ size: 110, x: vehicleState.position.x, y: vehicleState.position.z }))}
+            aria-label={t('youAreHere')}
+            title={t('youAreHere')}
+          >
+            <Icon name="gauge" size={16} />
+          </button>
+        </div>
+      </div>
+      {selected ? (
+        <div className="map-card" style={{ '--area': selected.color }}>
+          <div>
+            <strong>{t(selected.label)}</strong>
+            <span>{t('sub_' + selected.id)}</span>
+          </div>
+          <button className="button small primary" onClick={() => go(selected)}>
+            {t('teleport')}
+          </button>
+        </div>
+      ) : (
+        <p className="muted">{t('mapZoomHint')}</p>
+      )}
     </Panel>
   )
 }
@@ -453,6 +581,8 @@ function MenuPanel() {
   const openModal = useStore((s) => s.openModal)
   const togglePanel = useStore((s) => s.togglePanel)
   const setView = useStore((s) => s.setView)
+  const headlights = useStore((s) => s.headlights)
+  const cameraMode = useStore((s) => s.cameraMode)
   if (!open) return null
   return (
     <Panel id="menu" title={t('menu')}>
@@ -470,6 +600,27 @@ function MenuPanel() {
           ))}
         </div>
       </div>
+      <div className="menu-row">
+        <span>{t('headlights')}</span>
+        <div className="lang-switch">
+          {['auto', 'on', 'off'].map((h) => (
+            <button key={h} className={headlights === h ? 'active' : ''} onClick={() => useStore.setState({ headlights: h })} aria-pressed={headlights === h}>
+              {t(h === 'auto' ? 'hlAuto' : h === 'on' ? 'hlOn' : 'hlOff')}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="menu-row">
+        <span>{t('cameraMode')}</span>
+        <div className="lang-switch">
+          {['follow', 'chase'].map((c) => (
+            <button key={c} className={cameraMode === c ? 'active' : ''} onClick={() => useStore.setState({ cameraMode: c })} aria-pressed={cameraMode === c}>
+              {t(c === 'follow' ? 'camFollow' : 'camChase')}
+            </button>
+          ))}
+        </div>
+      </div>
+      <Garage />
       <div className="menu-list">
         <button onClick={() => openModal({ type: 'welcome' })}>
           <Icon name="help" /> {t('help')}
@@ -491,6 +642,39 @@ function MenuPanel() {
         </button>
       </div>
     </Panel>
+  )
+}
+
+// Garaj: araç modeli ve boya rengi
+function Garage() {
+  const { t, L } = useT()
+  const carId = useStore((s) => s.carId)
+  const carColor = useStore((s) => s.carColor)
+  const setCar = useStore((s) => s.setCar)
+  const setCarColor = useStore((s) => s.setCarColor)
+  return (
+    <div className="garage">
+      <h3>{t('garage')}</h3>
+      <div className="garage-cars">
+        {CARS.map((c) => (
+          <button key={c.id} className={carId === c.id ? 'active' : ''} onClick={() => setCar(c.id)} aria-pressed={carId === c.id}>
+            {L(c.name)}
+          </button>
+        ))}
+      </div>
+      <div className="garage-paints" role="group" aria-label={t('carColor')}>
+        {PAINTS.map((p) => (
+          <button
+            key={p.id}
+            className={carColor === p.id ? 'swatch active' : 'swatch'}
+            style={{ background: p.hex }}
+            onClick={() => setCarColor(p.id)}
+            aria-label={p.id}
+            aria-pressed={carColor === p.id}
+          />
+        ))}
+      </div>
+    </div>
   )
 }
 

@@ -6,8 +6,8 @@ import { AREAS, COLORS, LAKE, PATHS, RING_RADIUS, RING_WIDTH, WORLD_HALF } from 
 import { fbm, heightAt, shoreFactor } from './terrain.js'
 import { world as worldTime } from './time.js'
 
-const SIZE = 240
-const SEGMENTS = 170
+const SIZE = 330
+const SEGMENTS = 220
 
 function buildTerrain() {
   const geometry = new THREE.PlaneGeometry(SIZE, SIZE, SEGMENTS, SEGMENTS)
@@ -19,6 +19,8 @@ function buildTerrain() {
   const hill = new THREE.Color('#556f3e')
   const rockC = new THREE.Color('#8d8a7c')
   const sand = new THREE.Color('#d6c48e')
+  const dirt = new THREE.Color('#8a6a48')
+  const offroad = AREAS.find((a) => a.id === 'offroad')
   const tmp = new THREE.Color()
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i)
@@ -30,6 +32,9 @@ function buildTerrain() {
     if (h > 3) tmp.lerp(hill, Math.min((h - 3) / 6, 1))
     if (h > 9) tmp.lerp(rockC, Math.min((h - 9) / 6, 0.7))
     tmp.lerp(sand, 1 - shoreFactor(x, z))
+    // Arazi parkuru: toprak zemin, kenarlara doğru çimene karışır
+    const od = Math.hypot(x - offroad.center[0], z - offroad.center[2])
+    tmp.lerp(dirt, Math.max(0, Math.min(1, (offroad.radius + 2 - od) / 6)) * (0.75 + n * 0.25))
     colors.set([tmp.r, tmp.g, tmp.b], i * 3)
   }
   geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
@@ -123,6 +128,19 @@ function pavingTexture(repeatX, repeatY) {
   return texture
 }
 
+// Araziyi izleyen yol şeridi: tepelerden geçen yollar zemine yapışır
+function roadGeometry(p, width, lift) {
+  const segments = Math.max(2, Math.ceil(p.length / 1.5))
+  const g = new THREE.PlaneGeometry(width, p.length, 2, segments)
+  g.rotateX(-Math.PI / 2)
+  g.rotateY(p.angle)
+  g.translate(p.center[0], 0, p.center[1])
+  const pos = g.attributes.position
+  for (let i = 0; i < pos.count; i++) pos.setY(i, heightAt(pos.getX(i), pos.getZ(i)) + lift)
+  g.computeVertexNormals()
+  return g
+}
+
 function Water() {
   const material = useRef()
   const uniforms = useMemo(
@@ -204,7 +222,8 @@ export default function Terrain() {
       PATHS.map(({ from, to }) => {
         const dx = to[0] - from[0]
         const dz = to[1] - from[1]
-        return { length: Math.hypot(dx, dz), angle: Math.atan2(dx, dz), center: [(from[0] + to[0]) / 2, (from[1] + to[1]) / 2] }
+        const p = { length: Math.hypot(dx, dz), angle: Math.atan2(dx, dz), center: [(from[0] + to[0]) / 2, (from[1] + to[1]) / 2] }
+        return { ...p, road: roadGeometry(p, 5, 0.04), edge: roadGeometry(p, 5.6, 0.03) }
       }),
     [],
   )
@@ -225,7 +244,7 @@ export default function Terrain() {
       </mesh>
 
       {/* Bölge zeminleri */}
-      {AREAS.filter((a) => a.id !== 'lake' && a.id !== 'race').map((a) => (
+      {AREAS.filter((a) => a.id !== 'lake' && a.id !== 'race' && !a.pad).map((a) => (
         <group key={a.id} position={[a.center[0], 0, a.center[2]]}>
           {/* Taş kaplama meydan + bölge renginde ince kenar */}
           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.016, 0]} receiveShadow>
@@ -241,13 +260,11 @@ export default function Terrain() {
 
       {/* Yollar */}
       {paths.map((p, i) => (
-        <group key={i} position={[p.center[0], 0, p.center[1]]} rotation={[0, p.angle, 0]}>
-          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.025, 0]} receiveShadow>
-            <planeGeometry args={[5, p.length]} />
+        <group key={i}>
+          <mesh geometry={p.road} receiveShadow>
             <meshStandardMaterial map={textures.paths[i]} color="#e2d6b8" roughness={0.95} polygonOffset polygonOffsetFactor={-2} />
           </mesh>
-          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]} receiveShadow>
-            <planeGeometry args={[5.6, p.length]} />
+          <mesh geometry={p.edge} receiveShadow>
             <meshStandardMaterial color={COLORS.pathEdge} roughness={1} polygonOffset polygonOffsetFactor={-1.5} />
           </mesh>
         </group>

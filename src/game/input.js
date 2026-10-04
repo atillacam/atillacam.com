@@ -18,6 +18,7 @@ export const vehicleState = {
   grounded: true,
   slip: 0, // yanal kayma hızı (m/s)
   braking: false,
+  handbrake: false,
   rearWheels: [
     { x: 0, y: 0, z: 0 },
     { x: 0, y: 0, z: 0 },
@@ -97,6 +98,19 @@ export function bindKeyboard() {
         break
       case 'KeyN':
         store.toggleDayNight()
+        break
+      case 'KeyF':
+        store.cycleHeadlights()
+        break
+      case 'KeyC':
+        store.toggleCamera()
+        break
+      case 'Digit1':
+      case 'Digit2':
+      case 'Digit3':
+      case 'Digit4':
+      case 'Digit5':
+        trigger('hydro' + event.code.slice(5))
         break
     }
   }

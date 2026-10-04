@@ -51,7 +51,8 @@ function distanceToSegment(px, pz, [ax, az], [bx, bz]) {
 export function flatMask(x, z) {
   let d = Infinity
   for (const a of AREAS) {
-    if (a.id === 'lake') continue
+    // Göl, arazi parkuru ve gözlem tepesi kendi şekillerine sahip
+    if (a.id === 'lake' || a.pad === 'dirt' || a.pad === 'hill') continue
     d = Math.min(d, Math.hypot(x - a.center[0], z - a.center[2]) - a.radius - 2)
   }
   for (const p of PATHS) d = Math.min(d, distanceToSegment(x, z, p.from, p.to) - 5)
@@ -60,16 +61,32 @@ export function flatMask(x, z) {
   return smoothstep(0, 9, d)
 }
 
+const OFFROAD = AREAS.find((a) => a.id === 'offroad')
+const LOOKOUT = AREAS.find((a) => a.id === 'lookout')
+
 export function heightAt(x, z) {
   const r = Math.hypot(x, z)
   const mask = flatMask(x, z)
 
-  // İç bölgede hafif tümsekler
+  // Hafif tümsekler (yollar ve meydanlarda sıfır)
   let h = (fbm(x * 0.045 + 10, z * 0.045 - 4, 3) - 0.45) * 2.2 * mask
 
-  // Dış çeper: dünyayı çevreleyen tepeler
-  const rim = smoothstep(RING_RADIUS + RING_WIDTH / 2 + 3, 92, r)
-  h += rim * (5 + fbm(x * 0.03, z * 0.03, 4) * 12)
+  // Çevre yolun ötesinde yuvarlak tepeler; yollar bu tepeleri yararak geçer
+  const band = smoothstep(RING_RADIUS + RING_WIDTH / 2 + 3, 84, r)
+  h += band * (2.5 + fbm(x * 0.035, z * 0.035, 4) * 7) * mask
+
+  // Dünyanın kenarında yüksek dağlar (görünmez duvarların arkası)
+  const edge = Math.max(Math.abs(x), Math.abs(z))
+  h += smoothstep(122, 150, edge) * (10 + fbm(x * 0.02, z * 0.02, 3) * 16)
+
+  // Arazi parkuru: tekerlek zıplatan dalgalı zemin
+  const od = Math.hypot(x - OFFROAD.center[0], z - OFFROAD.center[2])
+  const rough = 1 - smoothstep(OFFROAD.radius - 4, OFFROAD.radius + 4, od)
+  h += rough * (Math.sin(x * 0.55) * Math.cos(z * 0.5) * 0.7 + (fbm(x * 0.2, z * 0.2, 2) - 0.5) * 1.6)
+
+  // Gözlem tepesi: düz zirveli yumuşak tepe
+  const ld2 = Math.hypot(x - LOOKOUT.center[0], z - LOOKOUT.center[2])
+  h += 11 * (1 - smoothstep(5, 30, ld2))
 
   // Göl çanağı
   const ld = Math.hypot(x - LAKE.x, z - LAKE.z)

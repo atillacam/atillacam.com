@@ -1,7 +1,8 @@
 import { profile, projects } from '../content.js'
 
 // Dünyanın yerleşimi. Kuzey = -z, doğu = +x. Birimler metre.
-export const WORLD_HALF = 90 // görünmez duvarlar
+export const WORLD_HALF = 140 // görünmez duvarlar
+export const OUTER = 78 // dış bölgelerin çapraz uzaklığı (x ve z)
 export const RING_RADIUS = 66 // çevre yarış yolu
 export const RING_WIDTH = 7
 export const SPAWN = { position: [0, 1.2, 8], yaw: Math.PI / 2 } // yaw=π/2 → kuzeye bakar
@@ -28,6 +29,11 @@ export const AREAS = [
   { id: 'playground', label: 'areaPlayground', center: [0, 0, 40], radius: 16, color: COLORS.coral, spawn: [0, 1.2, 26], yaw: -Math.PI / 2 },
   { id: 'lake', label: 'areaLake', center: [-34, 0, 34], radius: 11, color: '#4fa3d9', spawn: [-22, 1.2, 22], yaw: (3 * Math.PI) / 4 },
   { id: 'race', label: 'areaRace', center: [0, 0, RING_RADIUS], radius: 9, color: COLORS.amber, spawn: [8, 1.2, RING_RADIUS], yaw: Math.PI },
+  // Dış bölgeler: çevre yolun ötesinde, tepelerin arkasında (pad: zemin tipi)
+  { id: 'soccer', label: 'areaSoccer', center: [78, 0, 78], radius: 20, color: '#4fd99a', spawn: [60, 1.2, 60], yaw: -Math.PI / 4, pad: 'field', outer: true },
+  { id: 'drift', label: 'areaDrift', center: [-78, 0, 78], radius: 20, color: COLORS.coral, spawn: [-60, 1.2, 60], yaw: (-3 * Math.PI) / 4, pad: 'asphalt', outer: true },
+  { id: 'offroad', label: 'areaOffroad', center: [-78, 0, -78], radius: 20, color: '#c58b4a', spawn: [-60, 1.2, -60], yaw: (3 * Math.PI) / 4, pad: 'dirt', outer: true },
+  { id: 'lookout', label: 'areaLookout', center: [78, 0, -78], radius: 14, color: COLORS.violet, spawn: [60, 1.2, -60], yaw: Math.PI / 4, pad: 'hill', outer: true },
 ]
 
 export const LAKE = { x: -34, z: 34, radius: 11, waterLevel: -0.75 }
@@ -72,6 +78,7 @@ export const SPOTS = [
   { id: 'skills', label: 'spotSkills', action: 'spotSkillsAction', position: [35, 0, 6], color: COLORS.teal },
   { id: 'contact', label: 'areaContact', action: 'spotContactAction', position: [-45, 0, 6], color: COLORS.violet },
   { id: 'race', label: 'spotRace', action: 'spotRaceAction', position: [9, 0, RING_RADIUS - 8], color: COLORS.amber },
+  { id: 'lookout', label: 'areaLookout', action: 'spotLookoutAction', position: [78, 0, -78], color: COLORS.violet },
   { id: 'credits', label: 'spotCredits', action: 'spotCreditsAction', position: [-16, 0, 20], color: '#c9b6ff' },
   ...SOCIAL_PEDESTALS.map(({ social, position }) => ({
     id: `social:${social.id}`,
@@ -100,6 +107,17 @@ export const PATHS = [
   { from: [0, 0], to: [0, 24.2] },
   { from: [0, 55.8], to: [0, RING_RADIUS - RING_WIDTH / 2] },
   { from: [-8, 8], to: [-22, 22] },
+  // Çevre yoldan dış bölgelere: tepeleri yararak geçen yollar
+  ...[
+    [1, 1, 20],
+    [-1, 1, 20],
+    [-1, -1, 20],
+    [1, -1, 14],
+  ].map(([sx, sz, radius]) => {
+    const a = (RING_RADIUS + RING_WIDTH / 2) / Math.SQRT2
+    const b = (Math.hypot(OUTER, OUTER) - radius) / Math.SQRT2
+    return { from: [sx * a, sz * a], to: [sx * b, sz * b], outer: true }
+  }),
 ]
 
 // Sokak lambaları: yolların kenarında ve çevre yolunda
@@ -126,6 +144,10 @@ export const COLLECTIBLES = [
   [RING_RADIUS, 0],
   [0, -RING_RADIUS],
   [-14, 40],
+  [92, 64],
+  [-96, 92],
+  [-84, -70],
+  [86, -70],
 ].map(([x, z], i) => ({ id: `core-${i + 1}`, x, z }))
 
 // Ağaç ve kaya yerleştirirken boş bırakılacak alanlar

@@ -13,7 +13,10 @@ Atilla Çam'ın kişisel web sitesi. Ziyaretçiler fizik tabanlı bir arabayla a
 - **Gün-gece döngüsü:** gökyüzü shader'ı, güneş, ay ve yıldızlar; gece yanan sokak lambaları ve araba farları
 - **Bitki örtüsü:** rüzgârda sallanan ağaçlar ve çiçekler, arabanın değdiği yerde eğilen 90 bin çimen yaprağı
 - **İçerik:** 5 proje panosu, Hakkımda kartı, itilebilir yetenek küpleri, 3D GitHub, LinkedIn ve Instagram logoları
-- **Oyun:** kontrol noktalı zamanlı yarış ve skor tablosu, 10 veri çekirdeği, 16 başarım, bowling, rampa
+- **Dış bölgeler:** futbol sahası (gol + konfeti), drift pisti (puan ve rekor), arazi parkuru, sinematik manzaralı gözlem tepesi
+- **Oyun:** kontrol noktalı zamanlı yarış ve skor tablosu, 14 veri çekirdeği, 21 başarım, bowling, rampa
+- **Garaj:** iki araç (GLB hatchback ve kodla üretilen spor coupé) ve 6 boya rengi; yeni GLB araç src/game/cars.js ile eklenir
+- **Araç fonksiyonları:** el freniyle drift (B/Ctrl), hidrolik (1–5), farlar (F), takip kamerası (C), hız göstergesi
 - **Arayüz:** Türkçe/İngilizce, mini harita ve büyük harita ile ışınlanma, bölge başlık kartları, mobil joystick, gamepad, kalite ayarı, ses
 - **Erişilebilirlik ve SEO:** klasik görünüm (`?klasik`), JSON-LD, Open Graph görseli, sitemap, WebGL yoksa otomatik geçiş
 

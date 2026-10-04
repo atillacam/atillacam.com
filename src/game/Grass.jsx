@@ -11,6 +11,7 @@ import { vehicleState } from './input.js'
 
 const CHUNK = 30
 const RADIUS = 72
+const OUTER_RADIUS = 118
 
 function bladeGeometry() {
   // 5 köşeli sivri yaprak (3 üçgen)
@@ -36,7 +37,7 @@ function allowed(x, z) {
   if (Math.abs(Math.hypot(x, z) - RING_RADIUS) < RING_WIDTH / 2 + 0.9) return false
   if (Math.hypot(x - LAKE.x, z - LAKE.z) < LAKE.radius + 1.5) return false
   // Bölge meydanları ve etkileşim halkaları temiz kalsın
-  if (AREAS.some((a) => a.id !== 'lake' && a.id !== 'race' && Math.hypot(x - a.center[0], z - a.center[2]) < a.radius - 0.5)) return false
+  if (AREAS.some((a) => a.id !== 'lake' && a.id !== 'race' && a.pad !== 'hill' && Math.hypot(x - a.center[0], z - a.center[2]) < a.radius - 0.5)) return false
   if (SPOTS.some((s) => Math.hypot(x - s.position[0], z - s.position[2]) < 2.4)) return false
   return true
 }
@@ -151,7 +152,8 @@ export default function Grass({ count = 60000 }) {
     let guard = 0
     while (placed < count && guard++ < count * 3) {
       const a = rand() * Math.PI * 2
-      const r = Math.sqrt(rand()) * RADIUS
+      // Çimenin çoğu iç bölgede, kalanı tepelere ve dış bölgelere yayılır
+      const r = rand() < 0.65 ? Math.sqrt(rand()) * RADIUS : Math.sqrt(RADIUS * RADIUS + rand() * (OUTER_RADIUS * OUTER_RADIUS - RADIUS * RADIUS))
       const x = Math.cos(a) * r
       const z = Math.sin(a) * r
       if (!allowed(x, z)) continue

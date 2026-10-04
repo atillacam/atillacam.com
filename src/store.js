@@ -1,9 +1,10 @@
 import { create } from 'zustand'
 import { profile, projects } from './content.js'
 import { playChime } from './audio.js'
+import { AREAS, COLLECTIBLES } from './game/layout.js'
 
-const COLLECTIBLE_COUNT = 10
-const AREA_COUNT = 7
+const COLLECTIBLE_COUNT = COLLECTIBLES.length
+const AREA_COUNT = AREAS.length
 
 export const ACHIEVEMENTS = [
   { id: 'start', title: { tr: 'Yola çıktın', en: 'Hit the road' }, text: { tr: 'Başlangıç noktasından uzaklaş.', en: 'Leave the starting area.' } },
@@ -21,6 +22,11 @@ export const ACHIEVEMENTS = [
   { id: 'night', title: { tr: 'Gece kuşu', en: 'Night owl' }, text: { tr: 'Geceyi gör.', en: 'Witness the night.' } },
   { id: 'turtle', title: { tr: 'Kaplumbağa', en: 'Turtle' }, text: { tr: 'Arabayı ters çevir.', en: 'Flip the car upside down.' } },
   { id: 'honk', title: { tr: 'Korna ustası', en: 'Honk master' }, text: { tr: '10 kez korna çal.', en: 'Honk 10 times.' }, goal: 10 },
+  { id: 'goal', title: { tr: 'Gol!', en: 'Goal!' }, text: { tr: 'Futbol sahasında bir gol at.', en: 'Score a goal on the football pitch.' } },
+  { id: 'hattrick', title: { tr: 'Hat-trick', en: 'Hat-trick' }, text: { tr: 'Toplam 3 gol at.', en: 'Score 3 goals in total.' }, goal: 3 },
+  { id: 'drifter', title: { tr: 'Drift ustası', en: 'Drift king' }, text: { tr: 'Tek seferde 3000 drift puanı topla.', en: 'Score 3000 drift points in one combo.' } },
+  { id: 'summit', title: { tr: 'Zirve', en: 'Summit' }, text: { tr: 'Gözlem tepesine çık.', en: 'Reach the lookout hill.' } },
+  { id: 'garage', title: { tr: 'Garaj', en: 'Garage' }, text: { tr: 'Aracını ya da rengini değiştir.', en: 'Change your car or its colour.' } },
   { id: 'road', title: { tr: 'Uzun yol', en: 'Road trip' }, text: { tr: '2 km yol yap.', en: 'Drive 2 km.' }, goal: 2000 },
 ]
 
@@ -64,8 +70,8 @@ function detectQuality() {
   return coarse || lowMemory ? 'low' : 'high'
 }
 
-const saved = readJSON(STORAGE_KEY, { unlocked: {}, progress: {}, times: [] })
-const settings = readJSON(SETTINGS_KEY, { quality: detectQuality(), muted: false })
+const saved = readJSON(STORAGE_KEY, { unlocked: {}, progress: {}, times: [], driftBest: 0 })
+const settings = readJSON(SETTINGS_KEY, { quality: detectQuality(), muted: false, carId: 'ae86', carColor: 'white' })
 let toastId = 0
 
 const idleRace = { active: false, countdown: 0, start: 0, next: 0, finishedAt: 0, lastTime: 0 }
@@ -85,13 +91,21 @@ export const useStore = create((set, get) => ({
   unlocked: saved.unlocked,
   progress: saved.progress,
   times: saved.times, // en iyi yarış süreleri (ms)
+  driftBest: saved.driftBest ?? 0,
+  drift: { combo: 0, active: false },
+  soccerSession: 0, // bu ziyaretteki goller
+  cinematic: 0, // > performance.now() ise sinematik kamera
+  carId: settings.carId,
+  carColor: settings.carColor,
+  headlights: 'auto', // 'auto' | 'on' | 'off'
+  cameraMode: 'follow', // 'follow' | 'chase'
   toasts: [],
   race: idleRace,
 
   persist: () => {
     const s = get()
-    writeJSON(STORAGE_KEY, { unlocked: s.unlocked, progress: s.progress, times: s.times })
-    writeJSON(SETTINGS_KEY, { quality: s.quality, muted: s.muted })
+    writeJSON(STORAGE_KEY, { unlocked: s.unlocked, progress: s.progress, times: s.times, driftBest: s.driftBest })
+    writeJSON(SETTINGS_KEY, { quality: s.quality, muted: s.muted, carId: s.carId, carColor: s.carColor })
   },
 
   setView: (view) => set({ view, modal: null, panel: null }),
@@ -139,6 +153,8 @@ export const useStore = create((set, get) => ({
       const social = profile.socials.find((s) => `social:${s.id}` === spot.id)
       if (social) window.open(social.url, '_blank', 'noopener,noreferrer')
       get().unlock('social')
+    } else if (spot.id === 'lookout') {
+      get().startCinematic()
     } else if (spot.id === 'race') {
       if (!race.active && !race.countdown) get().requestRace()
     } else openModal({ type: spot.id })
@@ -166,6 +182,37 @@ export const useStore = create((set, get) => ({
     return ms
   },
   cancelRace: () => set({ race: idleRace }),
+
+  // ---------- Futbol ----------
+  scoreGoal: () => {
+    set((s) => ({ soccerSession: s.soccerSession + 1 }))
+    get().unlock('goal')
+    get().addProgress('hattrick', 1)
+  },
+
+  // ---------- Drift ----------
+  setDrift: (drift) => set({ drift }),
+  bankDrift: (points) => {
+    const best = Math.max(get().driftBest, Math.round(points))
+    set({ driftBest: best, drift: { combo: 0, active: false } })
+    if (points >= 3000) get().unlock('drifter')
+    get().persist()
+  },
+
+  // ---------- Garaj, far, kamera ----------
+  setCar: (carId) => {
+    set({ carId })
+    get().unlock('garage')
+    get().persist()
+  },
+  setCarColor: (carColor) => {
+    set({ carColor })
+    get().unlock('garage')
+    get().persist()
+  },
+  cycleHeadlights: () => set((s) => ({ headlights: s.headlights === 'auto' ? 'on' : s.headlights === 'on' ? 'off' : 'auto' })),
+  toggleCamera: () => set((s) => ({ cameraMode: s.cameraMode === 'follow' ? 'chase' : 'follow' })),
+  startCinematic: (ms = 9000) => set({ cinematic: performance.now() + ms }),
 
   // ---------- Toplanabilirler ----------
   collect: (id) => get().addToSet('collector', id),
@@ -210,7 +257,7 @@ export const useStore = create((set, get) => ({
   },
 
   resetProgress: () => {
-    set({ unlocked: {}, progress: {}, times: [] })
+    set({ unlocked: {}, progress: {}, times: [], driftBest: 0 })
     get().persist()
   },
 }))

@@ -13,6 +13,7 @@ import Playground from './Playground.jsx'
 import Spots from './Spots.jsx'
 import Race from './Race.jsx'
 import Collectibles from './Collectibles.jsx'
+import Zones from './Zones.jsx'
 import Dust from './Dust.jsx'
 import Skids from './Skids.jsx'
 import Atmosphere from './Atmosphere.jsx'
@@ -84,9 +85,10 @@ export default function Game() {
           <Spots />
           <Race />
           <Collectibles />
+          <Zones />
           <Vehicle />
         </Physics>
-        <Grass count={high ? 90000 : 22000} />
+        <Grass count={high ? 115000 : 28000} />
         <Dust />
         <Skids />
         <Atmosphere />

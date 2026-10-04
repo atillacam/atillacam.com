@@ -10,6 +10,7 @@ import { useStore } from '../store.js'
 import { useT } from '../i18n.js'
 import { playClick } from '../audio.js'
 import { vehicleState } from './input.js'
+import { heightAt } from './terrain.js'
 
 const isVehicle = (payload) => payload.other.rigidBodyObject?.name === 'vehicle'
 
@@ -88,7 +89,7 @@ function Spot({ spot }) {
   })
 
   return (
-    <group position={spot.position}>
+    <group position={[spot.position[0], heightAt(spot.position[0], spot.position[2]), spot.position[2]]}>
       <RigidBody type="fixed" colliders={false}>
         <CuboidCollider
           sensor
@@ -143,7 +144,7 @@ function Spot({ spot }) {
 
 function Area({ area }) {
   return (
-    <RigidBody type="fixed" colliders={false} position={area.center}>
+    <RigidBody type="fixed" colliders={false} position={[area.center[0], heightAt(area.center[0], area.center[2]), area.center[2]]}>
       <CylinderCollider
         sensor
         args={[4, area.radius]}

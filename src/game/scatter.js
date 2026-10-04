@@ -88,9 +88,9 @@ export function useScatter(density = 1) {
       }
       return out
     }
-    const trees = place(Math.round(105 * density), 1.5, 5.5, [], () => ({ kind: ['tree', 'maple', 'oak'][Math.floor(rand() * 3)] }))
-    const rocks = place(Math.round(34 * density), 0.5, 3, trees, () => ({ scale: 0.5 + rand() * 1.1 }))
-    const bushes = place(Math.round(70 * density), 0, 2.2, [...trees, ...rocks])
+    const trees = place(Math.round(185 * density), 1.5, 5.5, [], () => ({ kind: ['tree', 'maple', 'oak'][Math.floor(rand() * 3)] }))
+    const rocks = place(Math.round(55 * density), 0.5, 3, trees, () => ({ scale: 0.5 + rand() * 1.1 }))
+    const bushes = place(Math.round(110 * density), 0, 2.2, [...trees, ...rocks])
 
     // Bölge kenarlarında ve göl kıyısında çimen öbekleri ve çiçekler
     const decor = []
@@ -129,6 +129,9 @@ export function useScatter(density = 1) {
     const walls = []
     for (let i = 0; i < 36; i++) {
       const a = (i / 36) * Math.PI * 2 + rand() * 0.08
+      // Dış bölgelere giden yolların geçtiği çaprazlarda boşluk bırak
+      const diag = Math.abs(((a - Math.PI / 4) % (Math.PI / 2) + Math.PI / 2) % (Math.PI / 2) - Math.PI / 4)
+      if (Math.PI / 4 - diag < 0.14) continue
       const r = RING_RADIUS + RING_WIDTH / 2 + 4.5 + rand() * 1.5
       const x = Math.cos(a) * r
       const z = Math.sin(a) * r
