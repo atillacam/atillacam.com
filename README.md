@@ -17,7 +17,13 @@ Atilla Çam'ın kişisel web sitesi. Ziyaretçiler fizik tabanlı bir arabayla a
 - **Hava durumu:** otomatik döngüde yağmur (şimşek ve gök gürültüsü) ve kar; menüden elle seçilebilir
 - **Patlayan TNT kasaları:** zincirleme patlama, alev topu ve duman
 - **Kendini düzeltme:** yan yatan, ters dönen ya da takılan araç kendiliğinden doğrulur
-- **Oyun:** kontrol noktalı zamanlı yarış ve skor tablosu, 14 veri çekirdeği, 21 başarım, bowling, rampa
+- **Oyun:** kontrol noktalı zamanlı yarış, yerel + dünya skor tablosu, 14 veri çekirdeği, 27 başarım, bowling, rampa
+- **Navigasyon:** yol ağı üzerinde GPS rotası (yerde akan ok şeridi + yön oku), keşfedildikçe açılan harita sisi
+- **Laboratuvar ve Kariyer Yolu:** canlı shader / Lorenz çekicisi / fraktal deneyleri; zaman çizelgesi panoları
+- **Sürprizler:** arabayla devrilen mühendis heykeli, Konami kodu (↑↑↓↓←→←→BA) ile gökkuşağı boya
+- **Fısıltılar:** ziyaretçiler bulundukları yere mesaj bırakır (T); diğerleri yanından geçerken okur
+- **Ses tasarımı:** gündüz/gece değişen prosedürel müzik, vitesli motor sesi, lastik sürtünmesi, rüzgâr, yağmur, kuş ve cırcır böceği sesleri (hepsi Web Audio ile üretilir, ses dosyası yok)
+- **Canlı dünya:** gerçekçi göl suyu, kuş sürüleri, kelebekler, süzülen yapraklar, eğime göre kayalaşan arazi dokusu, sinematik açılış
 - **Garaj:** iki araç (GLB hatchback ve kodla üretilen spor coupé) ve 6 boya rengi; yeni GLB araç src/game/cars.js ile eklenir
 - **Araç fonksiyonları:** el freniyle drift (B/Ctrl), hidrolik (1–5), farlar (F), takip kamerası (C), hız göstergesi
 - **Arayüz:** Türkçe/İngilizce, mini harita ve büyük harita ile ışınlanma, bölge başlık kartları, mobil joystick, gamepad, kalite ayarı, ses
@@ -78,7 +84,22 @@ Bütün modeller **CC BY 4.0** lisanslı. Yazar adları sitede "Emeği geçenler
 | `src/game/Race.jsx` · `Collectibles.jsx` | Yarış ve veri çekirdekleri |
 | `src/game/Effects.jsx` | MSAA, vinyet, ACES ton eşleme |
 | `src/game/Skids.jsx` · `Dust.jsx` | Lastik izleri ve toz parçacıkları |
+| `src/game/route.js` · `navigation.js` · `RouteLine.jsx` | GPS yol grafı (Dijkstra), keşif sisi, yerdeki rota şeridi |
+| `src/game/Showcase.jsx` | Laboratuvar, kariyer yolu, yıkılabilir heykel |
+| `src/game/Whispers.jsx` · `src/online.js` | Ziyaretçi fısıltıları ve dünya sıralaması (Supabase REST, yoksa yerel) |
+| `src/audio.js` | Web Audio: motor, efektler, ortam sesleri, prosedürel müzik |
 | `src/ui/` | Arayüz katmanı ve klasik site |
+
+## Çevrimiçi özellikler (isteğe bağlı)
+
+Fısıltılar ve dünya sıralaması [Supabase](https://supabase.com) ile çalışır. Kurulmazsa site sorunsuz çalışır; fısıltılar yalnızca ziyaretçinin tarayıcısında saklanır, dünya sıralaması gizlenir.
+
+1. supabase.com'da ücretsiz bir proje oluştur.
+2. **SQL Editor → New query** ekranına `supabase/schema.sql` dosyasının tamamını yapıştırıp **Run** de. Tablolar, satır güvenliği (RLS) kuralları ve taşma koruması kurulur. Ziyaretçiler yalnızca okuyup ekleyebilir; düzenleme ve silme yalnızca panelden yapılır.
+3. **Project Settings → API** sayfasındaki *Project URL* ve *anon public* anahtarını `.env.example` dosyasını örnek alarak `.env.local` dosyasına yaz.
+4. Vercel/Netlify'da aynı iki değişkeni (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) ortam değişkeni olarak ekleyip yeniden yayınla.
+
+Uygunsuz bir fısıltıyı silmek için Supabase panelinde **Table Editor → whispers** tablosundan satırı sil.
 
 ## Yayınlama (atillacam.com)
 

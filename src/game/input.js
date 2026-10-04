@@ -109,6 +109,10 @@ export function bindKeyboard() {
       case 'KeyM':
         store.togglePanel('map')
         break
+      case 'KeyT':
+        event.preventDefault()
+        store.openModal({ type: 'whisper' })
+        break
       case 'KeyL':
         store.toggleMuted()
         break

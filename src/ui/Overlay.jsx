@@ -16,6 +16,7 @@ import {
   CreditsContent,
   LabContent,
   LeaderboardContent,
+  WhisperContent,
   ProjectContent,
   SkillsContent,
   SocialLinks,
@@ -156,6 +157,10 @@ function Hud() {
           <Icon name="cube" size={18} />
           {cores}/{COLLECTIBLES.length}
         </div>
+        <button className="whisper-button" onClick={() => useStore.getState().openModal({ type: 'whisper' })} title={`${t('whisperTitle')} (T)`}>
+          <Icon name="whisper" size={18} />
+          <span>{t('whisper')}</span>
+        </button>
         <SocialLinks compact />
       </div>
     </>
@@ -494,6 +499,7 @@ function Modal() {
   else if (modal.type === 'project') content = <ProjectContent id={modal.id} />
   else if (modal.type === 'credits') content = <CreditsContent />
   else if (modal.type === 'lab') content = <LabContent />
+  else if (modal.type === 'whisper') content = <WhisperContent />
   else content = <ControlsContent />
 
   return (

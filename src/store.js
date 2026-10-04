@@ -32,6 +32,7 @@ export const ACHIEVEMENTS = [
   { id: 'drifter', title: { tr: 'Drift ustası', en: 'Drift king' }, text: { tr: 'Tek seferde 3000 drift puanı topla.', en: 'Score 3000 drift points in one combo.' } },
   { id: 'summit', title: { tr: 'Zirve', en: 'Summit' }, text: { tr: 'Gözlem tepesine çık.', en: 'Reach the lookout hill.' } },
   { id: 'garage', title: { tr: 'Garaj', en: 'Garage' }, text: { tr: 'Aracını ya da rengini değiştir.', en: 'Change your car or its colour.' } },
+  { id: 'whisper', title: { tr: 'Fısıltı', en: 'Whisperer' }, text: { tr: 'Dünyaya bir fısıltı bırak.', en: 'Leave a whisper in the world.' } },
   { id: 'road', title: { tr: 'Uzun yol', en: 'Road trip' }, text: { tr: '2 km yol yap.', en: 'Drive 2 km.' }, goal: 2000 },
 ]
 
@@ -112,6 +113,7 @@ export const useStore = create((set, get) => ({
   weatherMode: 'auto', // 'auto' | 'clear' | 'rain' | 'snow'
   weather: 'clear', // şu anki hava
   toasts: [],
+  whispers: [], // ziyaretçi fısıltıları { id, name, message, x, z }
   race: idleRace,
 
   persist: () => {
@@ -239,6 +241,16 @@ export const useStore = create((set, get) => ({
     get().unlock('konami')
   },
   setWeatherMode: (weatherMode) => set({ weatherMode }),
+  setWhispers: (rows) =>
+    set((s) => {
+      // Sunucudan gelen listeye, henüz listede olmayan kendi yerel fısıltılarımızı ekle
+      const mine = s.whispers.filter((w) => w.mine && !rows.some((r) => r.message === w.message && r.name === w.name))
+      return { whispers: [...mine, ...rows] }
+    }),
+  addWhisper: (whisper) => {
+    set((s) => ({ whispers: [whisper, ...s.whispers] }))
+    get().unlock('whisper')
+  },
   setWeather: (weather) => {
     set({ weather })
     if (weather === 'rain') get().unlock('rain')

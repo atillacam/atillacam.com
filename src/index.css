@@ -1281,6 +1281,97 @@ kbd {
   color: var(--muted);
 }
 
+.leaderboard .who {
+  flex: 1;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.leaderboard .who + strong {
+  flex: none;
+}
+.world-ranking {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.prose h3 {
+  font-size: 0.95rem;
+  margin: 6px 0 2px;
+}
+
+/* Fısıltılar */
+.whisper-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  backdrop-filter: blur(14px);
+  color: var(--amber);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.whisper-button:hover {
+  border-color: var(--border-strong);
+  color: #ffd38a;
+}
+.whisper-form,
+.inline-form {
+  display: grid;
+  gap: 12px;
+  margin: 14px 0;
+}
+.inline-form {
+  grid-template-columns: 1fr auto;
+  margin: 4px 0 0;
+}
+.whisper-form label {
+  display: grid;
+  gap: 6px;
+}
+.whisper-form label span {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.whisper-form input,
+.whisper-form textarea,
+.inline-form input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text);
+  font: inherit;
+  resize: vertical;
+}
+.whisper-form input:focus,
+.whisper-form textarea:focus,
+.inline-form input:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+.form-error {
+  color: var(--coral);
+}
+@media (max-width: 560px) {
+  .whisper-button span {
+    display: none;
+  }
+  .inline-form {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Bildirimler */
 .toasts {
   position: fixed;

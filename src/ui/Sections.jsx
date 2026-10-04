@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { experience, labExperiments, profile, projects, skills } from '../content.js'
 import credits from '../game/credits.json'
 import { useT } from '../i18n.js'
 import { useStore } from '../store.js'
 import { formatTime } from '../format.js'
 import { BrandIcon, Icon } from './Icons.jsx'
+import { vehicleState } from '../game/input.js'
+import { LIMITS, ONLINE, fetchScores, postWhisper, savedName, submitScore, submittedBest, whisperCooldown } from '../online.js'
 
 // 3D dünyadaki pencereler ve klasik görünüm aynı içerik bileşenlerini kullanır
 
@@ -256,11 +258,80 @@ export function CreditsContent() {
   )
 }
 
+function WorldRanking() {
+  const { t } = useT()
+  const times = useStore((s) => s.times)
+  const carId = useStore((s) => s.carId)
+  const [scores, setScores] = useState(null)
+  const [state, setState] = useState('loading') // loading | ready | error
+  const [name, setName] = useState(savedName)
+  const [sent, setSent] = useState(submittedBest)
+  const [busy, setBusy] = useState(false)
+  const best = times[0]?.ms ?? 0
+
+  const load = () =>
+    fetchScores()
+      .then((rows) => {
+        setScores(rows ?? [])
+        setState('ready')
+      })
+      .catch(() => setState('error'))
+  useEffect(() => {
+    load()
+  }, [])
+
+  const canSubmit = best >= LIMITS.minRaceMs && (!sent || best < sent)
+  const submit = async (e) => {
+    e.preventDefault()
+    if (!name.trim() || busy) return
+    setBusy(true)
+    try {
+      await submitScore({ name, ms: best, car: carId })
+      setSent(Math.round(best))
+      await load()
+    } catch {
+      setState('error')
+    }
+    setBusy(false)
+  }
+
+  return (
+    <section className="world-ranking">
+      <h3>{t('worldRanking')}</h3>
+      {state === 'loading' && <p className="muted">{t('fetching')}</p>}
+      {state === 'error' && <p className="muted">{t('errorGeneric')}</p>}
+      {state === 'ready' && scores.length === 0 && <p className="muted">{t('noWorldScores')}</p>}
+      {state === 'ready' && scores.length > 0 && (
+        <ol className="leaderboard">
+          {scores.map((r, i) => (
+            <li key={r.id}>
+              <span className="rank">{i + 1}</span>
+              <span className="who">{r.name}</span>
+              <strong>{formatTime(r.time_ms)}</strong>
+            </li>
+          ))}
+        </ol>
+      )}
+      {canSubmit && (
+        <form className="inline-form" onSubmit={submit}>
+          <input value={name} onChange={(e) => setName(e.target.value)} maxLength={LIMITS.name} placeholder={t('yourName')} aria-label={t('yourName')} required />
+          <button className="button primary small" disabled={busy || !name.trim()}>
+            {busy ? t('sending') : `${t('submitBest')} · ${formatTime(best)}`}
+          </button>
+        </form>
+      )}
+      {!canSubmit && sent > 0 && <p className="muted">{t('submitted')}</p>}
+    </section>
+  )
+}
+
 export function LeaderboardContent() {
   const { t, lang } = useT()
   const times = useStore((s) => s.times)
   return (
     <>
+      {ONLINE && <WorldRanking />}
+      {ONLINE && <h3>{t('yourBest')}</h3>}
       {times.length === 0 ? (
         <p className="muted">{t('raceNoScore')}</p>
       ) : (
@@ -275,6 +346,65 @@ export function LeaderboardContent() {
         </ol>
       )}
       <p className="muted">{t('raceHint')}</p>
+    </>
+  )
+}
+
+export function WhisperContent() {
+  const { t } = useT()
+  const [name, setName] = useState(savedName)
+  const [message, setMessage] = useState('')
+  const [status, setStatus] = useState(null) // null | 'sending' | 'error' | 'cooldown'
+  const [wait, setWait] = useState(() => whisperCooldown())
+
+  useEffect(() => {
+    if (wait <= 0) return
+    const id = setTimeout(() => setWait(whisperCooldown()), 1000)
+    return () => clearTimeout(id)
+  }, [wait])
+
+  const submit = async (e) => {
+    e.preventDefault()
+    if (status === 'sending' || !name.trim() || !message.trim()) return
+    setStatus('sending')
+    try {
+      const p = vehicleState.position
+      const whisper = await postWhisper({ name, message, x: p.x, z: p.z })
+      const store = useStore.getState()
+      store.addWhisper(whisper)
+      store.toast('💬', t('whisperSent'))
+      store.closeAll()
+    } catch (err) {
+      if (err.message === 'cooldown') {
+        setWait(whisperCooldown())
+        setStatus('cooldown')
+      } else setStatus('error')
+    }
+  }
+
+  return (
+    <>
+      <p className="eyebrow">{t('whisper')}</p>
+      <h2>{t('whisperTitle')}</h2>
+      <p>{t('whisperIntro')}</p>
+      <form className="whisper-form" onSubmit={submit}>
+        <label>
+          <span>{t('yourName')}</span>
+          <input value={name} onChange={(e) => setName(e.target.value)} maxLength={LIMITS.name} required autoComplete="nickname" />
+        </label>
+        <label>
+          <span>
+            {t('message')} <small>{message.length}/{LIMITS.message}</small>
+          </span>
+          <textarea value={message} onChange={(e) => setMessage(e.target.value)} maxLength={LIMITS.message} rows={3} required />
+        </label>
+        {status === 'error' && <p className="form-error">{t('errorGeneric')}</p>}
+        {wait > 0 && <p className="muted">{t('whisperCooldown').replace('{s}', Math.ceil(wait / 1000))}</p>}
+        <button className="button primary" disabled={status === 'sending' || wait > 0 || !name.trim() || !message.trim()}>
+          {status === 'sending' ? t('sending') : t('send')}
+        </button>
+      </form>
+      <p className="muted">{ONLINE ? t('whisperPublic') : t('whisperLocal')}</p>
     </>
   )
 }
