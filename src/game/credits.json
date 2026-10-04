@@ -1,0 +1,90 @@
+[
+  {
+    "key": "car",
+    "file": "cartoon_car.glb",
+    "author": "wallon (https://sketchfab.com/realwallon)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/cartoon-car-09431a8df4344a84aa83a4095bef10fc",
+    "title": "Cartoon Car"
+  },
+  {
+    "key": "tree",
+    "file": "tree.glb",
+    "author": "farhad.Guli (https://sketchfab.com/farhad.Guli)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/tree-7016d1d32fe748f0a8b3f5eb39374bc4",
+    "title": "Tree"
+  },
+  {
+    "key": "maple",
+    "file": "maple_tree.glb",
+    "author": "atrodler (https://sketchfab.com/atrodler)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/maple-tree-4b27adcf92f644bdabf8ecc6c5bef399",
+    "title": "Maple tree"
+  },
+  {
+    "key": "oak",
+    "file": "oak_trees.glb",
+    "author": "DJMaesen (https://sketchfab.com/bumstrum)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/oak-trees-d841c3bcc5324daebee50f45619e05fc",
+    "title": "oak trees"
+  },
+  {
+    "key": "bush",
+    "file": "stylized_bush.glb",
+    "author": "Daniel (https://sketchfab.com/danielpetrov)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/stylized-bush-9d9ce79d3ae040619e96d5b22c7de1a6",
+    "title": "Stylized Bush"
+  },
+  {
+    "key": "rock",
+    "file": "rock.glb",
+    "author": "Siesta (https://sketchfab.com/siesta)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/rock-b66d5b63deb447299ca3effa904bc789",
+    "title": "Rock"
+  },
+  {
+    "key": "lamp",
+    "file": "street_lamb.glb",
+    "author": "F1nNxHMHN (https://sketchfab.com/F1nNxHMHN)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/street-lamb-e7a93f56504c40a3beec9109e507add1",
+    "title": "Street Lamb"
+  },
+  {
+    "key": "fence",
+    "file": "wooden_fence.glb",
+    "author": "DmitriyGDS (https://sketchfab.com/DmitriyGDS)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/wooden-fence-43f8b3127fba4800bfc3f36078393e87",
+    "title": "Wooden Fence"
+  },
+  {
+    "key": "wall",
+    "file": "ruined_rock_fence.glb",
+    "author": "VladNeko (https://sketchfab.com/vlad.neko)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/ruined-rock-fence-75e2716c378e4a68bac3577303671921",
+    "title": "Ruined rock fence"
+  },
+  {
+    "key": "grass",
+    "file": "grass.glb",
+    "author": "Cosmic_dust (https://sketchfab.com/Cosmic_dust)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/grass-f2f2bddb2728483a9105c5f5114eb15e",
+    "title": "Grass"
+  },
+  {
+    "key": "flower",
+    "file": "white_flower.glb",
+    "author": "tojamerlin (https://sketchfab.com/tojamerlin)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/white-flower-9e025b18a39741a4a38b197cee3cdcac",
+    "title": "white flower"
+  }
+]
