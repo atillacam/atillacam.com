@@ -8,6 +8,7 @@ import { useT } from '../i18n.js'
 import { formatTime } from '../format.js'
 import { Icon } from './Icons.jsx'
 import { CARS, PAINTS } from '../game/cars.js'
+import { explored, FOG, routeState } from '../game/navigation.js'
 import {
   AboutContent,
   ContactContent,
@@ -224,12 +225,23 @@ function GameHud() {
   const driftBest = useStore((s) => s.driftBest)
   const goals = useStore((s) => s.soccerSession)
   const pinsDown = useStore((s) => s.pinsDown)
+  const navTarget = useStore((s) => s.navTarget)
+  const setNavTarget = useStore((s) => s.setNavTarget)
+  const arrow = useRef()
+  const distance = useRef()
   const speed = useRef()
   const recover = useRef()
   useEffect(() => {
     let frame
     const loop = () => {
       if (speed.current) speed.current.textContent = Math.round(Math.abs(vehicleState.speed) * 3.6)
+      if (arrow.current && routeState.next) {
+        const { x, z } = vehicleState.position
+        const targetYaw = Math.atan2(routeState.next.x - x, routeState.next.z - z)
+        // ➤ karakteri sağa bakar; 0° yukarı olsun diye 90° çıkarıyoruz
+        arrow.current.style.transform = 'rotate(' + (((vehicleState.cameraYaw - targetYaw) * 180) / Math.PI - 90) + 'deg)'
+      }
+      if (distance.current) distance.current.textContent = Math.round(routeState.length) + ' m'
       if (recover.current) {
         const k = vehicleState.recovering
         recover.current.style.opacity = k > 0.15 ? 1 : 0
@@ -253,6 +265,20 @@ function GameHud() {
           <small>
             {t('driftBest')}: {driftBest}
           </small>
+        </div>
+      )}
+      {navTarget && (
+        <div className="nav-hud" style={{ '--area': navTarget.color }}>
+          <span className="nav-arrow" ref={arrow}>
+            ➤
+          </span>
+          <div>
+            <strong>{t(navTarget.label)}</strong>
+            <small ref={distance}>…</small>
+          </div>
+          <button className="icon-button" onClick={() => setNavTarget(null)} aria-label={t('clearRoute')} title={t('clearRoute')}>
+            <Icon name="close" size={16} />
+          </button>
         </div>
       )}
       <div className="recover" ref={recover} aria-hidden="true">
@@ -318,7 +344,50 @@ const AREA_ICONS = {
 }
 
 // Harita çizimi: büyük harita ve mini harita aynı katmanları kullanır
-function MapLayers({ collected, visited, onArea, labels = true, t }) {
+function FogLayer({ version }) {
+  // Gezilmemiş hücreler koyu bulutla örtülür; gezilenler maskede delik açar
+  const holes = []
+  for (let j = 0; j < FOG.cells; j++) {
+    for (let i = 0; i < FOG.cells; i++) {
+      if (!explored.grid[j * FOG.cells + i]) continue
+      holes.push(<circle key={j * FOG.cells + i} cx={-WORLD_HALF + (i + 0.5) * FOG.size} cy={-WORLD_HALF + (j + 0.5) * FOG.size} r={FOG.size * 0.95} />)
+    }
+  }
+  return (
+    <g data-version={version}>
+      <defs>
+        <filter id="fog-blur">
+          <feGaussianBlur stdDeviation="3" />
+        </filter>
+        <mask id="fog-mask">
+          <rect x={-WORLD_HALF - 10} y={-WORLD_HALF - 10} width={WORLD_HALF * 2 + 20} height={WORLD_HALF * 2 + 20} fill="white" />
+          <g fill="black" filter="url(#fog-blur)">{holes}</g>
+        </mask>
+      </defs>
+      <rect x={-WORLD_HALF} y={-WORLD_HALF} width={WORLD_HALF * 2} height={WORLD_HALF * 2} rx="14" className="map-fog" mask="url(#fog-mask)" />
+    </g>
+  )
+}
+
+function RoutePath({ className }) {
+  const path = useRef()
+  useEffect(() => {
+    let frame
+    let version = -1
+    const loop = () => {
+      if (routeState.version !== version && path.current) {
+        version = routeState.version
+        path.current.setAttribute('points', routeState.points.map((p) => p.x + ',' + p.z).join(' '))
+      }
+      frame = requestAnimationFrame(loop)
+    }
+    loop()
+    return () => cancelAnimationFrame(frame)
+  }, [])
+  return <polyline ref={path} className={className} />
+}
+
+function MapLayers({ collected, visited, onArea, labels = true, t, fog = false, fogVersion = 0 }) {
   return (
     <>
       <rect x={-WORLD_HALF} y={-WORLD_HALF} width={WORLD_HALF * 2} height={WORLD_HALF * 2} rx="14" className="map-ground" />
@@ -352,6 +421,8 @@ function MapLayers({ collected, visited, onArea, labels = true, t }) {
       {COLLECTIBLES.filter((c) => !collected.includes(c.id)).map((c) => (
         <rect key={c.id} x={c.x - 2} y={c.z - 2} width="4" height="4" transform={'rotate(45 ' + c.x + ' ' + c.z + ')'} className="map-core" />
       ))}
+      <RoutePath className="map-route" />
+      {fog && <FogLayer version={fogVersion} />}
     </>
   )
 }
@@ -489,9 +560,20 @@ function MapPanel() {
   const [view, setView] = useState(FULL_VIEW)
   const [selected, setSelected] = useState(null)
   const drag = useRef(null)
+  const [fogVersion, setFogVersion] = useState(explored.version)
   useCarMarker(car, open)
+  useEffect(() => {
+    if (!open) return
+    const id = setInterval(() => setFogVersion(explored.version), 1000)
+    return () => clearInterval(id)
+  }, [open])
 
   if (!open) return null
+  const navigate = (area) => {
+    useStore.getState().setNavTarget({ id: area.id, x: area.center[0], z: area.center[2], radius: area.radius, label: area.label, color: area.color })
+    setSelected(null)
+    togglePanel('map')
+  }
   const go = (area) => {
     useStore.getState().cancelRace()
     teleport(area.spawn, area.yaw)
@@ -526,7 +608,7 @@ function MapPanel() {
           onPointerUp={onUp}
           onPointerLeave={onUp}
         >
-          <MapLayers collected={collected} visited={visited} onArea={pick} t={t} />
+          <MapLayers collected={collected} visited={visited} onArea={pick} t={t} fog fogVersion={fogVersion} />
           <g ref={car}>
             <path d="M5 0 L-4 -4 L-2 0 L-4 4 Z" className="map-car" />
           </g>
@@ -556,13 +638,16 @@ function MapPanel() {
           🧭 {visited.length}/{AREAS.length} {t('areasLabel')}
         </span>
         <span>
+          🗺️ %{Math.round((explored.count / (FOG.cells * FOG.cells)) * 100)} {t('explored')}
+        </span>
+        <span>
           💠 {collected.length}/{COLLECTIBLES.length}
         </span>
       </div>
       <ul className="map-legend">
         {AREAS.map((a) => (
           <li key={a.id}>
-            <button onClick={() => go(a)} title={t('teleport')}>
+            <button onClick={() => setSelected(a)} aria-pressed={selected?.id === a.id}>
               <span className="legend-icon" style={{ background: a.color }}>
                 {AREA_ICONS[a.id]}
               </span>
@@ -578,9 +663,14 @@ function MapPanel() {
             <strong>{t(selected.label)}</strong>
             <span>{t('sub_' + selected.id)}</span>
           </div>
-          <button className="button small primary" onClick={() => go(selected)}>
-            {t('teleport')}
-          </button>
+          <div className="map-card-actions">
+            <button className="button small" onClick={() => navigate(selected)}>
+              🧭 {t('navigate')}
+            </button>
+            <button className="button small primary" onClick={() => go(selected)}>
+              {t('teleport')}
+            </button>
+          </div>
         </div>
       ) : (
         <p className="muted">{t('mapZoomHint')}</p>

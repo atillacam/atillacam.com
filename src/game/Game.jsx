@@ -19,6 +19,8 @@ import Dust from './Dust.jsx'
 import Skids from './Skids.jsx'
 import Atmosphere from './Atmosphere.jsx'
 import Weather from './Weather.jsx'
+import RouteLine from './RouteLine.jsx'
+import Life from './Life.jsx'
 import Vehicle from './Vehicle.jsx'
 import Effects from './Effects.jsx'
 import { bindKeyboard, input, vehicleState } from './input.js'
@@ -96,6 +98,8 @@ export default function Game() {
         <Skids />
         <Atmosphere />
         <Weather />
+        <RouteLine />
+        <Life />
         {high && <Effects />}
         <ReadySignal />
         <DebugHandle />

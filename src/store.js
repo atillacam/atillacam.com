@@ -102,6 +102,7 @@ export const useStore = create((set, get) => ({
   carColor: settings.carColor,
   headlights: 'auto', // 'auto' | 'on' | 'off'
   cameraMode: 'follow', // 'follow' | 'chase'
+  navTarget: null, // GPS hedefi: { id, x, z, radius, label, color }
   pinsDown: 0,
   bowlingReset: 0, // değişince lobutlar yeniden dizilir
   weatherMode: 'auto', // 'auto' | 'clear' | 'rain' | 'snow'
@@ -223,6 +224,7 @@ export const useStore = create((set, get) => ({
   toggleCamera: () => set((s) => ({ cameraMode: s.cameraMode === 'follow' ? 'chase' : 'follow' })),
   startCinematic: (ms = 9000) => set({ cinematic: performance.now() + ms }),
   setPinsDown: (pinsDown) => set({ pinsDown }),
+  setNavTarget: (navTarget) => set({ navTarget }),
   setWeatherMode: (weatherMode) => set({ weatherMode }),
   setWeather: (weather) => {
     set({ weather })

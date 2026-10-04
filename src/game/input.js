@@ -20,6 +20,7 @@ export const vehicleState = {
   braking: false,
   handbrake: false,
   recovering: 0, // 0..1 kendini düzeltme ilerlemesi
+  cameraYaw: 0,
   rearWheels: [
     { x: 0, y: 0, z: 0 },
     { x: 0, y: 0, z: 0 },

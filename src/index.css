@@ -887,6 +887,65 @@ kbd {
   color: var(--green);
 }
 
+/* GPS */
+.map-route {
+  fill: none;
+  stroke: #8fb8ff;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 5 3;
+}
+.map-fog {
+  fill: #0b1220;
+  opacity: 0.72;
+  pointer-events: none;
+}
+.map-card-actions {
+  display: flex;
+  gap: 8px;
+}
+.nav-hud {
+  position: fixed;
+  top: 76px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px 8px 12px;
+  border-radius: 16px;
+  background: var(--surface);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--border-strong);
+  border-left: 4px solid var(--area);
+  z-index: 11;
+}
+.nav-hud div {
+  display: grid;
+  line-height: 1.2;
+}
+.nav-hud small {
+  color: var(--muted);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.nav-arrow {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--area);
+  color: #0a0e1a;
+  font-size: 1rem;
+  transition: transform 0.12s linear;
+}
+.nav-arrow::before {
+  content: '';
+}
+
 /* Kendini düzeltme göstergesi */
 .recover {
   position: fixed;

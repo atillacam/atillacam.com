@@ -11,6 +11,7 @@ const _top = new THREE.Color()
 const _horizon = new THREE.Color()
 const _sunColor = new THREE.Color()
 const _grey = new THREE.Color()
+const _carPos = new THREE.Vector3()
 const WARM = new THREE.Color('#ffb070')
 const NOON = new THREE.Color('#fff4e2')
 const MOON = new THREE.Color('#9db4ff')
@@ -106,6 +107,7 @@ export default function DayNight({ shadows = true }) {
   const sun = useRef()
   const hemi = useRef()
   const scene = useThree((s) => s.scene)
+  const camera = useThree((s) => s.camera)
   const gl = useThree((s) => s.gl)
 
   // Yerel ortam haritası: metal ve parlak yüzeyler siyah görünmez, dış dosya gerekmez
@@ -157,10 +159,14 @@ export default function DayNight({ shadows = true }) {
       _top.lerp(_grey.setRGB(0.85, 0.88, 1), world.flash * 0.6)
       _horizon.lerp(_grey.setRGB(0.9, 0.92, 1), world.flash * 0.5)
     }
+    world.skyTop.copy(_top)
+    world.skyHorizon.copy(_horizon)
     if (scene.fog) {
       scene.fog.color.copy(_horizon).lerp(_top, 0.25)
-      scene.fog.near = THREE.MathUtils.lerp(70, 25, overcast)
-      scene.fog.far = THREE.MathUtils.lerp(230, 120, overcast)
+      // Kamera uzaklaştıkça (giriş, sinematik) sis de geri çekilir
+      const camFar = Math.max(camera.position.distanceTo(_carPos.set(vehicleState.position.x, vehicleState.position.y, vehicleState.position.z)) - 22, 0)
+      scene.fog.near = THREE.MathUtils.lerp(70, 25, overcast) + camFar
+      scene.fog.far = THREE.MathUtils.lerp(230, 120, overcast) + camFar * 1.6
     }
     scene.environmentIntensity = THREE.MathUtils.lerp(0.4, 0.08, world.night)
 

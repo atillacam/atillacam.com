@@ -1,10 +1,10 @@
-import { useMemo, useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useMemo } from 'react'
 import { CuboidCollider, RigidBody, TrimeshCollider } from '@react-three/rapier'
 import * as THREE from 'three'
-import { AREAS, COLORS, LAKE, PATHS, RING_RADIUS, RING_WIDTH, WORLD_HALF } from './layout.js'
+import { AREAS, COLORS, PATHS, RING_RADIUS, RING_WIDTH, WORLD_HALF } from './layout.js'
 import { fbm, heightAt, shoreFactor } from './terrain.js'
-import { world as worldTime } from './time.js'
+import Water from './Water.jsx'
+import { createTerrainMaterial } from './terrainMaterial.js'
 
 const SIZE = 330
 const SEGMENTS = 220
@@ -141,63 +141,9 @@ function roadGeometry(p, width, lift) {
   return g
 }
 
-function Water() {
-  const material = useRef()
-  const uniforms = useMemo(
-    () => ({
-      uTime: { value: 0 },
-      uDeep: { value: new THREE.Color('#1f5f8b') },
-      uShallow: { value: new THREE.Color('#5fb7d4') },
-      uNight: { value: 0 },
-    }),
-    [],
-  )
-  useFrame((_, delta) => {
-    uniforms.uTime.value += delta
-    uniforms.uNight.value = worldTime.night
-  })
-  return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[LAKE.x, LAKE.waterLevel, LAKE.z]} receiveShadow>
-      <circleGeometry args={[LAKE.radius + 4, 64]} />
-      <shaderMaterial
-        ref={material}
-        transparent
-        uniforms={uniforms}
-        vertexShader={/* glsl */ `
-          varying vec2 vUv;
-          varying vec3 vWorld;
-          void main() {
-            vUv = uv;
-            vec4 w = modelMatrix * vec4(position, 1.0);
-            vWorld = w.xyz;
-            gl_Position = projectionMatrix * viewMatrix * w;
-          }
-        `}
-        fragmentShader={/* glsl */ `
-          uniform float uTime;
-          uniform vec3 uDeep;
-          uniform vec3 uShallow;
-          uniform float uNight;
-          varying vec2 vUv;
-          varying vec3 vWorld;
-          void main() {
-            float d = distance(vUv, vec2(0.5)) * 2.0;
-            vec3 col = mix(uDeep, uShallow, smoothstep(0.2, 1.0, d));
-            float wave = sin(vWorld.x * 0.9 + uTime * 1.3) * sin(vWorld.z * 0.7 - uTime * 1.1);
-            col += smoothstep(0.75, 1.0, wave) * 0.18;
-            float foam = smoothstep(0.86, 0.97, d);
-            col = mix(col, vec3(0.95), foam * 0.55);
-            col *= mix(1.0, 0.28, uNight);
-            gl_FragColor = vec4(col, mix(0.82, 0.95, 1.0 - d));
-          }
-        `}
-      />
-    </mesh>
-  )
-}
-
 export default function Terrain() {
   const terrain = useMemo(() => buildTerrain(), [])
+  const terrainMaterial = useMemo(() => createTerrainMaterial(), [])
   const ring = useMemo(() => buildRing(), [])
   const dashes = useMemo(() => buildDashes(), [])
   // Döşeme dokuları bir kez üretilir
@@ -240,7 +186,7 @@ export default function Terrain() {
       </RigidBody>
 
       <mesh geometry={terrain} receiveShadow>
-        <meshStandardMaterial vertexColors roughness={1} />
+        <primitive object={terrainMaterial} attach="material" />
       </mesh>
 
       {/* Bölge zeminleri */}

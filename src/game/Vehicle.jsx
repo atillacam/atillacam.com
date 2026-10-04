@@ -141,7 +141,7 @@ export default function Vehicle() {
 
   const steer = useRef(0)
   const lookTarget = useRef(new THREE.Vector3(...SPAWN.position))
-  const orbit = useRef({ ...CAMERA_HOME, polar: 1.12, distance: 30, baseDistance: 16, dragging: false, lastX: 0, lastY: 0, idle: 10 })
+  const orbit = useRef({ ...CAMERA_HOME, polar: 0.72, distance: 88, baseDistance: 16, intro: 0, dragging: false, lastX: 0, lastY: 0, idle: 10 })
   const stats = useRef({ distance: 0, flushed: 0, upsideDown: 0, lastPos: null, splash: 0 })
   const shake = useRef({ amount: 0, lastHit: 0 })
   const blob = useRef()
@@ -456,7 +456,9 @@ export default function Vehicle() {
     const cinematic = store.cinematic > performance.now()
     const chase = store.cameraMode === 'chase' && !cinematic
     if (!store.started) {
-      o.azimuth += dt * 0.08 // giriş ekranında yavaşça döner
+      // Giriş ekranı: dünyanın üzerinde yüksekten, yavaş bir tur
+      o.azimuth += dt * 0.05
+      o.polar += (0.72 - o.polar) * (1 - Math.exp(-2 * dt))
     } else if (cinematic) {
       // Gözlem tepesi: dünyanın etrafında yavaş, geniş bir tur
       o.azimuth += dt * 0.22
@@ -483,8 +485,21 @@ export default function Vehicle() {
     const lt = lookTarget.current
     // Dikey ekranda (telefon) görüş alanı dar; kamerayı uzaklaştır
     const speedAbs = Math.abs(speed)
-    const targetDistance = !store.started ? 30 : cinematic ? 46 : chase ? 8.5 + Math.min(speedAbs * 0.12, 3) : o.baseDistance + Math.min(speedAbs * 0.18, 4.5)
-    o.distance += (targetDistance - o.distance) * (1 - Math.exp(-(store.started ? 1.6 : 4) * dt))
+    const targetDistance = !store.started ? 88 : cinematic ? 46 : chase ? 8.5 + Math.min(speedAbs * 0.12, 3) : o.baseDistance + Math.min(speedAbs * 0.18, 4.5)
+    if (store.started && o.intro < 1) {
+      // Sinematik iniş: kamera yüksekten süzülerek arabanın arkasına iner (3,4 sn, yumuşak hızlanma/yavaşlama)
+      if (o.intro === 0) o.introFrom = { distance: o.distance, polar: o.polar, azimuth: o.azimuth }
+      o.intro = Math.min(o.intro + dt / 3.4, 1)
+      const k = o.intro < 0.5 ? 4 * o.intro ** 3 : 1 - (-2 * o.intro + 2) ** 3 / 2
+      const f = o.introFrom
+      const turn = Math.atan2(Math.sin(CAMERA_HOME.azimuth - f.azimuth), Math.cos(CAMERA_HOME.azimuth - f.azimuth))
+      o.distance = f.distance + (targetDistance - f.distance) * k
+      o.polar = f.polar + (CAMERA_HOME.polar - f.polar) * k
+      o.azimuth = f.azimuth + turn * k
+      o.idle = 0
+    } else {
+      o.distance += (targetDistance - o.distance) * (1 - Math.exp(-(store.started ? 1.6 : 4) * dt))
+    }
     const distance = o.distance * (state.size.width < state.size.height ? 1.5 : 1)
     const targetFov = 45 + Math.min(speedAbs / MAX_BOOST_SPEED, 1) * 7
     if (Math.abs(camera.fov - targetFov) > 0.01) {
@@ -506,6 +521,8 @@ export default function Vehicle() {
       sh.amount *= Math.exp(-9 * dt)
     }
     camera.lookAt(lt.x, lt.y + 0.5, lt.z)
+    // Kameranın yatay bakış yönü (GPS yön oku için)
+    vehicleState.cameraYaw = Math.atan2(lt.x - camera.position.x, lt.z - camera.position.z)
 
     // Temas gölgesi: aracın altındaki zemine yumuşak bir leke
     if (blob.current) {
