@@ -18,6 +18,7 @@ import Bowling from './Bowling.jsx'
 import Showcase from './Showcase.jsx'
 import Dust from './Dust.jsx'
 import Skids from './Skids.jsx'
+import Ripples from './Ripples.jsx'
 import Atmosphere from './Atmosphere.jsx'
 import Weather from './Weather.jsx'
 import Seasons from './Seasons.jsx'
@@ -103,6 +104,7 @@ export default function Game() {
         <Grass count={high ? 115000 : 28000} />
         <Dust />
         <Skids />
+        <Ripples />
         <Atmosphere />
         <Seasons />
         <Weather />
