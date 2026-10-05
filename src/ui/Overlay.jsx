@@ -746,6 +746,7 @@ function MenuPanel() {
   const cameraMode = useStore((s) => s.cameraMode)
   const weatherMode = useStore((s) => s.weatherMode)
   const music = useStore((s) => s.music)
+  const fpsCap = useStore((s) => s.fpsCap)
   if (!open) return null
   return (
     <Panel id="menu" title={t('menu')}>
@@ -759,6 +760,16 @@ function MenuPanel() {
           {['high', 'low'].map((q) => (
             <button key={q} className={quality === q ? 'active' : ''} onClick={() => setQuality(q)} aria-pressed={quality === q}>
               {q === 'high' ? t('qualityHigh') : t('qualityLow')}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="menu-row">
+        <span>{t('fpsCap')}</span>
+        <div className="lang-switch">
+          {[30, 60, 0].map((f) => (
+            <button key={f} className={fpsCap === f ? 'active' : ''} onClick={() => useStore.getState().setFpsCap(f)} aria-pressed={fpsCap === f}>
+              {f ? f : t('fpsMax')}
             </button>
           ))}
         </div>

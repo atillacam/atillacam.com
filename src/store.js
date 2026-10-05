@@ -77,7 +77,7 @@ function detectQuality() {
 }
 
 const saved = readJSON(STORAGE_KEY, { unlocked: {}, progress: {}, times: [], driftBest: 0 })
-const settings = { quality: detectQuality(), muted: false, music: true, carId: 'ae86', carColor: 'white', ...readJSON(SETTINGS_KEY, {}) }
+const settings = { quality: detectQuality(), muted: false, music: true, fpsCap: 60, carId: 'ae86', carColor: 'white', ...readJSON(SETTINGS_KEY, {}) }
 let toastId = 0
 
 const idleRace = { active: false, countdown: 0, start: 0, next: 0, finishedAt: 0, lastTime: 0 }
@@ -90,6 +90,7 @@ export const useStore = create((set, get) => ({
   started: false,
   muted: settings.muted,
   music: settings.music,
+  fpsCap: settings.fpsCap, // 30 | 60 | 0 (sınırsız)
   night: false,
   spot: null,
   area: 'home',
@@ -119,7 +120,7 @@ export const useStore = create((set, get) => ({
   persist: () => {
     const s = get()
     writeJSON(STORAGE_KEY, { unlocked: s.unlocked, progress: s.progress, times: s.times, driftBest: s.driftBest })
-    writeJSON(SETTINGS_KEY, { quality: s.quality, muted: s.muted, music: s.music, carId: s.carId, carColor: s.carColor })
+    writeJSON(SETTINGS_KEY, { quality: s.quality, muted: s.muted, music: s.music, fpsCap: s.fpsCap, carId: s.carId, carColor: s.carColor })
   },
 
   setView: (view) => set({ view, modal: null, panel: null }),
@@ -131,6 +132,10 @@ export const useStore = create((set, get) => ({
       // yok say
     }
     document.documentElement.lang = lang
+  },
+  setFpsCap: (fpsCap) => {
+    set({ fpsCap })
+    get().persist()
   },
   setQuality: (quality) => {
     set({ quality })

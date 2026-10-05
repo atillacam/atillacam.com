@@ -28,3 +28,10 @@ models-src
 
 # Yerel araç ayarları
 .claude
+
+# graphify bilgi grafiği (yerel çıktı ve önbellek)
+graphify-out/
+
+# Yerel asistan kuralları ve graphify raporu (açık depoya girmez)
+CLAUDE.md
+GRAPH_REPORT.md

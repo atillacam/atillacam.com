@@ -1,7 +1,7 @@
 import { Suspense, useEffect } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { Physics } from '@react-three/rapier'
-import { AdaptiveDpr, useProgress } from '@react-three/drei'
+import { useProgress } from '@react-three/drei'
 import * as THREE from 'three'
 import DayNight from './DayNight.jsx'
 import Terrain from './Terrain.jsx'
@@ -25,6 +25,7 @@ import Life from './Life.jsx'
 import Whispers from './Whispers.jsx'
 import Vehicle from './Vehicle.jsx'
 import Effects from './Effects.jsx'
+import { AutoQuality, FrameDriver } from './Performance.jsx'
 import { bindKeyboard, input, vehicleState } from './input.js'
 import { world } from './time.js'
 import { useStore } from '../store.js'
@@ -73,11 +74,13 @@ export default function Game() {
     <Canvas
       shadows={high ? 'percentage' : false}
       dpr={high ? [1, 1.75] : [0.75, 1.25]}
+      frameloop="never"
       camera={{ position: [12, 16, 30], fov: 45, near: 0.3, far: 600 }}
       gl={{ antialias: !high, powerPreference: 'high-performance', toneMapping: THREE.ACESFilmicToneMapping }}
       aria-label="3D portfolyo dünyası"
     >
-      <AdaptiveDpr pixelated={false} />
+      <FrameDriver />
+      {!paused && <AutoQuality key={quality} min={high ? 1 : 0.75} max={high ? 1.75 : 1.25} />}
       <fog attach="fog" args={['#bfe2f4', 70, 230]} />
       <DayNight shadows={high} />
       <Suspense fallback={null}>
