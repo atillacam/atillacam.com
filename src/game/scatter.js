@@ -44,6 +44,22 @@ function isFree(x, z, margin) {
   return true
 }
 
+// Oyun alanının etrafındaki çit halkası (yolların girdiği kuzey ve güneyde boşluk).
+// a: halka üzerindeki açı; çit parçası halkaya teğet durur.
+export function playgroundFenceRing() {
+  const pg = AREAS.find((a) => a.id === 'playground')
+  const fr = pg.radius + 1.2
+  const count = Math.floor((Math.PI * 2 * fr) / 2.6)
+  const list = []
+  for (let i = 0; i < count; i++) {
+    const a = (i / count) * Math.PI * 2
+    const gap = Math.abs(Math.sin(a) + 1) < 0.08 || Math.abs(Math.sin(a) - 1) < 0.08
+    if (gap) continue
+    list.push({ x: pg.center[0] + Math.cos(a) * fr, z: pg.center[2] + Math.sin(a) * fr, a })
+  }
+  return list
+}
+
 // Lambalar en yakın yola dönük durur; başlığın altındaki ampul konumu da buradan gelir
 export function lampPlacements() {
   return LAMPS.map(([x, , z]) => {
@@ -113,17 +129,8 @@ export function useScatter(density = 1) {
       ringAround(a.center[0], a.center[2], a.radius + (a.id === 'lake' ? 3.5 : 0.5), Math.round(22 * density), 'flower', 1.4)
     }
 
-    // Oyun alanının etrafında ahşap çit (yolların girdiği yerlerde boşluk)
+    // Oyun alanının çiti artık kırılabilir (Breakables.jsx, playgroundFenceRing)
     const fences = []
-    const pg = AREAS.find((a) => a.id === 'playground')
-    const fr = pg.radius + 1.2
-    const fenceCount = Math.floor((Math.PI * 2 * fr) / 2.6)
-    for (let i = 0; i < fenceCount; i++) {
-      const a = (i / fenceCount) * Math.PI * 2
-      const gap = Math.abs(Math.sin(a) + 1) < 0.08 || Math.abs(Math.sin(a) - 1) < 0.08
-      if (gap) continue
-      fences.push({ x: pg.center[0] + Math.cos(a) * fr, z: pg.center[2] + Math.sin(a) * fr, rot: -a, y: 0 })
-    }
 
     // Tepelerin eteğinde doğal taş duvarlar
     const walls = []

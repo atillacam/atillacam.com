@@ -128,6 +128,35 @@ function pavingTexture(repeatX, repeatY) {
   return texture
 }
 
+// Taş kaplama meydanı olan bölgeler: yollar bunların içine çizilmez (iki farklı döşeme üst üste binmesin)
+const PLAZAS = AREAS.filter((a) => a.id !== 'lake' && a.id !== 'race' && (!a.pad || a.pad === 'alley'))
+
+// Yol ucunu, içinde kaldığı meydanın kenarına taşı. Yol ağı (GPS, düz zemin) değişmez; yalnızca çizim kırpılır.
+function trimToPlazas(from, to) {
+  const clip = (p, q) => {
+    for (const a of PLAZAS) {
+      const cx = a.center[0]
+      const cz = a.center[2]
+      const R = a.radius - 0.4
+      if (Math.hypot(p[0] - cx, p[1] - cz) >= R) continue
+      // p'den q'ya giderken çemberden çıkış noktası: |p + t(q-p) - c| = R
+      const dx = q[0] - p[0]
+      const dz = q[1] - p[1]
+      const fx = p[0] - cx
+      const fz = p[1] - cz
+      const A = dx * dx + dz * dz
+      const B = 2 * (fx * dx + fz * dz)
+      const C = fx * fx + fz * fz - R * R
+      const t = (-B + Math.sqrt(Math.max(B * B - 4 * A * C, 0))) / (2 * A)
+      return [p[0] + dx * Math.min(t, 1), p[1] + dz * Math.min(t, 1)]
+    }
+    return p
+  }
+  const a = clip(from, to)
+  const b = clip(to, a)
+  return [a, b]
+}
+
 // Araziyi izleyen yol şeridi: tepelerden geçen yollar zemine yapışır
 function roadGeometry(p, width, lift) {
   const segments = Math.max(2, Math.ceil(p.length / 1.5))
@@ -150,8 +179,10 @@ export default function Terrain() {
   const textures = useMemo(
     () => ({
       plaza: Object.fromEntries(AREAS.map((a) => [a.id, pavingTexture(((a.radius - 0.5) * 2) / 3.2, ((a.radius - 0.5) * 2) / 3.2)])),
-      paths: PATHS.map(({ from, to }) => pavingTexture(5 / 2.5, Math.hypot(to[0] - from[0], to[1] - from[1]) / 2.5)),
-      center: pavingTexture(12 / 2.5, 12 / 2.5),
+      paths: PATHS.map((p) => {
+        const [from, to] = trimToPlazas(p.from, p.to)
+        return pavingTexture(5 / 2.5, Math.max(Math.hypot(to[0] - from[0], to[1] - from[1]), 0.5) / 2.5)
+      }),
     }),
     [],
   )
@@ -165,7 +196,8 @@ export default function Terrain() {
 
   const paths = useMemo(
     () =>
-      PATHS.map(({ from, to }) => {
+      PATHS.map((path) => {
+        const [from, to] = trimToPlazas(path.from, path.to)
         const dx = to[0] - from[0]
         const dz = to[1] - from[1]
         const p = { length: Math.hypot(dx, dz), angle: Math.atan2(dx, dz), center: [(from[0] + to[0]) / 2, (from[1] + to[1]) / 2] }
@@ -215,10 +247,6 @@ export default function Terrain() {
           </mesh>
         </group>
       ))}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.026, 0]} receiveShadow>
-        <circleGeometry args={[6, 56]} />
-        <meshStandardMaterial map={textures.center} color="#e2d6b8" roughness={0.95} polygonOffset polygonOffsetFactor={-2} />
-      </mesh>
 
       {/* Çevre yarış yolu */}
       {ring.map((r, i) => (

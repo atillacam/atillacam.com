@@ -145,7 +145,8 @@ function InstancedChunk({ part, items, castShadow, receiveShadow }) {
     items.forEach((it, i) => {
       _q.setFromAxisAngle(_up, it.rot)
       _p.set(it.x, it.y, it.z)
-      _s.setScalar(it.scale)
+      // Ölçeği verilmeyen yerleşimler 1 kabul edilir (yoksa matris NaN olur ve model görünmez)
+      _s.setScalar(it.scale ?? 1)
       _m.compose(_p, _q, _s)
       mesh.setMatrixAt(i, _m)
     })
@@ -184,7 +185,7 @@ function LampBulbs({ lamps }) {
 
 export default function Vegetation({ quality = 'high' }) {
   const density = quality === 'high' ? 1 : 0.55
-  const { trees, rocks, bushes, decor, fences, walls, lamps } = useScatter(density)
+  const { trees, rocks, bushes, decor, walls, lamps } = useScatter(density)
   const byKind = (list, kind) => list.filter((t) => t.kind === kind)
 
   return (
@@ -196,7 +197,6 @@ export default function Vegetation({ quality = 'high' }) {
       <Instances url={MODEL_URLS.rock} items={rocks} />
       <Instances url={MODEL_URLS.grass} items={byKind(decor, 'grass')} castShadow={false} wind={0.35} />
       <Instances url={MODEL_URLS.flower} items={byKind(decor, 'flower')} castShadow={false} wind={0.6} />
-      <Instances url={MODEL_URLS.fence} items={fences} />
       <Instances url={MODEL_URLS.wall} items={walls} />
       <Instances url={MODEL_URLS.lamp} items={lamps} overrides={LAMP_FIX} />
       <LampBulbs lamps={lamps} />
@@ -208,9 +208,6 @@ export default function Vegetation({ quality = 'high' }) {
         ))}
         {rocks.map((r, i) => (
           <CuboidCollider key={`r${i}`} args={[1.2 * r.scale, 0.85 * r.scale, 1.15 * r.scale]} position={[r.x, r.y + 0.6 * r.scale, r.z]} rotation={[0, r.rot, 0]} />
-        ))}
-        {fences.map((f, i) => (
-          <CuboidCollider key={`f${i}`} args={[0.08, 0.65, 1.32]} position={[f.x, 0.65, f.z]} rotation={[0, f.rot, 0]} />
         ))}
         {walls.map((w, i) => (
           <CuboidCollider key={`w${i}`} args={[1.6 * w.scale, 0.7 * w.scale, 0.55 * w.scale]} position={[w.x, w.y + 0.7 * w.scale, w.z]} rotation={[0, w.rot, 0]} />

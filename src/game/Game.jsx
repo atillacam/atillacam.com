@@ -1,6 +1,6 @@
 import { Suspense, useEffect } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
-import { Physics } from '@react-three/rapier'
+import { Physics, useRapier } from '@react-three/rapier'
 import { useProgress } from '@react-three/drei'
 import * as THREE from 'three'
 import DayNight from './DayNight.jsx'
@@ -36,6 +36,15 @@ import { AutoQuality, FrameDriver } from './Performance.jsx'
 import { bindKeyboard, input, vehicleState } from './input.js'
 import { world } from './time.js'
 import { useStore } from '../store.js'
+
+// Geliştirme sırasında konsoldan fizik dünyasını sorgulamak için
+function PhysicsDebugHandle() {
+  const { world, rapier } = useRapier()
+  useEffect(() => {
+    if (import.meta.env.DEV) window.__portfolio = Object.assign(window.__portfolio ?? {}, { physicsWorld: world, rapier })
+  }, [world, rapier])
+  return null
+}
 
 function DebugHandle() {
   const scene = useThree((s) => s.scene)
@@ -109,6 +118,7 @@ export default function Game() {
           <MiniGolf />
           <Breakables />
           <Vehicle />
+          <PhysicsDebugHandle />
         </Physics>
         <Grass count={high ? 115000 : 28000} />
         <Dust />

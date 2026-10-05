@@ -310,8 +310,9 @@ function Signpost({ position }) {
 // ---------- Emeği geçenler tabelası ----------
 function CreditsSign() {
   const { t } = useT()
+  // Göl yolunun kenarında (yolu kapatmadan)
   return (
-    <group position={[-16, 0, 16.6]}>
+    <group position={[-21, 0, 14]}>
       <RigidBody type="fixed" colliders={false}>
         <CuboidCollider args={[1.3, 0.9, 0.15]} position={[0, 1.4, 0]} />
       </RigidBody>

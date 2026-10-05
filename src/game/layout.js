@@ -63,7 +63,8 @@ export const MAILBOX = { position: [-52, 0, 3], rotation: Math.PI / 2 }
 
 // Yarış: başlangıç kapısı güneyde, saat yönünün tersine (θ artarak) gidilir
 export const RACE = {
-  startAngle: Math.PI / 2,
+  // Kapılar yol girişleriyle (45°'nin katları) çakışmasın diye 11.5° kaydırıldı: direkler yolu kesmez
+  startAngle: Math.PI / 2 - 0.2,
   checkpoints: 8,
 }
 export function ringPoint(angle, radius = RING_RADIUS) {
@@ -88,7 +89,7 @@ export const SPOTS = [
   { id: 'lab', label: 'areaLab', action: 'spotLabAction', position: [0, 0, -95], color: '#2ec4b6' },
   { id: 'bowling', label: 'areaBowling', action: 'spotBowlingAction', position: [93, 0, -6], color: '#ff8a3d' },
   { id: 'lookout', label: 'areaLookout', action: 'spotLookoutAction', position: [78, 0, -78], color: COLORS.violet },
-  { id: 'credits', label: 'spotCredits', action: 'spotCreditsAction', position: [-16, 0, 20], color: '#c9b6ff' },
+  { id: 'credits', label: 'spotCredits', action: 'spotCreditsAction', position: [-21, 0, 18], color: '#c9b6ff' },
   ...SOCIAL_PEDESTALS.map(({ social, position }) => ({
     id: `social:${social.id}`,
     label: social.label,
@@ -136,13 +137,16 @@ export const PATHS = [
 ]
 
 // Sokak lambaları: yolların kenarında ve çevre yolunda
+// Çevre yolu lambaları: iki yarış kapısının tam ortası (kapı açısı + 22.5°)
+const RACE_LAMP_OFFSET = RACE.startAngle + Math.PI / 8
 export const LAMPS = [
   ...[-8, -18].map((z) => [3.6, 0, z]),
   ...[10, 20].map((x) => [x, 0, -3.6]),
   ...[-10, -20].map((x) => [x, 0, 3.6]),
   ...[12, 21, 60].map((z) => [3.6, 0, z]),
-  ...Array.from({ length: 10 }, (_, i) => {
-    const [x, z] = ringPoint((i / 10) * Math.PI * 2 + 0.3, RING_RADIUS - RING_WIDTH / 2 - 1.6)
+  // Çevre yolu lambaları iki yarış kapısının tam ortasında: yol girişlerini ve kapı direklerini kesmez
+  ...Array.from({ length: 8 }, (_, i) => {
+    const [x, z] = ringPoint((i / 8) * Math.PI * 2 + RACE_LAMP_OFFSET, RING_RADIUS - RING_WIDTH / 2 - 1.6)
     return [x, 0, z]
   }),
 ]

@@ -5,6 +5,7 @@ import * as THREE from 'three'
 import { AREAS } from './layout.js'
 import { heightAt } from './terrain.js'
 import { vehicleState } from './input.js'
+import { playgroundFenceRing } from './scatter.js'
 import { useStore } from '../store.js'
 import { playCrumble, playThud } from '../audio.js'
 
@@ -83,6 +84,8 @@ function placements() {
       list.push({ kind: 'fence', x, z, rot: -Math.PI / 4, parts: fenceParts() })
     }
   }
+  // Oyun alanını çevreleyen çit: halkaya teğet, sade iki raylı çit (dikey çıta yok, gövde sayısı az)
+  for (const f of playgroundFenceRing()) list.push({ kind: 'fence', x: f.x, z: f.z, rot: -f.a - Math.PI / 2, parts: fenceParts().slice(0, 4) })
   // Tuğla duvarlar
   const stunt = area('stunt')
   list.push({ kind: 'wall', x: stunt.center[0] - 12, z: stunt.center[2] + 11, rot: 0, parts: wallParts() })
