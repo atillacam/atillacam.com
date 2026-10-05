@@ -85,9 +85,13 @@ function Intro() {
         <LangSwitch />
       </div>
       <div className="intro-card">
-        <div className="monogram" aria-hidden="true">
-          AÇ
-        </div>
+        <img
+          src="/icon-192.png"
+          alt="Atilla Çam - Yazılım Geliştirici"
+          className="intro-avatar"
+          width="64"
+          height="64"
+        />
         <p className="eyebrow">{L(profile.title)}</p>
         <h1>{profile.name}</h1>
         <p className="lead">{L(profile.tagline)}</p>
