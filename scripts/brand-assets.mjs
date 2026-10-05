@@ -1,31 +1,28 @@
 // Paylaşım görseli, uygulama ikonları ve favicon üretir. Çalıştırma: node scripts/brand-assets.mjs
 import fs from 'node:fs'
 import sharp from 'sharp'
+import { logoSvg } from './logo.mjs'
 
-const monogram = (size, radius) => `
-<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 64 64">
-  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3d7bff"/><stop offset="1" stop-color="#8a5cff"/></linearGradient></defs>
-  <rect width="64" height="64" rx="${radius}" fill="url(#g)"/>
-  <text x="32" y="42" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-weight="900" font-size="26" fill="#fff">AÇ</text>
-</svg>`
-
-fs.writeFileSync('public/favicon.svg', monogram(64, 16).trim() + '\n')
-await sharp(Buffer.from(monogram(180, 0))).resize(180, 180).png().toFile('public/apple-touch-icon.png')
-await sharp(Buffer.from(monogram(512, 14))).resize(512, 512).png().toFile('public/icon-512.png')
-await sharp(Buffer.from(monogram(192, 14))).resize(192, 192).png().toFile('public/icon-192.png')
+// Favicon ve uygulama ikonları: elle çizilmiş AÇ monogramı (scripts/logo.mjs)
+fs.writeFileSync('public/favicon.svg', logoSvg({ size: 64, radius: 16 }) + '\n')
+fs.writeFileSync('public/logo.svg', logoSvg({ size: 512, radius: 16 }) + '\n')
+// iOS köşeleri kendisi yuvarlar: tam dolu kare
+await sharp(Buffer.from(logoSvg({ size: 180, bleed: true }))).png().toFile('public/apple-touch-icon.png')
+await sharp(Buffer.from(logoSvg({ size: 192, radius: 14 }))).png().toFile('public/icon-192.png')
+// Maskable: Android şekli kendisi kırpar; glif güvenli alanın içinde
+await sharp(Buffer.from(logoSvg({ size: 512, bleed: true }))).png().toFile('public/icon-512.png')
+const logoData = 'data:image/svg+xml;base64,' + Buffer.from(logoSvg({ size: 96, radius: 16 })).toString('base64')
 
 const og = `
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
   <defs>
     <radialGradient id="a" cx="0.85" cy="0" r="0.9"><stop offset="0" stop-color="#3d7bff" stop-opacity="0.45"/><stop offset="1" stop-color="#0a0e1a" stop-opacity="0"/></radialGradient>
     <radialGradient id="b" cx="0" cy="1" r="0.8"><stop offset="0" stop-color="#8a5cff" stop-opacity="0.3"/><stop offset="1" stop-color="#0a0e1a" stop-opacity="0"/></radialGradient>
-    <linearGradient id="m" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3d7bff"/><stop offset="1" stop-color="#8a5cff"/></linearGradient>
   </defs>
   <rect width="1200" height="630" fill="#0a0e1a"/>
   <rect width="1200" height="630" fill="url(#a)"/>
   <rect width="1200" height="630" fill="url(#b)"/>
-  <rect x="90" y="90" width="96" height="96" rx="26" fill="url(#m)"/>
-  <text x="138" y="152" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-weight="900" font-size="40" fill="#fff">AÇ</text>
+  <image x="90" y="90" width="96" height="96" href="${logoData}"/>
   <text x="90" y="330" font-family="Segoe UI, Arial, sans-serif" font-weight="900" font-size="104" fill="#ffffff" letter-spacing="-3">Atilla Çam</text>
   <text x="94" y="392" font-family="Segoe UI, Arial, sans-serif" font-weight="700" font-size="36" fill="#6aa1ff">Computer Engineer · Bilgisayar Mühendisi</text>
   <text x="94" y="450" font-family="Segoe UI, Arial, sans-serif" font-weight="600" font-size="28" fill="#a2aac0">AI · Backend · Interactive 3D Web — İstanbul</text>

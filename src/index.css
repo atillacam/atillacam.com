@@ -145,6 +145,12 @@ kbd {
   font-size: 0.85rem;
   flex: none;
 }
+.logo {
+  display: block;
+  flex: none;
+  border-radius: 12px;
+  box-shadow: 0 8px 22px -8px var(--primary-glow);
+}
 .intro-avatar {
   display: block;
   margin: 0 auto 6px;

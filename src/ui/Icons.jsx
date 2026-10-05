@@ -1,4 +1,35 @@
+import { useId } from 'react'
 import { siGithub, siInstagram } from 'simple-icons'
+import { GLYPH } from '../../scripts/logo.mjs'
+
+// AÇ logosu: favicon ve uygulama ikonlarıyla aynı vektör çizim (scripts/logo.mjs)
+export function Logo({ size = 38, className = 'logo' }) {
+  const id = useId().replace(/:/g, '')
+  return (
+    <svg className={className} width={size} height={size} viewBox="0 0 64 64" aria-hidden="true">
+      <defs>
+        <linearGradient id={`${id}bg`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#4a86ff" />
+          <stop offset="0.55" stopColor="#5b6cff" />
+          <stop offset="1" stopColor="#8a5cff" />
+        </linearGradient>
+        <linearGradient id={`${id}hi`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#ffffff" stopOpacity="0.22" />
+          <stop offset="0.5" stopColor="#ffffff" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <rect width="64" height="64" rx="16" fill={`url(#${id}bg)`} />
+      <rect width="64" height="64" rx="16" fill={`url(#${id}hi)`} />
+      <rect x="0.75" y="0.75" width="62.5" height="62.5" rx="15.25" fill="none" stroke="#ffffff" strokeOpacity="0.18" strokeWidth="1.5" />
+      <g fill="none" stroke="#ffffff" strokeLinecap="round" strokeLinejoin="round">
+        <path d={GLYPH.a} strokeWidth="6" />
+        <path d={GLYPH.bar} strokeWidth="4.2" />
+        <path d={GLYPH.c} strokeWidth="6" />
+        <path d={GLYPH.cedilla} strokeWidth="2.8" />
+      </g>
+    </svg>
+  )
+}
 
 const LINKEDIN =
   'M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z'

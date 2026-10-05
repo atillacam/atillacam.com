@@ -4,7 +4,7 @@ import { useStore } from '../store.js'
 import { useT } from '../i18n.js'
 import { CreditsContent } from './Sections.jsx'
 import { LangSwitch } from './Overlay.jsx'
-import { BrandIcon, Icon } from './Icons.jsx'
+import { BrandIcon, Icon, Logo } from './Icons.jsx'
 
 const YEAR = new Date().getFullYear()
 const SECTIONS = ['projects', 'about', 'career', 'skills', 'contact']
@@ -70,9 +70,7 @@ function Nav({ webgl }) {
   return (
     <header className={scrolled ? 'classic-nav scrolled' : 'classic-nav'}>
       <a className="brand" href="#top" onClick={() => setOpen(false)}>
-        <span className="monogram small" aria-hidden="true">
-          AÇ
-        </span>
+        <Logo />
         <strong>{profile.name}</strong>
       </a>
       <nav aria-label={t('menu')} className={open ? 'open' : ''}>
@@ -400,9 +398,7 @@ export default function ClassicSite({ webgl }) {
 
       <footer className="classic-footer">
         <div className="footer-brand">
-          <span className="monogram small" aria-hidden="true">
-            AÇ
-          </span>
+          <Logo />
           <div>
             <strong>{profile.name}</strong>
             <small>

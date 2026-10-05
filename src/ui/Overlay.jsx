@@ -6,7 +6,7 @@ import { input, teleport, trigger, vehicleState } from '../game/input.js'
 import { initAudio } from '../audio.js'
 import { useT } from '../i18n.js'
 import { formatTime } from '../format.js'
-import { Icon } from './Icons.jsx'
+import { Icon, Logo } from './Icons.jsx'
 import { CARS, PAINTS } from '../game/cars.js'
 import { explored, FOG, routeState } from '../game/navigation.js'
 import {
@@ -126,9 +126,7 @@ function Hud() {
   return (
     <>
       <header className="hud-brand">
-        <span className="monogram small" aria-hidden="true">
-          AÇ
-        </span>
+        <Logo />
         <span>
           <strong>{profile.name}</strong>
           <small>{L(profile.title)}</small>
