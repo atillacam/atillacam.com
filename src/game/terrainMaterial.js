@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { fbm } from './terrain.js'
+import { world } from './time.js'
 
 // Kod içinde üretilen detay dokuları: çimen dokusu ve kaya dokusu (gri tonlu, tekrarlanabilir)
 function noiseTexture(size, scale, octaves, streak = 0) {
@@ -38,16 +39,25 @@ export function createTerrainMaterial() {
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uGrass = { value: grass }
     shader.uniforms.uRock = { value: rock }
+    shader.uniforms.uSeason = world.uniforms.uSeason
+    shader.uniforms.uSnow = world.uniforms.uSnow
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vTerrainWorld;\nvarying vec3 vTerrainNormal;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvTerrainWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvTerrainNormal = normal;')
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform sampler2D uGrass;\nuniform sampler2D uRock;\nvarying vec3 vTerrainWorld;\nvarying vec3 vTerrainNormal;')
+      .replace('#include <common>', '#include <common>\nuniform sampler2D uGrass;\nuniform sampler2D uRock;\nuniform vec4 uSeason;\nuniform float uSnow;\nvarying vec3 vTerrainWorld;\nvarying vec3 vTerrainNormal;')
       .replace(
         '#include <color_fragment>',
         `#include <color_fragment>
         {
           vec2 p = vTerrainWorld.xz;
+          // Mevsim: yalnızca çimenli (yeşil) zemin renk değiştirir; yol, kum ve toprak aynı kalır
+          vec3 c0 = diffuseColor.rgb;
+          float green = smoothstep(0.0, 0.06, c0.g - max(c0.r, c0.b));
+          float lum0 = dot(c0, vec3(0.333));
+          vec3 seasonal = c0 * vec3(0.95, 1.08, 0.92) * uSeason.x + c0 * uSeason.y
+            + c0 * vec3(1.2, 0.96, 0.6) * uSeason.z + mix(c0, vec3(lum0), 0.45) * vec3(0.92, 0.96, 1.02) * uSeason.w;
+          diffuseColor.rgb = mix(c0, seasonal, green);
           float fine = texture2D(uGrass, p * 0.32).r;
           float broad = texture2D(uGrass, p * 0.045).r;
           diffuseColor.rgb *= mix(0.8, 1.14, fine) * mix(0.88, 1.1, broad);
@@ -56,9 +66,15 @@ export function createTerrainMaterial() {
           float r = texture2D(uRock, p * 0.12).r;
           vec3 rockColor = vec3(0.46, 0.44, 0.40) * (0.75 + r * 0.55);
           diffuseColor.rgb = mix(diffuseColor.rgb, rockColor, smoothstep(0.22, 0.42, slope + (r - 0.5) * 0.12));
+          // Kar örtüsü: düz yerlerde yoğun, dik yamaçta ve yollarda ince; kenarları gürültülü
+          float flatness = 1.0 - smoothstep(0.16, 0.4, slope);
+          float patchy = texture2D(uGrass, p * 0.021).r;
+          float snow = smoothstep(0.0, 0.22, uSnow * 1.3 - (1.0 - flatness) * 0.9 - patchy * 0.35);
+          snow *= mix(0.55, 1.0, green);
+          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.9, 0.93, 0.97) * (0.93 + fine * 0.08), snow);
         }`,
       )
   }
-  material.customProgramCacheKey = () => 'terrain-detail'
+  material.customProgramCacheKey = () => 'terrain-detail-season'
   return material
 }

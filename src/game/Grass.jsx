@@ -100,6 +100,16 @@ const _s = new THREE.Vector3()
 const _up = new THREE.Vector3(0, 1, 0)
 const DAY_LIGHT = new THREE.Color('#ffffff')
 const NIGHT_LIGHT = new THREE.Color('#6a7cb0')
+// Mevsim renkleri: [dip, uç] — ilkbahar, yaz, sonbahar, kış
+const SEASON_COLORS = [
+  ['#2f5c27', '#9fcb5c'],
+  ['#2f5627', '#87a957'],
+  ['#4b4a22', '#bf9c45'],
+  ['#3e4a3e', '#b9c4b6'],
+].map(([b, t]) => [new THREE.Color(b), new THREE.Color(t)])
+const SNOW = new THREE.Color('#eef3f8')
+const _base = new THREE.Color()
+const _tip = new THREE.Color()
 
 function GrassChunk({ blades, geometry, material }) {
   const ref = useRef()
@@ -170,6 +180,21 @@ export default function Grass({ count = 60000 }) {
     u.uTime.value += Math.min(delta, 0.1)
     u.uCar.value.set(vehicleState.position.x, vehicleState.position.y - 0.6, vehicleState.position.z)
     u.uLight.value.copy(DAY_LIGHT).lerp(NIGHT_LIGHT, world.night)
+    const w = world.uniforms.uSeason.value
+    const weights = [w.x, w.y, w.z, w.w]
+    _base.setRGB(0, 0, 0)
+    _tip.setRGB(0, 0, 0)
+    SEASON_COLORS.forEach(([b, t], i) => {
+      _base.r += b.r * weights[i]
+      _base.g += b.g * weights[i]
+      _base.b += b.b * weights[i]
+      _tip.r += t.r * weights[i]
+      _tip.g += t.g * weights[i]
+      _tip.b += t.b * weights[i]
+    })
+    const snow = world.snowCover
+    u.uBase.value.copy(_base).lerp(SNOW, snow * 0.55)
+    u.uTip.value.copy(_tip).lerp(SNOW, snow * 0.9)
   })
 
   return chunks.map((blades, i) => <GrassChunk key={i} blades={blades} geometry={geometry} material={material} />)

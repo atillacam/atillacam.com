@@ -78,7 +78,8 @@ function Birds() {
 
   useFrame((state, delta) => {
     material.uniforms.uTime.value += delta
-    material.uniforms.uFade.value = 1 - world.night * 0.85 - world.wet * 0.6
+    const sw = world.uniforms.uSeason.value
+    material.uniforms.uFade.value = (1 - world.night * 0.85 - world.wet * 0.6) * (1 - sw.w * 0.75)
     const t = state.clock.elapsedTime
     let i = 0
     for (const f of flocks) {
@@ -120,7 +121,9 @@ function Butterflies() {
 
   useFrame((state, delta) => {
     const t = state.clock.elapsedTime
-    const fade = Math.max(1 - world.night * 1.2 - world.wet, 0)
+    const sw = world.uniforms.uSeason.value
+    // Kelebekler ilkbahar ve yazın; sonbaharda az, kışın hiç
+    const fade = Math.max(1 - world.night * 1.2 - world.wet, 0) * (sw.x + sw.y + sw.z * 0.25)
     materials.forEach((m) => {
       m.uniforms.uTime.value += delta
       m.uniforms.uFade.value = fade
@@ -182,7 +185,9 @@ function Leaves() {
     }
     data.attributes.position.needsUpdate = true
     p.position.set(camera.position.x, Math.max(vehicleGroundY(camera), 0), camera.position.z)
-    p.material.opacity = Math.max(0.85 - world.night * 0.7 - world.snowy, 0)
+    const sw = world.uniforms.uSeason.value
+    // Süzülen yapraklar en çok sonbaharda; kışın yok
+    p.material.opacity = Math.max(0.85 - world.night * 0.7 - world.snowy, 0) * (0.3 + sw.z * 0.7) * (1 - sw.w)
   })
   return (
     <points ref={points} geometry={data} frustumCulled={false}>

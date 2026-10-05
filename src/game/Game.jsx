@@ -20,6 +20,7 @@ import Dust from './Dust.jsx'
 import Skids from './Skids.jsx'
 import Atmosphere from './Atmosphere.jsx'
 import Weather from './Weather.jsx'
+import Seasons from './Seasons.jsx'
 import RouteLine from './RouteLine.jsx'
 import Life from './Life.jsx'
 import Whispers from './Whispers.jsx'
@@ -103,6 +104,7 @@ export default function Game() {
         <Dust />
         <Skids />
         <Atmosphere />
+        <Seasons />
         <Weather />
         <RouteLine />
         <Life />

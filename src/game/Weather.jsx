@@ -17,9 +17,12 @@ function seeded(seed) {
   return () => ((s = (s * 16807) % 2147483647) - 1) / 2147483646
 }
 
-function pickWeather() {
+// Otomatik hava mevsime göre seçilir: yazın kar yok, kışın yağmur nadir
+const ODDS = { spring: [0.6, 0.4, 0], summer: [0.78, 0.22, 0], autumn: [0.5, 0.45, 0.05], winter: [0.5, 0.05, 0.45] }
+function pickWeather(season) {
+  const [clear, rain] = ODDS[season] ?? ODDS.summer
   const r = Math.random()
-  return r < 0.58 ? 'clear' : r < 0.84 ? 'rain' : 'snow'
+  return r < clear ? 'clear' : r < clear + rain ? 'rain' : 'snow'
 }
 
 function Rain() {
@@ -115,7 +118,7 @@ export default function Weather() {
     // Otomatik modda belirli aralıklarla hava değişir
     s.next -= dt
     if (s.next <= 0) {
-      s.auto = pickWeather()
+      s.auto = pickWeather(store.season)
       s.next = s.auto === 'clear' ? 150 + Math.random() * 120 : 70 + Math.random() * 60
     }
     const current = store.weatherMode === 'auto' ? s.auto : store.weatherMode

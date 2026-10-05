@@ -745,6 +745,7 @@ function MenuPanel() {
   const headlights = useStore((s) => s.headlights)
   const cameraMode = useStore((s) => s.cameraMode)
   const weatherMode = useStore((s) => s.weatherMode)
+  const seasonMode = useStore((s) => s.seasonMode)
   const music = useStore((s) => s.music)
   const fpsCap = useStore((s) => s.fpsCap)
   if (!open) return null
@@ -800,6 +801,16 @@ function MenuPanel() {
           {['follow', 'chase'].map((c) => (
             <button key={c} className={cameraMode === c ? 'active' : ''} onClick={() => useStore.setState({ cameraMode: c })} aria-pressed={cameraMode === c}>
               {t(c === 'follow' ? 'camFollow' : 'camChase')}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="menu-row">
+        <span>{t('season')}</span>
+        <div className="lang-switch">
+          {['auto', 'spring', 'summer', 'autumn', 'winter'].map((m) => (
+            <button key={m} className={seasonMode === m ? 'active' : ''} onClick={() => useStore.getState().setSeasonMode(m)} aria-pressed={seasonMode === m} title={t(m === 'auto' ? 'wAuto' : 'season_' + m)}>
+              {m === 'auto' ? t('wAuto') : { spring: '🌸', summer: '☀️', autumn: '🍂', winter: '❄️' }[m]}
             </button>
           ))}
         </div>

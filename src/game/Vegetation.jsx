@@ -31,11 +31,15 @@ function Instances({ url, items, castShadow = true, receiveShadow = true, wind =
         Object.entries(fix).forEach(([k, val]) => (k === 'color' ? material.color.set(val) : (material[k] = val)))
       }
       material = material.clone()
+      // Adı yaprak/çalı/çimen olan malzemeler doğrudan mevsimle renk değiştirir
+      const foliage = /leaf|bush|grass/i.test(material.name)
       material.onBeforeCompile = (shader) => {
         shader.uniforms.uTime = world.uniforms.uTime
         shader.uniforms.uCar = world.uniforms.uCar
+        shader.uniforms.uSeason = world.uniforms.uSeason
+        shader.uniforms.uSnow = world.uniforms.uSnow
         shader.vertexShader = shader.vertexShader
-          .replace('#include <common>', '#include <common>\nuniform float uTime;\nvarying vec3 vSeeWorld;')
+          .replace('#include <common>', '#include <common>\nuniform float uTime;\nvarying vec3 vSeeWorld;\nvarying vec3 vSeasonN;\nvarying float vSeasonSeed;')
           .replace(
             '#include <begin_vertex>',
             `#include <begin_vertex>
@@ -54,13 +58,39 @@ function Instances({ url, items, castShadow = true, receiveShadow = true, wind =
             }
             #ifdef USE_INSTANCING
               vSeeWorld = (modelMatrix * instanceMatrix * vec4(transformed, 1.0)).xyz;
+              vSeasonN = mat3(modelMatrix * instanceMatrix) * objectNormal;
+              vSeasonSeed = fract(sin(instanceMatrix[3].x * 12.9898 + instanceMatrix[3].z * 78.233) * 43758.5453);
             #else
               vSeeWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;
+              vSeasonN = mat3(modelMatrix) * objectNormal;
+              vSeasonSeed = 0.5;
             #endif`,
           )
         // Kamera ile araç arasındaki görüş hattına giren yüzeyler desenli şekilde şeffaflaşır (gölgeler etkilenmez)
         shader.fragmentShader = shader.fragmentShader
-          .replace('#include <common>', '#include <common>\nuniform vec3 uCar;\nvarying vec3 vSeeWorld;')
+          .replace('#include <common>', '#include <common>\nuniform vec3 uCar;\nuniform vec4 uSeason;\nuniform float uSnow;\nvarying vec3 vSeeWorld;\nvarying vec3 vSeasonN;\nvarying float vSeasonSeed;')
+          .replace('#include <color_fragment>', `#include <color_fragment>
+          {
+            // Yeşil yüzeyler (yaprak, çimen) mevsime göre renk değiştirir; gövde, kaya, çit etkilenmez
+            vec3 c = diffuseColor.rgb;
+            float lum = dot(c, vec3(0.299, 0.587, 0.114));
+            // Tek dokulu ağaçlarda: sarımsı yeşiller dahil yeşil tonlar; kahverengi gövde, gri kaya dışarıda
+            float green = ${foliage ? '1.0' : 'smoothstep(0.02, 0.1, c.g - c.b) * smoothstep(-0.12, 0.0, c.g - c.r)'};
+            // İlkbahar: taze yeşil ve pembe-beyaz çiçek benekleri
+            float bloom = step(0.84, fract(sin(dot(floor(vSeeWorld * 2.4), vec3(12.9898, 78.233, 37.719))) * 43758.5453));
+            vec3 spring = mix(c * vec3(0.95, 1.14, 0.9), mix(vec3(1.0, 0.74, 0.84), vec3(1.0), vSeasonSeed) * (0.55 + lum), bloom * 0.8);
+            // Sonbahar: ağaç başına kızıl–turuncu–sarı ton
+            vec3 autumn = mix(vec3(0.82, 0.3, 0.07), vec3(0.96, 0.7, 0.16), vSeasonSeed) * (0.5 + lum * 1.7);
+            // Kış: soluk, gri-mavi
+            vec3 winter = mix(vec3(lum), c, 0.3) * vec3(0.88, 0.93, 1.0);
+            vec3 seasonal = spring * uSeason.x + c * uSeason.y + autumn * uSeason.z + winter * uSeason.w;
+            c = mix(c, seasonal, green);
+            c = mix(c, vec3(lum), uSeason.w * 0.25 * (1.0 - green));
+            // Kar: yukarı bakan yüzeylerde birikir
+            float up = smoothstep(0.3, 0.85, normalize(vSeasonN).y);
+            c = mix(c, vec3(0.93, 0.96, 1.0), up * uSnow * 0.9);
+            diffuseColor.rgb = c;
+          }`)
           .replace(
             '#include <clipping_planes_fragment>',
             `#include <clipping_planes_fragment>
@@ -81,7 +111,7 @@ function Instances({ url, items, castShadow = true, receiveShadow = true, wind =
             }`,
           )
       }
-      material.customProgramCacheKey = () => `veg-${wind}`
+      material.customProgramCacheKey = () => `veg-${wind}-season-${foliage}`
       list.push({ geometry, material })
     })
     return list

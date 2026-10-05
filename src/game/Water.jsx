@@ -22,6 +22,7 @@ const fragmentShader = /* glsl */ `
   uniform vec3 uSunDir;
   uniform float uNight;
   uniform vec2 uCenter;
+  uniform float uIce;
   uniform float uRadius;
   varying vec3 vWorld;
 
@@ -60,6 +61,10 @@ const fragmentShader = /* glsl */ `
     float ang = atan(vWorld.z - uCenter.y, vWorld.x - uCenter.x);
     float edge = smoothstep(0.84, 0.97, d + sin(ang * 9.0 + uTime * 1.5) * 0.015);
     col = mix(col, vec3(0.93, 0.96, 0.98), edge * 0.6);
+    // Kış: kıyıdan içeri doğru dalgalı kenarlı buz tabakası
+    float ice = smoothstep(0.0, 0.08, d + sin(ang * 5.0 + 1.3) * 0.05 - (1.0 - uIce * 0.75));
+    vec3 iceCol = mix(vec3(0.78, 0.88, 0.95), vec3(0.95, 0.98, 1.0), fresnel) + glint * 0.6;
+    col = mix(col, iceCol, ice * uIce);
     col *= mix(1.0, 0.32, uNight);
     gl_FragColor = vec4(col, mix(0.86, 0.96, 1.0 - d));
     #include <colorspace_fragment>
@@ -77,12 +82,14 @@ export default function Water() {
       uNight: { value: 0 },
       uCenter: { value: new THREE.Vector2(LAKE.x, LAKE.z) },
       uRadius: { value: LAKE.radius + 4 },
+      uIce: { value: 0 },
     }),
     [],
   )
   useFrame((_, delta) => {
     uniforms.uTime.value += delta
     uniforms.uNight.value = world.night
+    uniforms.uIce.value = world.uniforms.uSeason.value.w
     uniforms.uSky.value.copy(world.skyHorizon)
     uniforms.uSunDir.value.copy(world.sunDir)
   })

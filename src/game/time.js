@@ -13,8 +13,36 @@ export const world = {
   sunDir: new THREE.Vector3(0, 1, 0),
   skyTop: new THREE.Color(),
   skyHorizon: new THREE.Color(),
-  // Ortak shader değerleri: rüzgâr saati ve aracın konumu (görüş hattı şeffaflığı için)
-  uniforms: { uTime: { value: 0 }, uCar: { value: new THREE.Vector3() } },
+  // Mevsim: 0 ilkbahar, 1 yaz, 2 sonbahar, 3 kış (ondalıklı değer = iki mevsim arası geçiş)
+  season: seasonFromDate(new Date()),
+  snowCover: 0, // zemindeki kar örtüsü 0..1
+  // Ortak shader değerleri: rüzgâr saati, aracın konumu (görüş hattı şeffaflığı için),
+  // mevsim ağırlıkları (x ilkbahar, y yaz, z sonbahar, w kış) ve kar örtüsü
+  uniforms: {
+    uTime: { value: 0 },
+    uCar: { value: new THREE.Vector3() },
+    uSeason: { value: new THREE.Vector4(0, 1, 0, 0) },
+    uSnow: { value: 0 },
+  },
+}
+
+export const SEASONS = ['spring', 'summer', 'autumn', 'winter']
+
+// Gerçek takvimden başlangıç mevsimi (kuzey yarımküre): Mart–Mayıs ilkbahar, Haziran–Ağustos yaz …
+export function seasonFromDate(date) {
+  return Math.floor(((date.getMonth() + 10) % 12) / 3)
+}
+
+// Mevsim değerinden dört ağırlık: komşu iki mevsim arasında yumuşak geçiş, toplam her zaman 1
+export function seasonWeights(season, out) {
+  const w = [0, 0, 0, 0]
+  const base = Math.floor(season) % 4
+  const k = season - Math.floor(season)
+  // Mevsimin büyük kısmı sabit kalır, sondaki %25'lik dilimde bir sonrakine geçer
+  const t = THREE.MathUtils.smoothstep(k, 0.75, 1)
+  w[base] = 1 - t
+  w[(base + 1) % 4] += t
+  return out.set(w[0], w[1], w[2], w[3])
 }
 
 // Gökyüzü renk anahtarları (zaman → zenit, ufuk)

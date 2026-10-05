@@ -33,6 +33,7 @@ export const ACHIEVEMENTS = [
   { id: 'summit', title: { tr: 'Zirve', en: 'Summit' }, text: { tr: 'Gözlem tepesine çık.', en: 'Reach the lookout hill.' } },
   { id: 'garage', title: { tr: 'Garaj', en: 'Garage' }, text: { tr: 'Aracını ya da rengini değiştir.', en: 'Change your car or its colour.' } },
   { id: 'whisper', title: { tr: 'Fısıltı', en: 'Whisperer' }, text: { tr: 'Dünyaya bir fısıltı bırak.', en: 'Leave a whisper in the world.' } },
+  { id: 'seasons', title: { tr: 'Dört mevsim', en: 'Four seasons' }, text: { tr: 'Dört mevsimi de gör.', en: 'See all four seasons.' }, goal: 4 },
   { id: 'road', title: { tr: 'Uzun yol', en: 'Road trip' }, text: { tr: '2 km yol yap.', en: 'Drive 2 km.' }, goal: 2000 },
 ]
 
@@ -113,6 +114,8 @@ export const useStore = create((set, get) => ({
   bowlingReset: 0, // değişince lobutlar yeniden dizilir
   weatherMode: 'auto', // 'auto' | 'clear' | 'rain' | 'snow'
   weather: 'clear', // şu anki hava
+  seasonMode: 'auto', // 'auto' | 'spring' | 'summer' | 'autumn' | 'winter'
+  season: 'summer', // şu an görünen mevsim
   toasts: [],
   whispers: [], // ziyaretçi fısıltıları { id, name, message, x, z }
   race: idleRace,
@@ -246,6 +249,11 @@ export const useStore = create((set, get) => ({
     get().unlock('konami')
   },
   setWeatherMode: (weatherMode) => set({ weatherMode }),
+  setSeasonMode: (seasonMode) => set({ seasonMode }),
+  setSeason: (season) => {
+    set({ season })
+    if (get().started) get().addToSet('seasons', season)
+  },
   setWhispers: (rows) =>
     set((s) => {
       // Sunucudan gelen listeye, henüz listede olmayan kendi yerel fısıltılarımızı ekle
