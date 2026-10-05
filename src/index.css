@@ -1317,6 +1317,60 @@ kbd {
   margin: 6px 0 2px;
 }
 
+/* Helikopter */
+.heli-button {
+  color: #7ad7ff;
+}
+.heli-button.active {
+  color: #0a0e1a;
+  background: #7ad7ff;
+  border-color: #7ad7ff;
+}
+.heli-button:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+.heli-hud {
+  position: fixed;
+  left: 50%;
+  top: 74px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: calc(100% - 32px);
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(14px);
+  font-size: 0.85rem;
+  color: var(--muted);
+  z-index: 6;
+}
+.heli-alt {
+  display: grid;
+  line-height: 1.1;
+}
+.heli-alt span {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.heli-alt strong {
+  color: #7ad7ff;
+  font-size: 1.25rem;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 640px) {
+  .heli-hud p {
+    display: none;
+  }
+  .heli-button span:last-child {
+    display: none;
+  }
+}
+
 /* Fısıltılar */
 .whisper-button {
   display: inline-flex;

@@ -9,6 +9,7 @@ let reverb = null
 let engine = null
 let tires = null
 let ambience = null
+let rotor = null
 let noiseBuffer = null
 let musicOn = true
 let muted = false
@@ -156,6 +157,30 @@ export function initAudio() {
   pulse.start()
   ambience = { windFilter, windGain, rainGain, cricketGain, wet: 0 }
 
+  // Helikopter rotoru: alçak geçiren gürültü, ~13 Hz'lik "pat-pat" ile genliği dalgalanır + bas gövde sesi
+  const rotorFilter = ctx.createBiquadFilter()
+  rotorFilter.type = 'lowpass'
+  rotorFilter.frequency.value = 260
+  const chop = ctx.createGain()
+  chop.gain.value = 0.5
+  const chopLfo = ctx.createOscillator()
+  chopLfo.type = 'sawtooth'
+  chopLfo.frequency.value = 13
+  const chopDepth = ctx.createGain()
+  chopDepth.gain.value = 0.5
+  chopLfo.connect(chopDepth).connect(chop.gain)
+  const rotorGain = ctx.createGain()
+  rotorGain.gain.value = 0
+  loop(makeNoise(3, true)).connect(rotorFilter).connect(chop).connect(rotorGain).connect(sfx)
+  const thump = ctx.createOscillator()
+  thump.frequency.value = 52
+  const thumpGain = ctx.createGain()
+  thumpGain.gain.value = 0.35
+  thump.connect(thumpGain).connect(chop)
+  chopLfo.start()
+  thump.start()
+  rotor = { gain: rotorGain, lfo: chopLfo, filter: rotorFilter }
+
   setInterval(tick, 250)
 }
 
@@ -198,6 +223,15 @@ export function updateEngine(speed, throttle, slip = 0, grounded = true) {
   const screech = grounded && v > 4 ? Math.min(Math.max((slip - 3.5) / 6, 0), 1) : 0
   tires.gain.gain.setTargetAtTime(screech * 0.07, t, 0.08)
   tires.filter.frequency.setTargetAtTime(1300 + screech * 600, t, 0.1)
+}
+
+// Helikopter rotor sesi: on = helikopter modunda mı, power: 0..1
+export function updateHeli(on, power) {
+  if (!rotor) return
+  const t = ctx.currentTime
+  rotor.gain.gain.setTargetAtTime(on ? 0.05 + power * 0.06 : 0, t, on ? 0.4 : 0.25)
+  rotor.lfo.frequency.setTargetAtTime(11 + power * 5, t, 0.3)
+  rotor.filter.frequency.setTargetAtTime(220 + power * 140, t, 0.3)
 }
 
 // night, wet: 0..1, speed: m/s

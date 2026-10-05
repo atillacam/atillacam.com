@@ -16,6 +16,7 @@ Atilla Çam'ın kişisel web sitesi. Ziyaretçiler fizik tabanlı bir arabayla a
 - **Dış bölgeler:** futbol sahası (gol + konfeti), drift pisti (puan ve rekor), skor sayan bowling salonu, arazi parkuru, sinematik manzaralı gözlem tepesi, stunt parkı (rampalar, hızlandırıcı, ateş ve neon halkaları, takla puanı)
 - **Mini golf:** arabayla dev topu deliğe sokma; dönen yel değirmeni, tamponlar, par 3 ve en iyi skor
 - **Hayalet araba:** yarışta en iyi turunun yarı saydam kopyasıyla yarışırsın
+- **Gezinti helikopteri (V):** haritanın üzerinde serbest uçuş; keşif sisi uçarken de açılır, inince araba helikopterin altına gelir
 - **Kırılabilir dünya:** banklar, çitler ve tuğla duvarlar çarpınca parçalanır, bir süre sonra yeniden kurulur
 - **Hava durumu:** otomatik döngüde yağmur (şimşek ve gök gürültüsü) ve kar; menüden elle seçilebilir
 - **Mevsimler:** gerçek takvimden başlayan döngü; ilkbahar çiçekleri, sonbahar yaprakları, kışın kar örtüsü ve buz tutan göl
@@ -24,7 +25,7 @@ Atilla Çam'ın kişisel web sitesi. Ziyaretçiler fizik tabanlı bir arabayla a
 - **Performans koruması:** FPS sınırı (30/60/sınırsız), takılınca otomatik kalite düşürme, pencere açıkken 24 FPS
 - **Patlayan TNT kasaları:** zincirleme patlama, alev topu ve duman
 - **Kendini düzeltme:** yan yatan, ters dönen ya da takılan araç kendiliğinden doğrulur
-- **Oyun:** kontrol noktalı zamanlı yarış, yerel + dünya skor tablosu, 14 veri çekirdeği, 33 başarım, bowling, rampa
+- **Oyun:** kontrol noktalı zamanlı yarış, yerel + dünya skor tablosu, 14 veri çekirdeği, 34 başarım, bowling, rampa
 - **Navigasyon:** yol ağı üzerinde GPS rotası (yerde akan ok şeridi + yön oku), keşfedildikçe açılan harita sisi
 - **Laboratuvar ve Kariyer Yolu:** canlı shader / Lorenz çekicisi / fraktal deneyleri; zaman çizelgesi panoları
 - **Sürprizler:** arabayla devrilen mühendis heykeli, Konami kodu (↑↑↓↓←→←→BA) ile gökkuşağı boya

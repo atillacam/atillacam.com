@@ -27,6 +27,7 @@ import Ghost from './Ghost.jsx'
 import Stunt from './Stunt.jsx'
 import MiniGolf from './MiniGolf.jsx'
 import Breakables from './Breakables.jsx'
+import Helicopter from './Helicopter.jsx'
 import RouteLine from './RouteLine.jsx'
 import Life from './Life.jsx'
 import Whispers from './Whispers.jsx'
@@ -125,6 +126,7 @@ export default function Game() {
         <Skids />
         <Ripples />
         <Ghost />
+        <Helicopter />
         <Atmosphere />
         <Seasons />
         <Weather />

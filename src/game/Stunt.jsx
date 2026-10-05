@@ -176,6 +176,11 @@ function StuntScorer() {
     const dt = Math.min(delta, 0.1)
     const st = s.current
     const store = useStore.getState()
+    // Helikopterle parkın üstünden uçmak atlayış sayılmaz
+    if (store.mode !== 'car') {
+      st.flying = false
+      return
+    }
     const p = vehicleState.position
     const inside = Math.hypot(p.x - CX, p.z - CZ) < A.radius + 10
     const height = p.y - heightAt(p.x, p.z)

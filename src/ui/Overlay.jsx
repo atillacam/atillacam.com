@@ -159,6 +159,7 @@ function Hud() {
           <Icon name="cube" size={18} />
           {cores}/{COLLECTIBLES.length}
         </div>
+        <HeliButton />
         <button className="whisper-button" onClick={() => useStore.getState().openModal({ type: 'whisper' })} title={`${t('whisperTitle')} (T)`}>
           <Icon name="whisper" size={18} />
           <span>{t('whisper')}</span>
@@ -174,7 +175,8 @@ function Prompt() {
   const spot = useStore((s) => s.spot)
   const modal = useStore((s) => s.modal)
   const interact = useStore((s) => s.interact)
-  if (!spot || modal) return null
+  const mode = useStore((s) => s.mode)
+  if (!spot || modal || mode !== 'car') return null
   return (
     <button className="prompt" onClick={interact}>
       <kbd>Enter</kbd>
@@ -225,6 +227,53 @@ function RaceHud() {
   )
 }
 
+// Helikopter düğmesi: binmek / inmek (V)
+function HeliButton() {
+  const { t } = useT()
+  const mode = useStore((s) => s.mode)
+  const racing = useStore((s) => s.race.active || s.race.countdown > 0)
+  if (racing) return null
+  return (
+    <button
+      className={mode === 'car' ? 'whisper-button heli-button' : 'whisper-button heli-button active'}
+      onClick={() => useStore.getState().toggleHeli()}
+      disabled={mode === 'landing'}
+      title={`${mode === 'car' ? t('heli') : t('heliLand')} (V)`}
+      aria-pressed={mode !== 'car'}
+    >
+      <span aria-hidden="true">🚁</span>
+      <span>{mode === 'car' ? t('heli') : mode === 'landing' ? t('heliLanding') : t('heliLand')}</span>
+    </button>
+  )
+}
+
+// Helikopterdeyken kontrol ipucu ve irtifa
+function HeliHud() {
+  const { t } = useT()
+  const mode = useStore((s) => s.mode)
+  const alt = useRef()
+  useEffect(() => {
+    if (mode === 'car') return
+    let frame
+    const loop = () => {
+      if (alt.current) alt.current.textContent = Math.max(0, Math.round(vehicleState.altitude)) + ' m'
+      frame = requestAnimationFrame(loop)
+    }
+    loop()
+    return () => cancelAnimationFrame(frame)
+  }, [mode])
+  if (mode === 'car') return null
+  return (
+    <div className="heli-hud" role="status">
+      <div className="heli-alt">
+        <span>{t('heliAlt')}</span>
+        <strong ref={alt}>0 m</strong>
+      </div>
+      <p>{t('heliHint')}</p>
+    </div>
+  )
+}
+
 // Hız göstergesi, canlı drift puanı ve futbol sahasında gol sayacı
 function GameHud() {
   const { t } = useT()
@@ -266,6 +315,7 @@ function GameHud() {
   }, [])
   return (
     <>
+      <HeliHud />
       <div className="speedo" aria-hidden="true">
         <strong ref={speed}>0</strong>
         <span>km/h</span>

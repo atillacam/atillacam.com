@@ -39,6 +39,7 @@ export const ACHIEVEMENTS = [
   { id: 'golfer', title: { tr: 'Golfçü', en: 'Golfer' }, text: { tr: 'Mini golfte topu deliğe sok.', en: 'Sink the ball in mini golf.' } },
   { id: 'holeInOne', title: { tr: 'Tek vuruş', en: 'Hole in one' }, text: { tr: 'Mini golfte tek vuruşta deliğe sok.', en: 'Get a hole in one in mini golf.' } },
   { id: 'wrecker', title: { tr: 'Yıkım ekibi', en: 'Wrecking crew' }, text: { tr: '15 bank, çit ya da duvarı parçala.', en: 'Smash 15 benches, fences or walls.' }, goal: 15 },
+  { id: 'pilot', title: { tr: 'Pilot', en: 'Pilot' }, text: { tr: 'Helikopterle dünyanın üzerinde uç.', en: 'Fly over the world by helicopter.' } },
   { id: 'road', title: { tr: 'Uzun yol', en: 'Road trip' }, text: { tr: '2 km yol yap.', en: 'Drive 2 km.' }, goal: 2000 },
 ]
 
@@ -181,8 +182,9 @@ export const useStore = create((set, get) => ({
   },
 
   interact: () => {
-    const { spot, modal, openModal, race } = get()
-    if (modal || !spot) return
+    const { spot, modal, openModal, race, mode } = get()
+    // Helikopterdeyken park hâlindeki arabanın durduğu noktayla etkileşim olmaz
+    if (modal || !spot || mode !== 'car') return
     if (spot.id.startsWith('project:')) openModal({ type: 'project', id: spot.id.slice(8) })
     else if (spot.id.startsWith('social:')) {
       const social = profile.socials.find((s) => `social:${s.id}` === spot.id)
@@ -199,6 +201,7 @@ export const useStore = create((set, get) => ({
 
   // area: son girilen bölge (harita, keşif); zone: şu an içinde olunan bölge (oyun göstergeleri)
   zone: null,
+  mode: 'car', // 'car' | 'heli' | 'landing'
   enterArea: (id) => {
     set({ area: id, zone: id })
     get().addToSet('explorer', id)
@@ -208,7 +211,18 @@ export const useStore = create((set, get) => ({
 
   // ---------- Yarış ----------
   // requestRace: aracı başlangıca ışınlatır (Race bileşeni dinler) ve geri sayımı başlatır
-  requestRace: () => set({ race: { ...idleRace, countdown: 3, requested: Date.now() } }),
+  // Yarış her zaman arabayla: helikopterdeyse araca geçilir
+  requestRace: () => set({ mode: 'car', race: { ...idleRace, countdown: 3, requested: Date.now() } }),
+  setMode: (mode) => set({ mode }),
+  // V tuşu / düğme: arabadan helikoptere geç ya da helikopterle in
+  toggleHeli: () => {
+    const { mode, started, race } = get()
+    if (!started || race.active || race.countdown) return
+    if (mode === 'car') {
+      set({ mode: 'heli' })
+      get().unlock('pilot')
+    } else if (mode === 'heli') set({ mode: 'landing' })
+  },
   setCountdown: (countdown) => set((s) => ({ race: { ...s.race, countdown } })),
   beginRace: () => set((s) => ({ race: { ...s.race, countdown: 0, active: true, start: performance.now(), next: 1 } })),
   passCheckpoint: (index) => set((s) => ({ race: { ...s.race, next: index + 1 } })),

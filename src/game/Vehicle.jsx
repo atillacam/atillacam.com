@@ -227,7 +227,7 @@ export default function Vehicle() {
     const rb = body.current
     if (!vehicle || !rb) return
     const store = useStore.getState()
-    const active = store.started && !store.modal && !store.race.countdown
+    const active = store.started && !store.modal && !store.race.countdown && store.mode === 'car'
 
     // Klavye + dokunmatik + gamepad birleşimi
     const pad = pollGamepad()
@@ -328,7 +328,9 @@ export default function Vehicle() {
       input.events.clear()
     }
     if (vehicleState.teleport) {
-      respawn(vehicleState.teleport.position, vehicleState.teleport.yaw)
+      // Helikopterdeyken haritadan ışınlanma helikopteri taşır (araba park yerinde kalır)
+      if (store.mode === 'heli') vehicleState.heliTeleport = vehicleState.teleport
+      else respawn(vehicleState.teleport.position, vehicleState.teleport.yaw)
       vehicleState.teleport = null
     }
   })
@@ -355,6 +357,13 @@ export default function Vehicle() {
         group.position.set(WHEELS[2].position.x, -s, 0)
         group.children[0].rotation.z = vehicle.wheelRotation(2) ?? 0
       }
+    }
+
+    // Helikopter modunda araba park hâlinde: kamera, ses ve canlı durum helikopterde
+    if (store.mode !== 'car') {
+      updateEngine(0, 0)
+      updateAmbience(worldTime.night, worldTime.wet ?? 0, Math.abs(vehicleState.speed) * 0.6)
+      return
     }
 
     // Ekranda çizilen (enterpolasyonlu) konum: kamera ve efektler bunu izler, böylece araç titremez

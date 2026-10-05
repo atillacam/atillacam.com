@@ -7,6 +7,7 @@ export const input = {
   keys: { forward: false, backward: false, left: false, right: false, boost: false, brake: false },
   // Dokunmatik joystick: -1..1
   touch: { steer: 0, throttle: 0, active: false, boost: false },
+  // keys.up: Boşluk basılı (helikopterde yükselmek için); keys içinde dinamik olarak tutulur
   // Tek seferlik olaylar (araç tüketir)
   events: new Set(),
 }
@@ -33,6 +34,8 @@ export const vehicleState = {
   upright: 1, // 1 = dik, -1 = ters
   quaternion: { x: 0, y: 0, z: 0, w: 1 }, // ekranda çizilen yönelim (hayalet kaydı için)
   modelOffsetY: 0, // gövdeye göre model yüksekliği (Vehicle ayarlar)
+  altitude: 0, // helikopterde yerden yükseklik (m)
+  heliTeleport: null, // helikopterdeyken haritadan ışınlanma hedefi
   teleport: null, // { position, yaw }
 }
 
@@ -96,7 +99,11 @@ export function bindKeyboard() {
     switch (event.code) {
       case 'Space':
         event.preventDefault()
-        trigger('jump')
+        input.keys.up = true
+        if (store.mode === 'car') trigger('jump')
+        break
+      case 'KeyV':
+        store.toggleHeli()
         break
       case 'Enter':
       case 'KeyE':
@@ -139,6 +146,7 @@ export function bindKeyboard() {
   const onUp = (event) => {
     const key = KEYMAP[event.code]
     if (key) input.keys[key] = false
+    if (event.code === 'Space') input.keys.up = false
   }
   const releaseAll = () => {
     for (const k in input.keys) input.keys[k] = false
