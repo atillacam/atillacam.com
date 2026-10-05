@@ -13,11 +13,18 @@ Atilla Çam'ın kişisel web sitesi. Ziyaretçiler fizik tabanlı bir arabayla a
 - **Gün-gece döngüsü:** gökyüzü shader'ı, güneş, ay ve yıldızlar; gece yanan sokak lambaları ve araba farları
 - **Bitki örtüsü:** rüzgârda sallanan ağaçlar ve çiçekler, arabanın değdiği yerde eğilen 90 bin çimen yaprağı
 - **İçerik:** 5 proje panosu, Hakkımda kartı, itilebilir yetenek küpleri, 3D GitHub, LinkedIn ve Instagram logoları
-- **Dış bölgeler:** futbol sahası (gol + konfeti), drift pisti (puan ve rekor), skor sayan bowling salonu, arazi parkuru, sinematik manzaralı gözlem tepesi
+- **Dış bölgeler:** futbol sahası (gol + konfeti), drift pisti (puan ve rekor), skor sayan bowling salonu, arazi parkuru, sinematik manzaralı gözlem tepesi, stunt parkı (rampalar, hızlandırıcı, ateş ve neon halkaları, takla puanı)
+- **Mini golf:** arabayla dev topu deliğe sokma; dönen yel değirmeni, tamponlar, par 3 ve en iyi skor
+- **Hayalet araba:** yarışta en iyi turunun yarı saydam kopyasıyla yarışırsın
+- **Kırılabilir dünya:** banklar, çitler ve tuğla duvarlar çarpınca parçalanır, bir süre sonra yeniden kurulur
 - **Hava durumu:** otomatik döngüde yağmur (şimşek ve gök gürültüsü) ve kar; menüden elle seçilebilir
+- **Mevsimler:** gerçek takvimden başlayan döngü; ilkbahar çiçekleri, sonbahar yaprakları, kışın kar örtüsü ve buz tutan göl
+- **İzler ve su:** karda, kumda, toprakta ve ıslak çimende tekerlek izleri; gölde dalga ve yağmur halkaları
+- **Gece detayları:** renkli fener dizileri, neon "İş tekliflerine açık" tabelası, kayan yıldızlar; gündüz kayan bulut gölgeleri
+- **Performans koruması:** FPS sınırı (30/60/sınırsız), takılınca otomatik kalite düşürme, pencere açıkken 24 FPS
 - **Patlayan TNT kasaları:** zincirleme patlama, alev topu ve duman
 - **Kendini düzeltme:** yan yatan, ters dönen ya da takılan araç kendiliğinden doğrulur
-- **Oyun:** kontrol noktalı zamanlı yarış, yerel + dünya skor tablosu, 14 veri çekirdeği, 27 başarım, bowling, rampa
+- **Oyun:** kontrol noktalı zamanlı yarış, yerel + dünya skor tablosu, 14 veri çekirdeği, 33 başarım, bowling, rampa
 - **Navigasyon:** yol ağı üzerinde GPS rotası (yerde akan ok şeridi + yön oku), keşfedildikçe açılan harita sisi
 - **Laboratuvar ve Kariyer Yolu:** canlı shader / Lorenz çekicisi / fraktal deneyleri; zaman çizelgesi panoları
 - **Sürprizler:** arabayla devrilen mühendis heykeli, Konami kodu (↑↑↓↓←→←→BA) ile gökkuşağı boya
