@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { CLOUD_GLSL } from './cloudShadow.js'
 import { AREAS, LAKE, PATHS, RING_RADIUS, RING_WIDTH, SPOTS } from './layout.js'
 import { heightAt } from './terrain.js'
 import { world } from './time.js'
@@ -45,6 +46,7 @@ function allowed(x, z) {
 const vertexShader = /* glsl */ `
   uniform float uTime;
   uniform vec3 uCar;
+  varying vec2 vCloudXZ;
   varying float vHeight;
   varying float vShade;
   varying float vPatch;
@@ -67,6 +69,7 @@ const vertexShader = /* glsl */ `
     vHeight = h;
     vShade = fract(sin(dot(root.xz, vec2(12.9898, 78.233))) * 43758.5453);
     vPatch = 0.5 + 0.5 * sin(root.x * 0.11 + sin(root.z * 0.07) * 2.0) * cos(root.z * 0.09 - root.x * 0.03);
+    vCloudXZ = world.xz;
     vec4 mvPosition = viewMatrix * world;
     gl_Position = projectionMatrix * mvPosition;
     #include <fog_vertex>
@@ -77,6 +80,10 @@ const fragmentShader = /* glsl */ `
   uniform vec3 uBase;
   uniform vec3 uTip;
   uniform vec3 uLight;
+  uniform float uCloud;
+  uniform float uWorldTime;
+  varying vec2 vCloudXZ;
+  ${CLOUD_GLSL}
   varying float vHeight;
   varying float vShade;
   varying float vPatch;
@@ -85,6 +92,7 @@ const fragmentShader = /* glsl */ `
     vec3 col = mix(uBase, uTip, vHeight) * (0.88 + vShade * 0.24);
     // Geniş ölçekli ton lekeleri: çimen tek düze halı gibi durmaz
     col *= mix(vec3(0.92, 0.95, 0.85), vec3(1.06, 1.02, 0.92), vPatch);
+    col *= 1.0 - cloudShadow(vCloudXZ, uWorldTime) * uCloud * 0.36;
     col *= uLight;
     gl_FragColor = vec4(col, 1.0);
     #include <tonemapping_fragment>
@@ -145,6 +153,8 @@ export default function Grass({ count = 60000 }) {
             uBase: { value: new THREE.Color('#2f5627') },
             uTip: { value: new THREE.Color('#87a957') },
             uLight: { value: new THREE.Color('#ffffff') },
+            uCloud: { value: 0 },
+            uWorldTime: { value: 0 },
           },
         ]),
       }),
@@ -180,6 +190,8 @@ export default function Grass({ count = 60000 }) {
     u.uTime.value += Math.min(delta, 0.1)
     u.uCar.value.set(vehicleState.position.x, vehicleState.position.y - 0.6, vehicleState.position.z)
     u.uLight.value.copy(DAY_LIGHT).lerp(NIGHT_LIGHT, world.night)
+    u.uCloud.value = world.uniforms.uCloud.value
+    u.uWorldTime.value = world.uniforms.uTime.value
     const w = world.uniforms.uSeason.value
     const weights = [w.x, w.y, w.z, w.w]
     _base.setRGB(0, 0, 0)

@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { fbm } from './terrain.js'
 import { world } from './time.js'
+import { CLOUD_GLSL } from './cloudShadow.js'
 
 // Kod içinde üretilen detay dokuları: çimen dokusu ve kaya dokusu (gri tonlu, tekrarlanabilir)
 function noiseTexture(size, scale, octaves, streak = 0) {
@@ -41,11 +42,13 @@ export function createTerrainMaterial() {
     shader.uniforms.uRock = { value: rock }
     shader.uniforms.uSeason = world.uniforms.uSeason
     shader.uniforms.uSnow = world.uniforms.uSnow
+    shader.uniforms.uCloud = world.uniforms.uCloud
+    shader.uniforms.uTime = world.uniforms.uTime
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vTerrainWorld;\nvarying vec3 vTerrainNormal;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvTerrainWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvTerrainNormal = normal;')
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform sampler2D uGrass;\nuniform sampler2D uRock;\nuniform vec4 uSeason;\nuniform float uSnow;\nvarying vec3 vTerrainWorld;\nvarying vec3 vTerrainNormal;')
+      .replace('#include <common>', '#include <common>\nuniform sampler2D uGrass;\nuniform sampler2D uRock;\nuniform vec4 uSeason;\nuniform float uSnow;\nuniform float uCloud;\nuniform float uTime;\nvarying vec3 vTerrainWorld;\nvarying vec3 vTerrainNormal;\n' + CLOUD_GLSL)
       .replace(
         '#include <color_fragment>',
         `#include <color_fragment>
@@ -72,9 +75,11 @@ export function createTerrainMaterial() {
           float snow = smoothstep(0.0, 0.22, uSnow * 1.3 - (1.0 - flatness) * 0.9 - patchy * 0.35);
           snow *= mix(0.55, 1.0, green);
           diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.9, 0.93, 0.97) * (0.93 + fine * 0.08), snow);
+          // Kayan bulut gölgeleri
+          diffuseColor.rgb *= 1.0 - cloudShadow(p, uTime) * uCloud * 0.36;
         }`,
       )
   }
-  material.customProgramCacheKey = () => 'terrain-detail-season'
+  material.customProgramCacheKey = () => 'terrain-detail-season-cloud'
   return material
 }

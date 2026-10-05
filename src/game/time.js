@@ -23,6 +23,7 @@ export const world = {
     uCar: { value: new THREE.Vector3() },
     uSeason: { value: new THREE.Vector4(0, 1, 0, 0) },
     uSnow: { value: 0 },
+    uCloud: { value: 0 }, // bulut gölgesi gücü 0..1
   },
 }
 
