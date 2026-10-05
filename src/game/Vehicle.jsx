@@ -36,6 +36,7 @@ const WHEELS = [
 ]
 // Modelde tekerlek merkezleri y=0'da; süspansiyon dinlenmedeyken onları aynı yere oturtmak için
 const MODEL_OFFSET_Y = -REST_LENGTH
+vehicleState.modelOffsetY = MODEL_OFFSET_Y
 
 // Varsayılan kamera açısı: güneydoğudan, hafif yukarıdan
 const CAMERA_HOME = { azimuth: 0.42, polar: 0.98 }
@@ -372,6 +373,10 @@ export default function Vehicle() {
     vehicleState.position.y = t.y
     vehicleState.position.z = t.z
     vehicleState.heading = Math.atan2(-_forward.z, _forward.x)
+    vehicleState.quaternion.x = _quat.x
+    vehicleState.quaternion.y = _quat.y
+    vehicleState.quaternion.z = _quat.z
+    vehicleState.quaternion.w = _quat.w
     vehicleState.speed = speed
     vehicleState.upright = _up.y
     _right.set(0, 0, 1).applyQuaternion(_quat) // aracın sağı (+z)

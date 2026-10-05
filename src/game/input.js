@@ -31,6 +31,8 @@ export const vehicleState = {
   heading: 0,
   speed: 0,
   upright: 1, // 1 = dik, -1 = ters
+  quaternion: { x: 0, y: 0, z: 0, w: 1 }, // ekranda çizilen yönelim (hayalet kaydı için)
+  modelOffsetY: 0, // gövdeye göre model yüksekliği (Vehicle ayarlar)
   teleport: null, // { position, yaw }
 }
 
