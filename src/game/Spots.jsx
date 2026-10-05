@@ -149,6 +149,7 @@ function Area({ area }) {
         sensor
         args={[4, area.radius]}
         onIntersectionEnter={(p) => isVehicle(p) && useStore.getState().enterArea(area.id)}
+        onIntersectionExit={(p) => isVehicle(p) && useStore.getState().leaveZone(area.id)}
       />
     </RigidBody>
   )

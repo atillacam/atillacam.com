@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { profile } from '../content.js'
 import { ACHIEVEMENTS, progressOf, useStore } from '../store.js'
-import { AREAS, COLLECTIBLES, LAKE, PATHS, RACE, RING_RADIUS, WORLD_HALF } from '../game/layout.js'
+import { AREAS, COLLECTIBLES, GOLF_PAR, LAKE, PATHS, RACE, RING_RADIUS, WORLD_HALF } from '../game/layout.js'
 import { input, teleport, trigger, vehicleState } from '../game/input.js'
 import { initAudio } from '../audio.js'
 import { useT } from '../i18n.js'
@@ -226,9 +226,13 @@ function RaceHud() {
 // Hız göstergesi, canlı drift puanı ve futbol sahasında gol sayacı
 function GameHud() {
   const { t } = useT()
-  const area = useStore((s) => s.area)
+  const zone = useStore((s) => s.zone)
   const drift = useStore((s) => s.drift)
   const driftBest = useStore((s) => s.driftBest)
+  const stunt = useStore((s) => s.stunt)
+  const stuntBest = useStore((s) => s.stuntBest)
+  const golf = useStore((s) => s.golf)
+  const golfBest = useStore((s) => s.golfBest)
   const goals = useStore((s) => s.soccerSession)
   const pinsDown = useStore((s) => s.pinsDown)
   const navTarget = useStore((s) => s.navTarget)
@@ -264,12 +268,32 @@ function GameHud() {
         <strong ref={speed}>0</strong>
         <span>km/h</span>
       </div>
-      {(area === 'drift' || drift.active) && (
+      {(zone === 'drift' || drift.active) && (
         <div className={drift.active ? 'game-hud drift active' : 'game-hud drift'}>
           <span>{t('driftLabel')}</span>
           <strong>{drift.combo}</strong>
           <small>
             {t('driftBest')}: {driftBest}
+          </small>
+        </div>
+      )}
+      {(zone === 'stunt' || stunt.active) && (
+        <div className={stunt.active ? 'game-hud drift active' : 'game-hud drift'}>
+          <span>{t('stuntLabel')}</span>
+          <strong>{stunt.score}</strong>
+          <small>
+            {t('driftBest')}: {stuntBest}
+          </small>
+        </div>
+      )}
+      {zone === 'golf' && (
+        <div className="game-hud drift">
+          <span>{t('areaGolf')}</span>
+          <strong>
+            {golf.strokes} <small>/ PAR {GOLF_PAR}</small>
+          </strong>
+          <small>
+            {t('driftBest')}: {golfBest || '—'}
           </small>
         </div>
       )}
@@ -291,7 +315,7 @@ function GameHud() {
         <span className="recover-ring" />
         {t('recovering')}
       </div>
-      {area === 'bowling' && (
+      {zone === 'bowling' && (
         <div className="game-hud bowling">
           <span>🎳 {t('pins')}</span>
           <strong>
@@ -299,7 +323,7 @@ function GameHud() {
           </strong>
         </div>
       )}
-      {area === 'soccer' && (
+      {zone === 'soccer' && (
         <div className="game-hud soccer">
           <span>⚽ {t('goals')}</span>
           <strong>{goals}</strong>
@@ -347,6 +371,10 @@ const AREA_ICONS = {
   offroad: '🚙',
   lookout: '⛰️',
   bowling: '🎳',
+  lab: '🧪',
+  career: '🛣️',
+  stunt: '🔥',
+  golf: '⛳',
 }
 
 // Harita çizimi: büyük harita ve mini harita aynı katmanları kullanır

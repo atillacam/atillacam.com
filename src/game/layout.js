@@ -29,6 +29,7 @@ export const AREAS = [
   { id: 'playground', label: 'areaPlayground', center: [0, 0, 40], radius: 16, color: COLORS.coral, spawn: [0, 1.2, 26], yaw: -Math.PI / 2 },
   { id: 'lake', label: 'areaLake', center: [-34, 0, 34], radius: 11, color: '#4fa3d9', spawn: [-22, 1.2, 22], yaw: (3 * Math.PI) / 4 },
   { id: 'race', label: 'areaRace', center: [0, 0, RING_RADIUS], radius: 9, color: COLORS.amber, spawn: [8, 1.2, RING_RADIUS], yaw: Math.PI },
+  { id: 'golf', label: 'areaGolf', center: [34, 0, 34], radius: 12, color: '#4fd99a', spawn: [24, 1.2, 24], yaw: -Math.PI / 4 },
   // Dış bölgeler: çevre yolun ötesinde, tepelerin arkasında (pad: zemin tipi)
   { id: 'soccer', label: 'areaSoccer', center: [78, 0, 78], radius: 20, color: '#4fd99a', spawn: [60, 1.2, 60], yaw: -Math.PI / 4, pad: 'field', outer: true },
   { id: 'drift', label: 'areaDrift', center: [-78, 0, 78], radius: 20, color: COLORS.coral, spawn: [-60, 1.2, 60], yaw: (-3 * Math.PI) / 4, pad: 'asphalt', outer: true },
@@ -37,7 +38,10 @@ export const AREAS = [
   { id: 'career', label: 'areaCareer', center: [-106, 0, 0], radius: 18, color: COLORS.amber, spawn: [-84, 1.2, 0], yaw: Math.PI, pad: 'alley', outer: true },
   { id: 'bowling', label: 'areaBowling', center: [108, 0, 0], radius: 18, color: '#ff8a3d', spawn: [86, 1.2, 0], yaw: 0, pad: 'alley', outer: true },
   { id: 'lookout', label: 'areaLookout', center: [78, 0, -78], radius: 14, color: COLORS.violet, spawn: [60, 1.2, -60], yaw: Math.PI / 4, pad: 'hill', outer: true },
+  { id: 'stunt', label: 'areaStunt', center: [0, 0, 108], radius: 20, color: '#ff5d5d', spawn: [-18, 1.2, 108], yaw: 0, pad: 'asphalt', outer: true },
 ]
+
+export const GOLF_PAR = 3 // mini golf deliğinin par değeri
 
 export const LAKE = { x: -34, z: 34, radius: 11, waterLevel: -0.75 }
 
@@ -112,9 +116,12 @@ export const PATHS = [
   { from: [0, 0], to: [0, 24.2] },
   { from: [0, 55.8], to: [0, RING_RADIUS - RING_WIDTH / 2] },
   { from: [-8, 8], to: [-22, 22] },
+  { from: [8, 8], to: [25.5, 25.5] },
   { from: [RING_RADIUS + RING_WIDTH / 2, 0], to: [90, 0], outer: true },
   { from: [-(RING_RADIUS + RING_WIDTH / 2), 0], to: [-88, 0], outer: true },
   { from: [0, -(RING_RADIUS + RING_WIDTH / 2)], to: [0, -90], outer: true },
+  // Stunt parkı: güneydeki START/BİTİŞ kapısının direklerinden kaçınmak için çaprazdan bağlanır
+  { from: ringPoint(Math.PI / 2 + 0.32, RING_RADIUS + RING_WIDTH / 2), to: [-9.2, 90.3], outer: true },
   // Çevre yoldan dış bölgelere: tepeleri yararak geçen yollar
   ...[
     [1, 1, 20],

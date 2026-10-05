@@ -34,6 +34,11 @@ export const ACHIEVEMENTS = [
   { id: 'garage', title: { tr: 'Garaj', en: 'Garage' }, text: { tr: 'Aracını ya da rengini değiştir.', en: 'Change your car or its colour.' } },
   { id: 'whisper', title: { tr: 'Fısıltı', en: 'Whisperer' }, text: { tr: 'Dünyaya bir fısıltı bırak.', en: 'Leave a whisper in the world.' } },
   { id: 'seasons', title: { tr: 'Dört mevsim', en: 'Four seasons' }, text: { tr: 'Dört mevsimi de gör.', en: 'See all four seasons.' }, goal: 4 },
+  { id: 'stuntman', title: { tr: 'Dublör', en: 'Stuntman' }, text: { tr: 'Stunt parkında tek atlayışta 1500 puan topla.', en: 'Score 1500 points in a single stunt-park jump.' } },
+  { id: 'ringOfFire', title: { tr: 'Ateş çemberi', en: 'Ring of fire' }, text: { tr: 'Ateş halkasının içinden geç.', en: 'Fly through the ring of fire.' } },
+  { id: 'golfer', title: { tr: 'Golfçü', en: 'Golfer' }, text: { tr: 'Mini golfte topu deliğe sok.', en: 'Sink the ball in mini golf.' } },
+  { id: 'holeInOne', title: { tr: 'Tek vuruş', en: 'Hole in one' }, text: { tr: 'Mini golfte tek vuruşta deliğe sok.', en: 'Get a hole in one in mini golf.' } },
+  { id: 'wrecker', title: { tr: 'Yıkım ekibi', en: 'Wrecking crew' }, text: { tr: '15 bank, çit ya da duvarı parçala.', en: 'Smash 15 benches, fences or walls.' }, goal: 15 },
   { id: 'road', title: { tr: 'Uzun yol', en: 'Road trip' }, text: { tr: '2 km yol yap.', en: 'Drive 2 km.' }, goal: 2000 },
 ]
 
@@ -77,7 +82,7 @@ function detectQuality() {
   return coarse || lowMemory ? 'low' : 'high'
 }
 
-const saved = readJSON(STORAGE_KEY, { unlocked: {}, progress: {}, times: [], driftBest: 0 })
+const saved = { unlocked: {}, progress: {}, times: [], driftBest: 0, stuntBest: 0, golfBest: 0, ...readJSON(STORAGE_KEY, {}) }
 const settings = { quality: detectQuality(), muted: false, music: true, fpsCap: 60, carId: 'ae86', carColor: 'white', ...readJSON(SETTINGS_KEY, {}) }
 let toastId = 0
 
@@ -101,6 +106,10 @@ export const useStore = create((set, get) => ({
   progress: saved.progress,
   times: saved.times, // en iyi yarış süreleri (ms)
   driftBest: saved.driftBest ?? 0,
+  stuntBest: saved.stuntBest ?? 0,
+  stunt: { score: 0, active: false },
+  golfBest: saved.golfBest ?? 0, // en az vuruş (0 = henüz yok)
+  golf: { strokes: 0 },
   drift: { combo: 0, active: false },
   soccerSession: 0, // bu ziyaretteki goller
   cinematic: 0, // > performance.now() ise sinematik kamera
@@ -122,7 +131,7 @@ export const useStore = create((set, get) => ({
 
   persist: () => {
     const s = get()
-    writeJSON(STORAGE_KEY, { unlocked: s.unlocked, progress: s.progress, times: s.times, driftBest: s.driftBest })
+    writeJSON(STORAGE_KEY, { unlocked: s.unlocked, progress: s.progress, times: s.times, driftBest: s.driftBest, stuntBest: s.stuntBest, golfBest: s.golfBest })
     writeJSON(SETTINGS_KEY, { quality: s.quality, muted: s.muted, music: s.music, fpsCap: s.fpsCap, carId: s.carId, carColor: s.carColor })
   },
 
@@ -188,10 +197,14 @@ export const useStore = create((set, get) => ({
     } else openModal({ type: spot.id })
   },
 
+  // area: son girilen bölge (harita, keşif); zone: şu an içinde olunan bölge (oyun göstergeleri)
+  zone: null,
   enterArea: (id) => {
-    set({ area: id })
+    set({ area: id, zone: id })
     get().addToSet('explorer', id)
   },
+
+  leaveZone: (id) => set((s) => (s.zone === id ? { zone: null } : {})),
 
   // ---------- Yarış ----------
   // requestRace: aracı başlangıca ışınlatır (Race bileşeni dinler) ve geri sayımı başlatır
@@ -224,6 +237,23 @@ export const useStore = create((set, get) => ({
     const best = Math.max(get().driftBest, Math.round(points))
     set({ driftBest: best, drift: { combo: 0, active: false } })
     if (points >= 3000) get().unlock('drifter')
+    get().persist()
+  },
+
+  // ---------- Stunt parkı ----------
+  setStunt: (stunt) => set({ stunt }),
+  bankStunt: (points) => {
+    set((s) => ({ stuntBest: Math.max(s.stuntBest, Math.round(points)), stunt: { score: Math.round(points), active: false } }))
+    if (points >= 1500) get().unlock('stuntman')
+    get().persist()
+  },
+
+  // ---------- Mini golf ----------
+  setGolf: (golf) => set({ golf }),
+  sinkGolf: (strokes) => {
+    set((s) => ({ golfBest: s.golfBest ? Math.min(s.golfBest, strokes) : strokes, golf: { strokes } }))
+    get().unlock('golfer')
+    if (strokes === 1) get().unlock('holeInOne')
     get().persist()
   },
 
@@ -313,7 +343,7 @@ export const useStore = create((set, get) => ({
   },
 
   resetProgress: () => {
-    set({ unlocked: {}, progress: {}, times: [], driftBest: 0 })
+    set({ unlocked: {}, progress: {}, times: [], driftBest: 0, stuntBest: 0, golfBest: 0 })
     get().persist()
   },
 }))
