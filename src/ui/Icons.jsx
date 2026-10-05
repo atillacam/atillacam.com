@@ -1,31 +1,29 @@
 import { useId } from 'react'
 import { siGithub, siInstagram } from 'simple-icons'
-import { GLYPH } from '../../scripts/logo.mjs'
+import { C_STROKE, GLYPH, GLYPH_SHIFT_Y, LOGO_COLORS } from '../../scripts/logo.mjs'
 
-// AÇ logosu: favicon ve uygulama ikonlarıyla aynı vektör çizim (scripts/logo.mjs)
+// AÇ logosu ("Monolit"): favicon ve uygulama ikonlarıyla aynı vektör çizim (scripts/logo.mjs)
 export function Logo({ size = 38, className = 'logo' }) {
   const id = useId().replace(/:/g, '')
+  const { from, to, bgTop, bgBottom } = LOGO_COLORS
   return (
     <svg className={className} width={size} height={size} viewBox="0 0 64 64" aria-hidden="true">
       <defs>
-        <linearGradient id={`${id}bg`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#4a86ff" />
-          <stop offset="0.55" stopColor="#5b6cff" />
-          <stop offset="1" stopColor="#8a5cff" />
+        <linearGradient id={`${id}ink`} gradientUnits="userSpaceOnUse" x1="8" y1="14" x2="56" y2="52">
+          <stop offset="0" stopColor={from} />
+          <stop offset="1" stopColor={to} />
         </linearGradient>
-        <linearGradient id={`${id}hi`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#ffffff" stopOpacity="0.22" />
-          <stop offset="0.5" stopColor="#ffffff" stopOpacity="0" />
+        <linearGradient id={`${id}bg`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={bgTop} />
+          <stop offset="1" stopColor={bgBottom} />
         </linearGradient>
       </defs>
-      <rect width="64" height="64" rx="16" fill={`url(#${id}bg)`} />
-      <rect width="64" height="64" rx="16" fill={`url(#${id}hi)`} />
-      <rect x="0.75" y="0.75" width="62.5" height="62.5" rx="15.25" fill="none" stroke="#ffffff" strokeOpacity="0.18" strokeWidth="1.5" />
-      <g fill="none" stroke="#ffffff" strokeLinecap="round" strokeLinejoin="round">
-        <path d={GLYPH.a} strokeWidth="6" />
-        <path d={GLYPH.bar} strokeWidth="4.2" />
-        <path d={GLYPH.c} strokeWidth="6" />
-        <path d={GLYPH.cedilla} strokeWidth="2.8" />
+      <rect width="64" height="64" rx="14" fill={`url(#${id}bg)`} />
+      <rect x="0.75" y="0.75" width="62.5" height="62.5" rx="13.25" fill="none" stroke={`url(#${id}ink)`} strokeOpacity="0.55" strokeWidth="1.5" />
+      <g transform={`translate(0 ${GLYPH_SHIFT_Y})`}>
+        <path fill={`url(#${id}ink)`} fillRule="evenodd" d={GLYPH.a} />
+        <path fill="none" stroke={`url(#${id}ink)`} strokeWidth={C_STROKE} d={GLYPH.c} />
+        <path fill={`url(#${id}ink)`} d={GLYPH.cedilla} />
       </g>
     </svg>
   )

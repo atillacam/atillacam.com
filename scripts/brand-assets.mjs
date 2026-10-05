@@ -1,35 +1,50 @@
 // Paylaşım görseli, uygulama ikonları ve favicon üretir. Çalıştırma: node scripts/brand-assets.mjs
 import fs from 'node:fs'
 import sharp from 'sharp'
-import { logoSvg } from './logo.mjs'
+import { GLYPH, GLYPH_SHIFT_Y, C_STROKE, LOGO_COLORS, logoSvg } from './logo.mjs'
 
-// Favicon ve uygulama ikonları: elle çizilmiş AÇ monogramı (scripts/logo.mjs)
-fs.writeFileSync('public/favicon.svg', logoSvg({ size: 64, radius: 16 }) + '\n')
-fs.writeFileSync('public/logo.svg', logoSvg({ size: 512, radius: 16 }) + '\n')
+// Favicon ve uygulama ikonları: AÇ logosu (scripts/logo.mjs)
+fs.writeFileSync('public/favicon.svg', logoSvg({ size: 64 }) + '\n')
+fs.writeFileSync('public/logo.svg', logoSvg({ size: 512 }) + '\n')
 // iOS köşeleri kendisi yuvarlar: tam dolu kare
 await sharp(Buffer.from(logoSvg({ size: 180, bleed: true }))).png().toFile('public/apple-touch-icon.png')
-await sharp(Buffer.from(logoSvg({ size: 192, radius: 14 }))).png().toFile('public/icon-192.png')
+await sharp(Buffer.from(logoSvg({ size: 192 }))).png().toFile('public/icon-192.png')
 // Maskable: Android şekli kendisi kırpar; glif güvenli alanın içinde
 await sharp(Buffer.from(logoSvg({ size: 512, bleed: true }))).png().toFile('public/icon-512.png')
-const logoData = 'data:image/svg+xml;base64,' + Buffer.from(logoSvg({ size: 96, radius: 16 })).toString('base64')
+const logoData = 'data:image/svg+xml;base64,' + Buffer.from(logoSvg({ size: 112 })).toString('base64')
 
+// Paylaşım görseli (1200×630): solda kimlik, sağda logonun büyük ve soluk silueti
+const { from, to } = LOGO_COLORS
+const font = 'Segoe UI, Arial, sans-serif'
 const og = `
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
   <defs>
-    <radialGradient id="a" cx="0.85" cy="0" r="0.9"><stop offset="0" stop-color="#3d7bff" stop-opacity="0.45"/><stop offset="1" stop-color="#0a0e1a" stop-opacity="0"/></radialGradient>
-    <radialGradient id="b" cx="0" cy="1" r="0.8"><stop offset="0" stop-color="#8a5cff" stop-opacity="0.3"/><stop offset="1" stop-color="#0a0e1a" stop-opacity="0"/></radialGradient>
+    <radialGradient id="a" cx="0.85" cy="0" r="0.9"><stop offset="0" stop-color="#3d7bff" stop-opacity="0.42"/><stop offset="1" stop-color="#0a0e1a" stop-opacity="0"/></radialGradient>
+    <radialGradient id="b" cx="0" cy="1" r="0.8"><stop offset="0" stop-color="#8a5cff" stop-opacity="0.28"/><stop offset="1" stop-color="#0a0e1a" stop-opacity="0"/></radialGradient>
+    <linearGradient id="ink" gradientUnits="userSpaceOnUse" x1="8" y1="14" x2="56" y2="52"><stop offset="0" stop-color="${from}"/><stop offset="1" stop-color="${to}"/></linearGradient>
+    <linearGradient id="text" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#c9d6ff"/></linearGradient>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M48 0H0V48" fill="none" stroke="#ffffff" stroke-opacity="0.04" stroke-width="1"/></pattern>
   </defs>
   <rect width="1200" height="630" fill="#0a0e1a"/>
+  <rect width="1200" height="630" fill="url(#grid)"/>
   <rect width="1200" height="630" fill="url(#a)"/>
   <rect width="1200" height="630" fill="url(#b)"/>
-  <image x="90" y="90" width="96" height="96" href="${logoData}"/>
-  <text x="90" y="330" font-family="Segoe UI, Arial, sans-serif" font-weight="900" font-size="104" fill="#ffffff" letter-spacing="-3">Atilla Çam</text>
-  <text x="94" y="392" font-family="Segoe UI, Arial, sans-serif" font-weight="700" font-size="36" fill="#6aa1ff">Computer Engineer · Bilgisayar Mühendisi</text>
-  <text x="94" y="450" font-family="Segoe UI, Arial, sans-serif" font-weight="600" font-size="28" fill="#a2aac0">AI · Backend · Interactive 3D Web — İstanbul</text>
-  <rect x="90" y="510" width="270" height="52" rx="26" fill="none" stroke="#4fd99a" stroke-opacity="0.5"/>
-  <circle cx="118" cy="536" r="7" fill="#4fd99a"/>
-  <text x="136" y="545" font-family="Segoe UI, Arial, sans-serif" font-weight="700" font-size="24" fill="#4fd99a">Open to work</text>
-  <text x="1110" y="545" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-weight="800" font-size="30" fill="#f2f4fa">atillacam.com</text>
+  <!-- Logonun büyük silueti -->
+  <g transform="translate(700 60) scale(8)" opacity="0.13">
+    <g transform="translate(0 ${GLYPH_SHIFT_Y})">
+      <path fill="url(#ink)" fill-rule="evenodd" d="${GLYPH.a}"/>
+      <path fill="none" stroke="url(#ink)" stroke-width="${C_STROKE}" d="${GLYPH.c}"/>
+      <path fill="url(#ink)" d="${GLYPH.cedilla}"/>
+    </g>
+  </g>
+  <image x="90" y="84" width="112" height="112" href="${logoData}"/>
+  <text x="90" y="318" font-family="${font}" font-weight="900" font-size="100" fill="url(#text)" letter-spacing="-3">Atilla Çam</text>
+  <text x="94" y="380" font-family="${font}" font-weight="700" font-size="34" fill="#7aa8ff">Bilgisayar Mühendisi · Yazılım Geliştirici</text>
+  <text x="94" y="434" font-family="${font}" font-weight="600" font-size="26" fill="#a2aac0">Yapay zekâ · Backend · Etkileşimli 3D web — İstanbul</text>
+  <rect x="90" y="500" width="296" height="54" rx="27" fill="#4fd99a" fill-opacity="0.08" stroke="#4fd99a" stroke-opacity="0.45"/>
+  <circle cx="120" cy="527" r="7" fill="#4fd99a"/>
+  <text x="139" y="536" font-family="${font}" font-weight="700" font-size="24" fill="#4fd99a">İş tekliflerine açık</text>
+  <text x="1110" y="536" text-anchor="end" font-family="${font}" font-weight="800" font-size="30" fill="#f2f4fa">atillacam.com</text>
 </svg>`
 await sharp(Buffer.from(og)).png().toFile('public/og-image.png')
 

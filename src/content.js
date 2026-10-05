@@ -6,6 +6,8 @@ export const profile = {
   // Dünyanın ortasında fiziksel harfler olarak duran isim
   worldName: 'ATİLLA',
   title: { tr: 'Bilgisayar Mühendisi', en: 'Computer Engineer' },
+  // Sitenin her yerinde kullanılan tam unvan (başlık, SEO, paylaşım görseli)
+  headline: { tr: 'Bilgisayar Mühendisi · Yazılım Geliştirici', en: 'Computer Engineer · Software Developer' },
   tagline: {
     tr: 'Yapay zekâ destekli, ölçeklenebilir ve sürdürülebilir yazılımlar geliştiriyorum.',
     en: 'I build intelligent, scalable and maintainable software.',

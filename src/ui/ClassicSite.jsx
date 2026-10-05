@@ -146,11 +146,11 @@ function Hero({ webgl }) {
       <div className="hero-glow" aria-hidden="true" />
       <div className="hero-copy">
         <div className="hero-meta">
-          <img src="/icon-192.png" alt="Atilla Çam - Yazılım Geliştirici" className="hero-avatar" width="56" height="56" loading="eager" />
+          <img src="/icon-192.png" alt="Atilla Çam - Bilgisayar Mühendisi · Yazılım Geliştirici" className="hero-avatar" width="56" height="56" loading="eager" />
           {profile.available && <p className="badge">{t('openToWork')}</p>}
         </div>
         <p className="eyebrow">
-          {L(profile.title)} · {L(profile.location)}
+          {L(profile.headline)} · {L(profile.location)}
         </p>
         <h1>{profile.name}</h1>
         <p className="lead">{L(profile.tagline)}</p>

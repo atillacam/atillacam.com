@@ -38,7 +38,7 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.lang = lang
-    document.title = lang === 'tr' ? 'Atilla Çam | Yazılım Geliştirici' : 'Atilla Çam | Software Developer'
+    document.title = lang === 'tr' ? 'Atilla Çam | Bilgisayar Mühendisi · Yazılım Geliştirici' : 'Atilla Çam | Computer Engineer · Software Developer'
   }, [lang])
 
   useEffect(() => {

@@ -87,7 +87,7 @@ function Intro() {
       <div className="intro-card">
         <img
           src="/icon-192.png"
-          alt="Atilla Çam - Yazılım Geliştirici"
+          alt="Atilla Çam - Bilgisayar Mühendisi · Yazılım Geliştirici"
           className="intro-avatar"
           width="64"
           height="64"
