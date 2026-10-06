@@ -9,6 +9,32 @@ fs.writeFileSync('public/logo.svg', logoSvg({ size: 512 }) + '\n')
 // iOS köşeleri kendisi yuvarlar: tam dolu kare
 await sharp(Buffer.from(logoSvg({ size: 180, bleed: true }))).png().toFile('public/apple-touch-icon.png')
 await sharp(Buffer.from(logoSvg({ size: 192 }))).png().toFile('public/icon-192.png')
+
+// Arama motorları için favicon seti: Google 48 pikselin katlarını ve kökteki /favicon.ico'yu tercih eder
+const png = (size) => sharp(Buffer.from(logoSvg({ size }))).png().toBuffer()
+await sharp(await png(48)).toFile('public/favicon-48.png')
+await sharp(await png(96)).toFile('public/favicon-96.png')
+// ICO: içinde PNG gömülü çok boyutlu dosya (16, 32, 48)
+const icoSizes = [16, 32, 48]
+const images = await Promise.all(icoSizes.map(png))
+const header = Buffer.alloc(6 + 16 * images.length)
+header.writeUInt16LE(0, 0) // ayrılmış
+header.writeUInt16LE(1, 2) // tür: ikon
+header.writeUInt16LE(images.length, 4)
+let offset = header.length
+images.forEach((img, i) => {
+  const e = 6 + i * 16
+  header.writeUInt8(icoSizes[i], e) // genişlik
+  header.writeUInt8(icoSizes[i], e + 1) // yükseklik
+  header.writeUInt8(0, e + 2) // palet yok
+  header.writeUInt8(0, e + 3)
+  header.writeUInt16LE(1, e + 4) // renk düzlemi
+  header.writeUInt16LE(32, e + 6) // bit derinliği
+  header.writeUInt32LE(img.length, e + 8)
+  header.writeUInt32LE(offset, e + 12)
+  offset += img.length
+})
+fs.writeFileSync('public/favicon.ico', Buffer.concat([header, ...images]))
 // Maskable: Android şekli kendisi kırpar; glif güvenli alanın içinde
 await sharp(Buffer.from(logoSvg({ size: 512, bleed: true }))).png().toFile('public/icon-512.png')
 const logoData = 'data:image/svg+xml;base64,' + Buffer.from(logoSvg({ size: 112 })).toString('base64')
@@ -68,13 +94,13 @@ fs.writeFileSync(
     2,
   ) + '\n',
 )
-fs.writeFileSync('public/robots.txt', 'User-agent: *\nAllow: /\n\nSitemap: https://atillacam.com/sitemap.xml\n')
+fs.writeFileSync('public/robots.txt', 'User-agent: *\nAllow: /\n\nSitemap: https://www.atillacam.com/sitemap.xml\n')
 fs.writeFileSync(
   'public/sitemap.xml',
   `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://atillacam.com/</loc><changefreq>monthly</changefreq><priority>1.0</priority></url>
-  <url><loc>https://atillacam.com/?klasik</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.atillacam.com/</loc><changefreq>monthly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://www.atillacam.com/?klasik</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
 </urlset>
 `,
 )

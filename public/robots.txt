@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://atillacam.com/sitemap.xml
+Sitemap: https://www.atillacam.com/sitemap.xml
