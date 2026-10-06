@@ -8,7 +8,8 @@ const SITE = 'https://www.atillacam.com'
 const SSR_DIR = '.ssr-build'
 
 // Modüller yüklenirken tarayıcı nesnelerine dokunanlar için en küçük yedekler
-const memory = new Map()
+// Dil kaydı önceden 'tr': React'in sunucu çıktısı mağazanın ilk durumunu kullanır (Node'un navigator.language'ı en-US)
+const memory = new Map([['portfolio-lang', 'tr']])
 globalThis.window ??= globalThis
 globalThis.localStorage ??= {
   getItem: (k) => (memory.has(k) ? memory.get(k) : null),

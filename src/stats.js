@@ -6,6 +6,10 @@ const RTF = {}
 // "dün", "3 gün önce", "2 ay önce" gibi göreli zaman (ziyaret anına göre)
 export function relativeTime(iso, lang) {
   if (!iso) return ''
+  // Derlemede üretilen hazır HTML'de göreli zaman eskir: kesin tarih yaz
+  if (typeof document === 'undefined') {
+    return new Date(iso).toLocaleDateString(lang === 'tr' ? 'tr-TR' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+  }
   const rtf = (RTF[lang] ??= new Intl.RelativeTimeFormat(lang === 'tr' ? 'tr-TR' : 'en-GB', { numeric: 'auto' }))
   const diff = (new Date(iso).getTime() - Date.now()) / 1000
   const abs = Math.abs(diff)
