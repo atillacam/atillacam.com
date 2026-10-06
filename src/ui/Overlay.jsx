@@ -937,6 +937,7 @@ function Garage() {
   const carColor = useStore((s) => s.carColor)
   const setCar = useStore((s) => s.setCar)
   const setCarColor = useStore((s) => s.setCarColor)
+  const goldUnlocked = useStore((s) => !!s.unlocked.logoHunter)
   return (
     <div className="garage">
       <h3>{t('garage')}</h3>
@@ -948,7 +949,7 @@ function Garage() {
         ))}
       </div>
       <div className="garage-paints" role="group" aria-label={t('carColor')}>
-        {PAINTS.map((p) => (
+        {PAINTS.filter((p) => !p.secret || goldUnlocked).map((p) => (
           <button
             key={p.id}
             className={carColor === p.id ? 'swatch active' : 'swatch'}

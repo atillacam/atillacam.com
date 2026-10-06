@@ -169,8 +169,41 @@ export const COLLECTIBLES = [
   [86, -70],
 ].map(([x, z], i) => ({ id: `core-${i + 1}`, x, z }))
 
+// Gizli AÇ logoları: kenar köşelere saklanmış; hepsini bulan altın boyayı açar.
+// air: yalnızca havadayken (rampadan atlayınca) alınır
+const STUNT_AREA = AREAS.find((a) => a.id === 'stunt')
+export const HIDDEN_LOGOS = [
+  { x: -31.5, z: -37.5 }, // Galata Kulesi'nin arkası
+  { x: -34, z: 37.6 }, // Kız Kulesi'nin arkası, gölün içinde
+  { x: STUNT_AREA.center[0] + 10, z: STUNT_AREA.center[2] - 11, y: 3.0, air: true }, // stunt parkı, kuzey rampasının üstü
+  { x: 88, z: -88 }, // gözlem tepesinin arka yamacı
+  { x: -64, z: 94 }, // drift pistinin güney kıyısı
+  { x: 16, z: -57 }, // proje panolarının arkası
+  { x: 46, z: 46 }, // mini golfün arka köşesi
+  { x: -92, z: -86 }, // arazi parkurunun en dibi
+  { x: 11, z: -121 }, // laboratuvarın arka sokağı
+  { x: -119, z: 9 }, // kariyer yolunun sonu
+].map((l, i) => ({ id: `logo-${i + 1}`, ...l }))
+
+// İstanbul dokunuşları
+export const ISTANBUL = {
+  galata: { x: -28, z: -34 },
+  simit: { x: 11.5, z: -10.5, rot: -Math.PI / 4 }, // ön yüzü meydanın ortasına bakar
+  maiden: { x: LAKE.x, z: LAKE.z }, // Kız Kulesi gölün ortasında
+  ferryRadius: 7, // vapurun göldeki tur yarıçapı
+}
+
+// Çevre yolunda dolaşan araçlar. Sağdan trafik: açı artarak giden (dir 1) iç şeritte, ters yöndeki dış şeritte
+export const TRAFFIC = [
+  { lane: RING_RADIUS - 1.75, dir: 1, angle: 0.4, color: '#f2c230', taxi: true },
+  { lane: RING_RADIUS - 1.75, dir: 1, angle: 0.4 + Math.PI, color: '#d8322f' },
+  { lane: RING_RADIUS + 1.75, dir: -1, angle: 2.2, color: '#f2f2f0' },
+  { lane: RING_RADIUS + 1.75, dir: -1, angle: 2.2 + Math.PI, color: '#2f6fe0' },
+]
+
 // Ağaç ve kaya yerleştirirken boş bırakılacak alanlar
 export const CLEARINGS = [
+  { x: ISTANBUL.galata.x, z: ISTANBUL.galata.z, r: 7 },
   ...AREAS.map((a) => ({ x: a.center[0], z: a.center[2], r: a.radius + 3 })),
   { x: 0, z: -9, r: 11 },
   { x: -16, z: 20, r: 4 },

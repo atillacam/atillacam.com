@@ -465,6 +465,20 @@ export function playCrumble() {
   ;[0, 0.12, 0.27, 0.4].forEach((d, i) => tone({ freq: 90 - i * 8, type: 'sine', duration: 0.25, volume: 0.12, delay: d, slide: 0.6 }))
 }
 
+// Havai fişek: kısa patlama ve çıtırtı
+export function playFirework() {
+  if (!ctx) return
+  noiseBurst({ duration: 0.5, volume: 0.22, freq: 2200, endFreq: 400 })
+  for (let i = 0; i < 6; i++) tone({ freq: 2400 + Math.random() * 1800, type: 'square', duration: 0.03, volume: 0.025, delay: 0.25 + Math.random() * 0.5 })
+}
+
+// Vapur düdüğü: iki alçak, hafif akortsuz ton
+export function playFerryHorn(volume = 1) {
+  if (!ctx) return
+  tone({ freq: 138, type: 'sawtooth', duration: 1.6, volume: 0.05 * volume, wet: true })
+  tone({ freq: 146, type: 'sawtooth', duration: 1.6, volume: 0.04 * volume, wet: true })
+}
+
 // Konami / gizli sürpriz arpeji
 export function playSecret() {
   ;[523, 659, 784, 1046, 1319].forEach((freq, i) => tone({ freq, type: 'triangle', duration: 0.4, volume: 0.09, delay: i * 0.07, wet: true }))

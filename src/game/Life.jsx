@@ -1,7 +1,7 @@
 import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { AREAS } from './layout.js'
+import { AREAS, LAKE } from './layout.js'
 import { heightAt } from './terrain.js'
 import { world } from './time.js'
 
@@ -196,6 +196,41 @@ function Leaves() {
   )
 }
 
+// Martılar: Kız Kulesi'nin çevresinde alçaktan, tek tek süzülerek döner
+function Gulls() {
+  const gulls = useMemo(() => {
+    const rand = seeded(57)
+    return Array.from({ length: 7 }, () => ({
+      r: 5 + rand() * 9,
+      y: 5.5 + rand() * 6,
+      speed: (0.32 + rand() * 0.25) * (rand() > 0.3 ? 1 : -1),
+      phase: rand() * Math.PI * 2,
+      wobble: rand() * 6,
+    }))
+  }, [])
+  const geometry = useMemo(() => wingGeometry(0.62, 0.3), [])
+  const material = useMemo(() => flapMaterial('#f4f3ee', 6, 0.28), [])
+  const mesh = useRef()
+
+  useFrame((state, delta) => {
+    material.uniforms.uTime.value += delta
+    material.uniforms.uFade.value = 1 - world.night * 0.8 - world.wet * 0.5
+    const t = state.clock.elapsedTime
+    gulls.forEach((g, i) => {
+      // Yarıçap hafifçe nefes alır: düz bir daire yerine süzülen bir yörünge
+      const a = g.phase + t * g.speed
+      const r = g.r + Math.sin(t * 0.4 + g.wobble) * 1.5
+      const dir = Math.sign(g.speed)
+      _q.setFromAxisAngle(_up, Math.atan2(-Math.sin(a) * dir, Math.cos(a) * dir))
+      _p.set(LAKE.x + Math.cos(a) * r, LAKE.waterLevel + g.y + Math.sin(t * 0.9 + g.wobble) * 0.6, LAKE.z + Math.sin(a) * r)
+      _m.compose(_p, _q, _s)
+      mesh.current.setMatrixAt(i, _m)
+    })
+    mesh.current.instanceMatrix.needsUpdate = true
+  })
+  return <instancedMesh ref={mesh} args={[geometry, material, gulls.length]} frustumCulled={false} />
+}
+
 function vehicleGroundY(camera) {
   return heightAt(camera.position.x, camera.position.z)
 }
@@ -204,6 +239,7 @@ export default function Life() {
   return (
     <>
       <Birds />
+      <Gulls />
       <Butterflies />
       <Leaves />
     </>

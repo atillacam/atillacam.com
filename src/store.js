@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { profile, projects } from './content.js'
 import { playChime, playSecret } from './audio.js'
-import { AREAS, COLLECTIBLES } from './game/layout.js'
+import { AREAS, COLLECTIBLES, HIDDEN_LOGOS } from './game/layout.js'
 
 const COLLECTIBLE_COUNT = COLLECTIBLES.length
 const AREA_COUNT = AREAS.length
@@ -40,6 +40,7 @@ export const ACHIEVEMENTS = [
   { id: 'holeInOne', title: { tr: 'Tek vuruş', en: 'Hole in one' }, text: { tr: 'Mini golfte tek vuruşta deliğe sok.', en: 'Get a hole in one in mini golf.' } },
   { id: 'wrecker', title: { tr: 'Yıkım ekibi', en: 'Wrecking crew' }, text: { tr: '15 bank, çit ya da duvarı parçala.', en: 'Smash 15 benches, fences or walls.' }, goal: 15 },
   { id: 'pilot', title: { tr: 'Pilot', en: 'Pilot' }, text: { tr: 'Helikopterle dünyanın üzerinde uç.', en: 'Fly over the world by helicopter.' } },
+  { id: 'logoHunter', title: { tr: 'Logo avcısı', en: 'Logo hunter' }, text: { tr: 'Haritaya saklanmış bütün AÇ logolarını bul. Ödül: altın boya.', en: 'Find every AÇ logo hidden around the map. Reward: gold paint.' }, goal: HIDDEN_LOGOS.length },
   { id: 'road', title: { tr: 'Uzun yol', en: 'Road trip' }, text: { tr: '2 km yol yap.', en: 'Drive 2 km.' }, goal: 2000 },
 ]
 
@@ -129,6 +130,7 @@ export const useStore = create((set, get) => ({
   toasts: [],
   whispers: [], // ziyaretçi fısıltıları { id, name, message, x, z }
   race: idleRace,
+  celebrate: 0, // havai fişek başlangıcı (performance.now)
 
   persist: () => {
     const s = get()
@@ -316,6 +318,15 @@ export const useStore = create((set, get) => ({
 
   // ---------- Toplanabilirler ----------
   collect: (id) => get().addToSet('collector', id),
+  // Gizli logo: sonuncusu bulununca altın boya açılır ve havai fişek patlar
+  findLogo: (id) => {
+    const had = !!get().unlocked.logoHunter
+    get().addToSet('logoHunter', id)
+    if (!had && get().unlocked.logoHunter) {
+      set({ celebrate: performance.now(), carColor: 'gold' })
+      get().persist()
+    }
+  },
 
   // ---------- Başarımlar ----------
   unlock: (id) => {
@@ -357,7 +368,7 @@ export const useStore = create((set, get) => ({
   },
 
   resetProgress: () => {
-    set({ unlocked: {}, progress: {}, times: [], driftBest: 0, stuntBest: 0, golfBest: 0 })
+    set((s) => ({ unlocked: {}, progress: {}, times: [], driftBest: 0, stuntBest: 0, golfBest: 0, carColor: s.carColor === 'gold' ? 'white' : s.carColor }))
     get().persist()
   },
 }))

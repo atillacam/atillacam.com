@@ -9,7 +9,7 @@ import { world as worldTime } from './time.js'
 import { heightAt } from './terrain.js'
 import { bakedGeometry } from './geometry.js'
 import TurboFlame from './TurboFlame.jsx'
-import { buildRacer, paintHex } from './cars.js'
+import { buildRacer, paintHex, PAINTS } from './cars.js'
 import { useStore } from '../store.js'
 import { playHonk, playSplash, playThud, setMuted, setMusic, updateAmbience, updateEngine } from '../audio.js'
 
@@ -137,7 +137,14 @@ export default function Vehicle() {
   // Seçilen boya rengini uygula
   useEffect(() => {
     const hex = paintHex(carColor)
-    car.paint.forEach((m) => m.color.set(hex))
+    const metal = PAINTS.find((p) => p.id === carColor)?.metal
+    car.paint.forEach((m) => {
+      // Özgün yüzey değerleri bir kez saklanır; metalik boya geri alınabilsin
+      m.userData.base ??= { metalness: m.metalness, roughness: m.roughness }
+      m.color.set(hex)
+      m.metalness = metal ? 0.65 : m.userData.base.metalness
+      m.roughness = metal ? 0.28 : m.userData.base.roughness
+    })
   }, [car, carColor])
 
   const steer = useRef(0)

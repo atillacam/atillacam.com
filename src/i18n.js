@@ -31,6 +31,7 @@ const STRINGS = {
     mapHint: 'Bir bölgeye tıkla, oraya ışınlan.',
     resetProgress: 'İlerlemeyi sıfırla',
     collected: 'Veri çekirdeği',
+    logoFound: 'Gizli AÇ logosu bulundu',
     // Bölgeler ve noktalar
     areaHome: 'Başlangıç',
     areaProjects: 'Projeler',
@@ -248,6 +249,7 @@ const STRINGS = {
     mapHint: 'Click an area to teleport there.',
     resetProgress: 'Reset progress',
     collected: 'Data cores',
+    logoFound: 'Hidden AÇ logo found',
     areaHome: 'Start',
     areaProjects: 'Projects',
     areaAbout: 'About',

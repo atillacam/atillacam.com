@@ -13,6 +13,9 @@ import Playground from './Playground.jsx'
 import Spots from './Spots.jsx'
 import Race from './Race.jsx'
 import Collectibles from './Collectibles.jsx'
+import HiddenLogos from './HiddenLogos.jsx'
+import Istanbul from './Istanbul.jsx'
+import Traffic from './Traffic.jsx'
 import Zones from './Zones.jsx'
 import Bowling from './Bowling.jsx'
 import Showcase from './Showcase.jsx'
@@ -111,6 +114,9 @@ export default function Game() {
           <Spots />
           <Race />
           <Collectibles />
+          <HiddenLogos />
+          <Istanbul />
+          <Traffic />
           <Zones />
           <Bowling />
           <Showcase />

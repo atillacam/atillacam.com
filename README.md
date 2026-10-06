@@ -25,13 +25,16 @@ Atilla Çam'ın kişisel web sitesi. Ziyaretçiler fizik tabanlı bir arabayla a
 - **Performans koruması:** FPS sınırı (30/60/sınırsız), takılınca otomatik kalite düşürme, pencere açıkken 24 FPS
 - **Patlayan TNT kasaları:** zincirleme patlama, alev topu ve duman
 - **Kendini düzeltme:** yan yatan, ters dönen ya da takılan araç kendiliğinden doğrulur
-- **Oyun:** kontrol noktalı zamanlı yarış, yerel + dünya skor tablosu, 14 veri çekirdeği, 34 başarım, bowling, rampa
+- **Oyun:** kontrol noktalı zamanlı yarış, yerel + dünya skor tablosu, 14 veri çekirdeği, 35 başarım, bowling, rampa
+- **Gizli AÇ logoları:** haritaya saklanmış 10 logo; hepsini bulan metalik altın boyayı ve havai fişek gösterisini açar
+- **İstanbul dokunuşları:** Galata Kulesi, gölde Kız Kulesi ve etrafında dönen düdüklü şehir hatları vapuru, itilip devrilebilen simitçi tezgâhı
+- **Trafik:** çevre yolunda sağdan akan araçlar (sarı taksi dahil); önüne çıkınca durur, yarışta yoldan çekilir
 - **Navigasyon:** yol ağı üzerinde GPS rotası (yerde akan ok şeridi + yön oku), keşfedildikçe açılan harita sisi
 - **Laboratuvar ve Kariyer Yolu:** canlı shader / Lorenz çekicisi / fraktal deneyleri; zaman çizelgesi panoları
 - **Sürprizler:** arabayla devrilen mühendis heykeli, Konami kodu (↑↑↓↓←→←→BA) ile gökkuşağı boya
 - **Fısıltılar:** ziyaretçiler bulundukları yere mesaj bırakır (T); diğerleri yanından geçerken okur
 - **Ses tasarımı:** gündüz/gece değişen prosedürel müzik, vitesli motor sesi, lastik sürtünmesi, rüzgâr, yağmur, kuş ve cırcır böceği sesleri (hepsi Web Audio ile üretilir, ses dosyası yok)
-- **Canlı dünya:** gerçekçi göl suyu, kuş sürüleri, kelebekler, süzülen yapraklar, eğime göre kayalaşan arazi dokusu, sinematik açılış
+- **Canlı dünya:** gerçekçi göl suyu, kuş sürüleri, gölde martılar, kelebekler, süzülen yapraklar, eğime göre kayalaşan arazi dokusu, sinematik açılış
 - **Garaj:** iki araç (GLB hatchback ve kodla üretilen spor coupé) ve 6 boya rengi; yeni GLB araç src/game/cars.js ile eklenir
 - **Araç fonksiyonları:** el freniyle drift (B/Ctrl), hidrolik (1–5), farlar (F), takip kamerası (C), hız göstergesi
 - **Arayüz:** Türkçe/İngilizce, mini harita ve büyük harita ile ışınlanma, bölge başlık kartları, mobil joystick, gamepad, kalite ayarı, ses
@@ -93,6 +96,8 @@ Bütün modeller **CC BY 4.0** lisanslı. Yazar adları sitede "Emeği geçenler
 | `src/game/Vegetation.jsx` · `scatter.js` | 30 m'lik hücrelere bölünmüş instanced modeller ve rüzgâr |
 | `src/game/Grass.jsx` | GPU çimen shader'ı |
 | `src/game/Race.jsx` · `Collectibles.jsx` | Yarış ve veri çekirdekleri |
+| `src/game/HiddenLogos.jsx` | Gizli AÇ logoları ve havai fişek |
+| `src/game/Istanbul.jsx` · `Traffic.jsx` | Galata, Kız Kulesi, vapur, simitçi; çevre yolu trafiği |
 | `src/game/Effects.jsx` | MSAA, vinyet, ACES ton eşleme |
 | `src/game/Skids.jsx` · `Dust.jsx` | Lastik izleri ve toz parçacıkları |
 | `src/game/route.js` · `navigation.js` · `RouteLine.jsx` | GPS yol grafı (Dijkstra), keşif sisi, yerdeki rota şeridi |

@@ -16,6 +16,8 @@ export const PAINTS = [
   { id: 'yellow', hex: '#f2b632' },
   { id: 'green', hex: '#2fae8a' },
   { id: 'black', hex: '#24262c' },
+  // Gizli: bütün AÇ logoları bulununca açılır (metalik)
+  { id: 'gold', hex: '#d6a53a', secret: true, metal: true },
 ]
 
 export const paintHex = (id) => PAINTS.find((p) => p.id === id)?.hex ?? PAINTS[0].hex
