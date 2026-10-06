@@ -35,6 +35,9 @@ Atilla Çam'ın kişisel web sitesi. Ziyaretçiler fizik tabanlı bir arabayla a
 - **Garaj:** iki araç (GLB hatchback ve kodla üretilen spor coupé) ve 6 boya rengi; yeni GLB araç src/game/cars.js ile eklenir
 - **Araç fonksiyonları:** el freniyle drift (B/Ctrl), hidrolik (1–5), farlar (F), takip kamerası (C), hız göstergesi
 - **Arayüz:** Türkçe/İngilizce, mini harita ve büyük harita ile ışınlanma, bölge başlık kartları, mobil joystick, gamepad, kalite ayarı, ses
+- **Gerçek GitHub verileri:** her yayından önce (`prebuild`) proje sayısı, yıldızlar ve son güncellemeler GitHub API'sinden çekilir; bağlantı yoksa kayıtlı veri kullanılır
+- **Hazır HTML (SEO):** klasik görünüm derlemede sunucu tarafında çizilir ve `/klasik` adresine tam içerikli sayfa olarak yazılır
+- **Analitik:** Vercel Web Analytics ve Speed Insights (çerezsiz); Vercel panelinden etkinleştirilmesi gerekir
 - **Erişilebilirlik ve SEO:** klasik görünüm (`?klasik`), JSON-LD, Open Graph görseli, sitemap, WebGL yoksa otomatik geçiş
 
 ## Çalıştırma

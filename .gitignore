@@ -35,3 +35,6 @@ graphify-out/
 # Yerel asistan kuralları ve graphify raporu (açık depoya girmez)
 CLAUDE.md
 GRAPH_REPORT.md
+
+# Derleme sırasında geçici sunucu tarafı paketi
+.ssr-build

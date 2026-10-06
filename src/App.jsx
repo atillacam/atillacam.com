@@ -42,7 +42,8 @@ export default function App() {
   }, [lang])
 
   useEffect(() => {
-    const wantsClassic = new URLSearchParams(window.location.search).has('klasik')
+    // ?klasik ya da /klasik (arama motorları için hazır HTML olarak üretilen sayfa)
+    const wantsClassic = new URLSearchParams(window.location.search).has('klasik') || window.location.pathname.startsWith('/klasik')
     if (!webgl || wantsClassic) setView('classic')
   }, [webgl, setView])
 

@@ -4,6 +4,7 @@ import credits from '../game/credits.json'
 import { useT } from '../i18n.js'
 import { useStore } from '../store.js'
 import { formatTime } from '../format.js'
+import { highlights, relativeTime, repoFor } from '../stats.js'
 import { BrandIcon, Icon } from './Icons.jsx'
 import { vehicleState } from '../game/input.js'
 import { LIMITS, ONLINE, fetchScores, postWhisper, savedName, submitScore, submittedBest, whisperCooldown } from '../online.js'
@@ -11,7 +12,7 @@ import { LIMITS, ONLINE, fetchScores, postWhisper, savedName, submitScore, submi
 // 3D dünyadaki pencereler ve klasik görünüm aynı içerik bileşenlerini kullanır
 
 export function AboutContent({ heading = true }) {
-  const { t, L } = useT()
+  const { t, L, lang } = useT()
   return (
     <>
       {heading && (
@@ -27,10 +28,10 @@ export function AboutContent({ heading = true }) {
         <p key={p}>{p}</p>
       ))}
       <ul className="stats">
-        {profile.highlights.map((h) => (
-          <li key={h.value + h.label.en}>
+        {highlights(lang).map((h) => (
+          <li key={h.label} className={h.small ? 'small' : undefined}>
             <strong>{h.value}</strong>
-            <span>{L(h.label)}</span>
+            <span>{h.label}</span>
           </li>
         ))}
       </ul>
@@ -149,6 +150,24 @@ export function ContactContent({ heading = true }) {
   )
 }
 
+// Proje deposunun GitHub'daki gerçek bilgileri: yıldız, dil, son güncelleme
+export function RepoMeta({ link }) {
+  const { lang } = useT()
+  const repo = repoFor(link)
+  if (!repo) return null
+  const tr = lang === 'tr'
+  return (
+    <p className="repo-meta">
+      <span title={tr ? 'GitHub yıldızı' : 'GitHub stars'}>★ {repo.stars}</span>
+      {repo.language && <span>{repo.language}</span>}
+      <span>
+        {tr ? 'Güncellendi: ' : 'Updated '}
+        {relativeTime(repo.pushedAt, lang)}
+      </span>
+    </p>
+  )
+}
+
 export function ProjectContent({ id }) {
   const { t, L } = useT()
   const project = projects.find((p) => p.id === id)
@@ -159,6 +178,7 @@ export function ProjectContent({ id }) {
         {project.year}
       </p>
       <h2>{L(project.title)}</h2>
+      <RepoMeta link={project.link} />
       <p className="lead">{L(project.summary)}</p>
       <ul className="bullets">
         {L(project.description).map((d) => (

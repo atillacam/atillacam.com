@@ -2154,6 +2154,24 @@ kbd {
   color: var(--primary-2);
 }
 
+.repo-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: -4px 0 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--faint);
+}
+.repo-meta span:first-child {
+  color: var(--amber);
+}
+.hero-stats li.small strong,
+.stats li.small strong {
+  font-size: 1.35rem;
+  line-height: 1.5;
+}
+
 /* Hakkımda */
 .about-grid {
   display: grid;

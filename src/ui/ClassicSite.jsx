@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { career, profile, projects, skills } from '../content.js'
 import { useStore } from '../store.js'
 import { useT } from '../i18n.js'
-import { CreditsContent } from './Sections.jsx'
+import { CreditsContent, RepoMeta } from './Sections.jsx'
+import { highlights } from '../stats.js'
 import { LangSwitch } from './Overlay.jsx'
 import { BrandIcon, Icon, Logo } from './Icons.jsx'
 
@@ -139,7 +140,7 @@ function CodeCard() {
 }
 
 function Hero({ webgl }) {
-  const { t, L } = useT()
+  const { t, L, lang } = useT()
   const setView = useStore((s) => s.setView)
   return (
     <section id="hero" className="classic-hero">
@@ -170,10 +171,10 @@ function Hero({ webgl }) {
       </div>
       <CodeCard />
       <ul className="hero-stats">
-        {profile.highlights.map((h) => (
-          <li key={h.value}>
+        {highlights(lang).map((h) => (
+          <li key={h.label} className={h.small ? 'small' : undefined}>
             <strong>{h.value}</strong>
-            <span>{L(h.label)}</span>
+            <span>{h.label}</span>
           </li>
         ))}
       </ul>
@@ -192,6 +193,7 @@ function ProjectCard({ project, index }) {
         <span className="project-year">{project.year}</span>
       </div>
       <h3>{L(project.title)}</h3>
+      <RepoMeta link={project.link} />
       <p>{L(project.summary)}</p>
       <ul className="chips">
         {project.tags.map((tag) => (

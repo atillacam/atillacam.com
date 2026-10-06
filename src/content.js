@@ -211,6 +211,6 @@ export const projects = [
         '115 MB of source models squeezed to 4.5 MB with a custom glTF pipeline, plus an accessible classic view for devices without WebGL.',
       ],
     },
-    link: 'https://github.com/atillacam',
+    link: 'https://github.com/atillacam/atillacam.com',
   },
 ]
