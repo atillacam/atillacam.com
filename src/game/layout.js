@@ -30,6 +30,7 @@ export const AREAS = [
   { id: 'lake', label: 'areaLake', center: [-34, 0, 34], radius: 11, color: '#4fa3d9', spawn: [-22, 1.2, 22], yaw: (3 * Math.PI) / 4 },
   { id: 'race', label: 'areaRace', center: [0, 0, RING_RADIUS], radius: 9, color: COLORS.amber, spawn: [8, 1.2, RING_RADIUS], yaw: Math.PI },
   { id: 'golf', label: 'areaGolf', center: [34, 0, 34], radius: 12, color: '#4fd99a', spawn: [24, 1.2, 24], yaw: -Math.PI / 4 },
+  { id: 'sumo', label: 'areaSumo', center: [33, 0, -33], radius: 13, color: '#e84a5f', spawn: [19, 1.2, -22], yaw: Math.PI / 4 },
   // Dış bölgeler: çevre yolun ötesinde, tepelerin arkasında (pad: zemin tipi)
   { id: 'soccer', label: 'areaSoccer', center: [78, 0, 78], radius: 20, color: '#4fd99a', spawn: [60, 1.2, 60], yaw: -Math.PI / 4, pad: 'field', outer: true },
   { id: 'drift', label: 'areaDrift', center: [-78, 0, 78], radius: 20, color: COLORS.coral, spawn: [-60, 1.2, 60], yaw: (-3 * Math.PI) / 4, pad: 'asphalt', outer: true },
@@ -42,6 +43,13 @@ export const AREAS = [
 ]
 
 export const GOLF_PAR = 3 // mini golf deliğinin par değeri
+
+// Sumo arenası: yükseltilmiş yuvarlak platform; dışarı düşen kaybeder
+export const SUMO = { x: 33, z: -33, radius: 10, height: 0.45, bots: 3, limit: 90 }
+// Helikopter pisti: halka parkuru buradan başlar ve burada biter
+export const HELIPAD = { x: 13, z: -30 }
+// Taksi durağı (meydanda)
+export const TAXI_STAND = { x: 6, z: 5 }
 
 export const LAKE = { x: -34, z: 34, radius: 11, waterLevel: -0.75 }
 
@@ -90,6 +98,9 @@ export const SPOTS = [
   { id: 'bowling', label: 'areaBowling', action: 'spotBowlingAction', position: [93, 0, -6], color: '#ff8a3d' },
   { id: 'lookout', label: 'areaLookout', action: 'spotLookoutAction', position: [78, 0, -78], color: COLORS.violet },
   { id: 'credits', label: 'spotCredits', action: 'spotCreditsAction', position: [-21, 0, 18], color: '#c9b6ff' },
+  { id: 'taxi', label: 'spotTaxi', action: 'spotTaxiAction', position: [6, 0, 5], color: '#f2c230' },
+  { id: 'helipad', label: 'spotHelipad', action: 'spotHelipadAction', position: [13, 0, -30], color: '#7ad7ff' },
+  { id: 'sumo', label: 'areaSumo', action: 'spotSumoAction', position: [23, 0, -23], color: '#e84a5f' },
   ...SOCIAL_PEDESTALS.map(({ social, position }) => ({
     id: `social:${social.id}`,
     label: social.label,
@@ -192,6 +203,36 @@ export const ISTANBUL = {
   maiden: { x: LAKE.x, z: LAKE.z }, // Kız Kulesi gölün ortasında
   ferryRadius: 7, // vapurun göldeki tur yarıçapı
 }
+
+// Helikopter halka parkuru: [x, yerden yükseklik, z]. Sırayla geçilir; son halka pistin üstünde.
+export const SKY_RINGS = [
+  [2, 13, -52], // proje panolarının üstü
+  [-19, 14, -40], // Galata Kulesi'nin yanı
+  [-44, 10, -6], // iletişim meydanı
+  [-28, 8, 42], // Kız Kulesi ve martılar
+  [-12, 7, 66], // çevre yolunun üstü, alçaktan
+  [0, 11, 100], // stunt parkı
+  [58, 13, 70], // tepelerin arası
+  [34, 9, 34], // mini golf
+  [70, 22, -68], // gözlem tepesinin zirvesi
+  [13, 8, -30], // bitiş: helikopter pisti
+]
+
+// Taksi: yolcuların bekleyip indiği yerler (label: i18n anahtarı)
+export const TAXI_PLACES = [
+  { id: 'galata', label: 'placeGalata', x: -22, z: -28 },
+  { id: 'maiden', label: 'placeMaiden', x: -20, z: 24 },
+  { id: 'simit', label: 'placeSimit', x: 14, z: -6 },
+  { id: 'projects', label: 'areaProjects', x: 0, z: -29 },
+  { id: 'about', label: 'areaAbout', x: 27, z: 0 },
+  { id: 'contact', label: 'areaContact', x: -27, z: 0 },
+  { id: 'race', label: 'areaRace', x: -10, z: 61 },
+  { id: 'golf', label: 'areaGolf', x: 23, z: 23 },
+  { id: 'stunt', label: 'areaStunt', x: -9, z: 90 },
+  { id: 'lab', label: 'areaLab', x: 0, z: -88 },
+  { id: 'bowling', label: 'areaBowling', x: 88, z: 0 },
+  { id: 'career', label: 'areaCareer', x: -86, z: 0 },
+]
 
 // Çevre yolunda dolaşan araçlar. Sağdan trafik: açı artarak giden (dir 1) iç şeritte, ters yöndeki dış şeritte
 export const TRAFFIC = [

@@ -2637,3 +2637,60 @@ kbd {
     scroll-behavior: auto;
   }
 }
+
+/* Taksi, halka parkuru ve sumo göstergeleri */
+.game-hud.taxi strong {
+  color: #f2c230;
+}
+.game-hud.rings strong {
+  color: #7ad7ff;
+}
+.game-hud.sumo.active {
+  border-color: rgba(232, 74, 95, 0.6);
+}
+.game-hud.sumo strong small {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.game-hud .link {
+  justify-self: start;
+  margin-top: 4px;
+  font-size: 0.8rem;
+}
+.game-hud small:empty {
+  display: none;
+}
+.records {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+.records li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--surface-2, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--border);
+}
+.records strong {
+  font-variant-numeric: tabular-nums;
+}
+/* Dar ekranda GPS kutusu üstte ortalı: oyun göstergeleri onun altına iner */
+@media (max-width: 760px) {
+  .game-hud.taxi,
+  .game-hud.rings,
+  .game-hud.sumo {
+    top: 136px;
+    min-width: 0;
+    padding: 10px 12px;
+  }
+  .game-hud.taxi strong,
+  .game-hud.rings strong,
+  .game-hud.sumo strong {
+    font-size: 1.5rem;
+  }
+}

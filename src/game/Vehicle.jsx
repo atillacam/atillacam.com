@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { CuboidCollider, RigidBody, useBeforePhysicsStep, useRapier } from '@react-three/rapier'
-import { useGLTF } from '@react-three/drei'
+import { Text, useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 import { input, pollGamepad, vehicleState } from './input.js'
 import { AREAS, LAKE, SPAWN, WORLD_HALF } from './layout.js'
@@ -9,6 +9,7 @@ import { world as worldTime } from './time.js'
 import { heightAt } from './terrain.js'
 import { bakedGeometry } from './geometry.js'
 import TurboFlame from './TurboFlame.jsx'
+import { fontBlack } from './fonts.js'
 import { buildRacer, paintHex, PAINTS } from './cars.js'
 import { useStore } from '../store.js'
 import { playHonk, playSplash, playThud, setMuted, setMusic, updateAmbience, updateEngine } from '../audio.js'
@@ -117,6 +118,47 @@ function useCarModel() {
   }, [scene])
 }
 
+const TAXI_YELLOW = '#f2c230'
+
+// Modelin gövde uzayındaki tavanı: en yüksek noktanın yüksekliği ve tavanın orta x'i
+function roofOf(body) {
+  const box = new THREE.Box3()
+  const part = new THREE.Box3()
+  const m = new THREE.Matrix4()
+  body.traverse((o) => {
+    if (!o.isMesh) return
+    if (!o.geometry.boundingBox) o.geometry.computeBoundingBox()
+    // Gövdeye göre yerel dönüşüm (sahnedeki konumdan bağımsız)
+    m.identity()
+    for (let n = o; n && n !== body; n = n.parent) {
+      n.updateMatrix()
+      m.premultiply(n.matrix)
+    }
+    box.union(part.copy(o.geometry.boundingBox).applyMatrix4(m))
+  })
+  return { y: box.max.y, x: (box.min.x + box.max.x) / 2 - 0.12 }
+}
+
+// Taksi vardiyasında tavandaki "TAKSİ" lambası (gece yanar)
+function TaxiRoofSign({ x, y }) {
+  const lamp = useMemo(() => new THREE.MeshStandardMaterial({ color: '#f2c230', emissive: '#ffcf3a', emissiveIntensity: 0.3 }), [])
+  useFrame(() => {
+    lamp.emissiveIntensity = 0.3 + worldTime.night * 1.5
+  })
+  return (
+    <group position={[x, y + 0.09, 0]}>
+      <mesh castShadow material={lamp}>
+        <boxGeometry args={[0.24, 0.17, 0.6]} />
+      </mesh>
+      {[1, -1].map((side) => (
+        <Text key={side} font={fontBlack} fontSize={0.12} color="#16181d" position={[0, 0, side * 0.305]} rotation={[0, side > 0 ? 0 : Math.PI, 0]} anchorX="center" anchorY="middle">
+          TAKSİ
+        </Text>
+      ))}
+    </group>
+  )
+}
+
 export default function Vehicle() {
   const body = useRef()
   const collider = useRef()
@@ -132,12 +174,15 @@ export default function Vehicle() {
   const racer = useMemo(() => buildRacer(), [])
   const carId = useStore((s) => s.carId)
   const carColor = useStore((s) => s.carColor)
+  const taxi = useStore((s) => s.taxi.active)
   const car = carId === 'racer' ? racer : glbCar
+  const roof = useMemo(() => roofOf(car.body), [car])
 
   // Seçilen boya rengini uygula
   useEffect(() => {
-    const hex = paintHex(carColor)
-    const metal = PAINTS.find((p) => p.id === carColor)?.metal
+    // Taksi vardiyasında araç geçici olarak taksi sarısına boyanır
+    const hex = taxi ? TAXI_YELLOW : paintHex(carColor)
+    const metal = !taxi && PAINTS.find((p) => p.id === carColor)?.metal
     car.paint.forEach((m) => {
       // Özgün yüzey değerleri bir kez saklanır; metalik boya geri alınabilsin
       m.userData.base ??= { metalness: m.metalness, roughness: m.roughness }
@@ -145,7 +190,7 @@ export default function Vehicle() {
       m.metalness = metal ? 0.65 : m.userData.base.metalness
       m.roughness = metal ? 0.28 : m.userData.base.roughness
     })
-  }, [car, carColor])
+  }, [car, carColor, taxi])
 
   const steer = useRef(0)
   const lookTarget = useRef(new THREE.Vector3(...SPAWN.position))
@@ -415,7 +460,7 @@ export default function Vehicle() {
       vehicleState.rainbowWas = true
     } else if (vehicleState.rainbowWas) {
       vehicleState.rainbowWas = false
-      car.paint.forEach((m) => m.color.set(paintHex(store.carColor)))
+      car.paint.forEach((m) => m.color.set(store.taxi.active ? TAXI_YELLOW : paintHex(store.carColor)))
     }
 
     // Gece farlar
@@ -599,6 +644,7 @@ export default function Vehicle() {
       <group ref={visual} />
       <group position={[0, MODEL_OFFSET_Y, 0]}>
         <primitive object={car.body} />
+        {taxi && <TaxiRoofSign x={roof.x} y={roof.y} />}
         {/* Stop lambaları */}
         {[-0.46, 0.46].map((z) => (
           <mesh key={z} position={[-1.235, 0.22, z]}>

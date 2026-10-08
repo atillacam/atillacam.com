@@ -366,6 +366,42 @@ export function LeaderboardContent() {
         </ol>
       )}
       <p className="muted">{t('raceHint')}</p>
+      <PersonalRecords />
+    </>
+  )
+}
+
+// Diğer oyunların en iyi skorları (yalnızca oynananlar)
+function PersonalRecords() {
+  const { t } = useT()
+  // Her değer ayrı seçilir: seçici her seferinde yeni dizi döndürürse sonsuz render olur
+  const drift = useStore((s) => s.driftBest)
+  const stunt = useStore((s) => s.stuntBest)
+  const golf = useStore((s) => s.golfBest)
+  const taxi = useStore((s) => s.taxiBest)
+  const rings = useStore((s) => s.ringsBest)
+  const sumo = useStore((s) => s.sumoBest)
+  const records = [
+    ['driftLabel', drift, String(drift)],
+    ['stuntLabel', stunt, String(stunt)],
+    ['areaGolf', golf, `${golf} / PAR`],
+    ['taxi', taxi, `₺${taxi}`],
+    ['rings', rings, formatTime(rings)],
+    ['areaSumo', sumo, formatTime(sumo)],
+  ]
+  const played = records.filter(([, value]) => value)
+  if (!played.length) return null
+  return (
+    <>
+      <h3>{t('personalRecords')}</h3>
+      <ul className="records">
+        {played.map(([label, , text]) => (
+          <li key={label}>
+            <span>{t(label)}</span>
+            <strong>{text}</strong>
+          </li>
+        ))}
+      </ul>
     </>
   )
 }

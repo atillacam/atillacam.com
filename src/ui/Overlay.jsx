@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { profile } from '../content.js'
 import { ACHIEVEMENTS, progressOf, useStore } from '../store.js'
-import { AREAS, COLLECTIBLES, GOLF_PAR, LAKE, PATHS, RACE, RING_RADIUS, WORLD_HALF } from '../game/layout.js'
+import { AREAS, COLLECTIBLES, GOLF_PAR, LAKE, PATHS, RACE, RING_RADIUS, SKY_RINGS, SUMO, WORLD_HALF } from '../game/layout.js'
 import { input, teleport, trigger, vehicleState } from '../game/input.js'
 import { initAudio } from '../audio.js'
 import { useT } from '../i18n.js'
@@ -176,12 +176,15 @@ function Prompt() {
   const modal = useStore((s) => s.modal)
   const interact = useStore((s) => s.interact)
   const mode = useStore((s) => s.mode)
+  const onShift = useStore((s) => s.taxi.active)
   if (!spot || modal || mode !== 'car') return null
+  // Vardiyadayken durakta Enter vardiyayı bitirir
+  const action = spot.id === 'taxi' && onShift ? 'taxiEnd' : spot.action
   return (
     <button className="prompt" onClick={interact}>
       <kbd>Enter</kbd>
       <span className="prompt-text">
-        <strong>{t(spot.action)}</strong>
+        <strong>{t(action)}</strong>
         <small>{spot.rawLabel ? L(spot.label) : t(spot.label)}</small>
       </span>
     </button>
@@ -274,6 +277,129 @@ function HeliHud() {
   )
 }
 
+// Canlı sayaçlar: her karede metni doğrudan günceller (React render'ı tetiklemez)
+function useTicker(active, update) {
+  useEffect(() => {
+    if (!active) return
+    let frame
+    const loop = () => {
+      update(performance.now())
+      frame = requestAnimationFrame(loop)
+    }
+    loop()
+    return () => cancelAnimationFrame(frame)
+  }, [active, update])
+}
+
+const clockText = (ms) => {
+  const sec = Math.max(0, Math.ceil(ms / 1000))
+  return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0')
+}
+
+// Taksi vardiyası: kazanç, kalan süre, yolcu sayısı ve sıradaki adım
+function TaxiHud() {
+  const { t } = useT()
+  const taxi = useStore((s) => s.taxi)
+  const taxiBest = useStore((s) => s.taxiBest)
+  const left = useRef()
+  const tip = useRef()
+  const update = useCallback((now) => {
+    const { taxi: live } = useStore.getState()
+    if (left.current) left.current.textContent = clockText(live.endsAt - now)
+    if (tip.current) {
+      const rest = live.stage === 'ride' ? live.par - (now - live.rideStart) / 1000 : 0
+      tip.current.textContent = rest > 0 ? `${t('taxiTip')}: ${Math.ceil(rest)} s` : live.stage === 'ride' ? t('taxiNoTip') : ''
+    }
+  }, [t])
+  useTicker(taxi.active, update)
+  if (!taxi.active) return null
+  return (
+    <div className="game-hud taxi">
+      <span>🚕 {t('taxi')}</span>
+      <strong>₺{taxi.earned}</strong>
+      <small>
+        <span ref={left}>0:00</span> · {t('taxiFares')}: {taxi.fares}
+      </small>
+      <small>{taxi.stage === 'pickup' ? t('taxiGoPickup') : t('taxiGoDrop')}</small>
+      <small ref={tip} />
+      <small>
+        {t('driftBest')}: ₺{taxiBest}
+      </small>
+      <button className="link" onClick={() => useStore.getState().endTaxi()}>
+        {t('taxiEnd')}
+      </button>
+    </div>
+  )
+}
+
+// Halka parkuru: süre ve geçilen halka sayısı
+function RingsHud() {
+  const { t } = useT()
+  const rings = useStore((s) => s.rings)
+  const best = useStore((s) => s.ringsBest)
+  const time = useRef()
+  const update = useCallback((now) => {
+    const { rings: live } = useStore.getState()
+    if (time.current) time.current.textContent = formatTime(now - live.start)
+  }, [])
+  useTicker(rings.active, update)
+  if (!rings.active) return null
+  return (
+    <div className="game-hud rings">
+      <span>🚁 {t('rings')}</span>
+      <strong ref={time}>0:00.00</strong>
+      <small>
+        {rings.next} / {SKY_RINGS.length} · {t('driftBest')}: {best ? formatTime(best) : '—'}
+      </small>
+      <button className="link" onClick={() => useStore.getState().cancelRings()}>
+        {t('close')}
+      </button>
+    </div>
+  )
+}
+
+// Sumo: geri sayım, kalan süre ve rakipler; maçtan sonra sonuç
+function SumoHud() {
+  const { t } = useT()
+  const sumo = useStore((s) => s.sumo)
+  const zone = useStore((s) => s.zone)
+  const best = useStore((s) => s.sumoBest)
+  const left = useRef()
+  const update = useCallback((now) => {
+    const { sumo: live } = useStore.getState()
+    if (left.current) left.current.textContent = live.start ? clockText(SUMO.limit * 1000 - (now - live.start)) : clockText(SUMO.limit * 1000)
+  }, [])
+  useTicker(sumo.active, update)
+  if (sumo.active && sumo.countdown > 0) {
+    return (
+      <div className="countdown" key={sumo.countdown}>
+        {sumo.countdown}
+      </div>
+    )
+  }
+  if (sumo.active) {
+    return (
+      <div className="game-hud sumo active">
+        <span>🥋 {t('areaSumo')}</span>
+        <strong>
+          {SUMO.bots - sumo.out.length} <small>{t('sumoRivals')}</small>
+        </strong>
+        <small ref={left}>1:30</small>
+      </div>
+    )
+  }
+  if (zone !== 'sumo') return null
+  return (
+    <div className="game-hud sumo">
+      <span>🥋 {t('areaSumo')}</span>
+      <strong>{sumo.result ? (sumo.result === 'win' ? t('sumoWon') : t('sumoLost')) : '—'}</strong>
+      <small>
+        {t('driftBest')}: {best ? formatTime(best) : '—'}
+      </small>
+    </div>
+  )
+}
+
 // Hız göstergesi, canlı drift puanı ve futbol sahasında gol sayacı
 function GameHud() {
   const { t } = useT()
@@ -316,6 +442,9 @@ function GameHud() {
   return (
     <>
       <HeliHud />
+      <TaxiHud />
+      <RingsHud />
+      <SumoHud />
       <div className="speedo" aria-hidden="true">
         <strong ref={speed}>0</strong>
         <span>km/h</span>

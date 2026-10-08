@@ -125,7 +125,8 @@ export default function RouteLine() {
 
     // Varış
     const toTarget = Math.hypot(target.x - x, target.z - z)
-    if (toTarget < (target.radius ?? 8) * 0.8) {
+    // silent: varışı hedefi koyan oyun kendisi yönetir (ör. taksi)
+    if (!target.silent && toTarget < (target.radius ?? 8) * 0.8) {
       store.setNavTarget(null)
       store.toast(translate('arrived', store.lang), translate(target.label, store.lang))
       if (!store.muted) playChime()

@@ -25,10 +25,13 @@ Atilla Çam'ın kişisel web sitesi. Ziyaretçiler fizik tabanlı bir arabayla a
 - **Performans koruması:** FPS sınırı (30/60/sınırsız), takılınca otomatik kalite düşürme, pencere açıkken 24 FPS
 - **Patlayan TNT kasaları:** zincirleme patlama, alev topu ve duman
 - **Kendini düzeltme:** yan yatan, ters dönen ya da takılan araç kendiliğinden doğrulur
-- **Oyun:** kontrol noktalı zamanlı yarış, yerel + dünya skor tablosu, 14 veri çekirdeği, 35 başarım, bowling, rampa
+- **Oyun:** kontrol noktalı zamanlı yarış, yerel + dünya skor tablosu, 14 veri çekirdeği, 38 başarım, bowling, rampa
 - **Gizli AÇ logoları:** haritaya saklanmış 10 logo; hepsini bulan metalik altın boyayı ve havai fişek gösterisini açar
 - **İstanbul dokunuşları:** Galata Kulesi, gölde Kız Kulesi ve etrafında dönen düdüklü şehir hatları vapuru, itilip devrilebilen simitçi tezgâhı
 - **Trafik:** çevre yolunda sağdan akan araçlar (sarı taksi dahil); önüne çıkınca durur, yarışta yoldan çekilir
+- **Taksi modu:** duraktan 2 dakikalık vardiya; yolcuyu al, GPS ile götür, hızlı varırsan bahşiş
+- **Helikopter halka parkuru:** pistten kalk, haritanın üzerindeki 10 halkadan sırayla geç (kılavuz ok, rekor süresi)
+- **Sumo arenası:** eğimli platformda üç çarpışan arabayı dışarı it; son kalan kazanır
 - **Navigasyon:** yol ağı üzerinde GPS rotası (yerde akan ok şeridi + yön oku), keşfedildikçe açılan harita sisi
 - **Laboratuvar ve Kariyer Yolu:** canlı shader / Lorenz çekicisi / fraktal deneyleri; zaman çizelgesi panoları
 - **Sürprizler:** arabayla devrilen mühendis heykeli, Konami kodu (↑↑↓↓←→←→BA) ile gökkuşağı boya
@@ -97,6 +100,7 @@ Bütün modeller **CC BY 4.0** lisanslı. Yazar adları sitede "Emeği geçenler
 | `src/game/Grass.jsx` | GPU çimen shader'ı |
 | `src/game/Race.jsx` · `Collectibles.jsx` | Yarış ve veri çekirdekleri |
 | `src/game/HiddenLogos.jsx` | Gizli AÇ logoları ve havai fişek |
+| `src/game/Taxi.jsx` · `SkyRings.jsx` · `Sumo.jsx` | Taksi modu, helikopter halka parkuru, sumo arenası |
 | `src/game/Istanbul.jsx` · `Traffic.jsx` | Galata, Kız Kulesi, vapur, simitçi; çevre yolu trafiği |
 | `src/game/Effects.jsx` | MSAA, vinyet, ACES ton eşleme |
 | `src/game/Skids.jsx` · `Dust.jsx` | Lastik izleri ve toz parçacıkları |

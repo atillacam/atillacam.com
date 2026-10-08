@@ -16,6 +16,9 @@ import Collectibles from './Collectibles.jsx'
 import HiddenLogos from './HiddenLogos.jsx'
 import Istanbul from './Istanbul.jsx'
 import Traffic from './Traffic.jsx'
+import Taxi from './Taxi.jsx'
+import SkyRings from './SkyRings.jsx'
+import Sumo from './Sumo.jsx'
 import Zones from './Zones.jsx'
 import Bowling from './Bowling.jsx'
 import Showcase from './Showcase.jsx'
@@ -117,6 +120,7 @@ export default function Game() {
           <HiddenLogos />
           <Istanbul />
           <Traffic />
+          <Sumo />
           <Zones />
           <Bowling />
           <Showcase />
@@ -133,6 +137,8 @@ export default function Game() {
         <Ripples />
         <Ghost />
         <Helicopter />
+        <Taxi />
+        <SkyRings />
         <Atmosphere />
         <Seasons />
         <Weather />

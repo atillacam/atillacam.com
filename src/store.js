@@ -41,6 +41,9 @@ export const ACHIEVEMENTS = [
   { id: 'wrecker', title: { tr: 'Yıkım ekibi', en: 'Wrecking crew' }, text: { tr: '15 bank, çit ya da duvarı parçala.', en: 'Smash 15 benches, fences or walls.' }, goal: 15 },
   { id: 'pilot', title: { tr: 'Pilot', en: 'Pilot' }, text: { tr: 'Helikopterle dünyanın üzerinde uç.', en: 'Fly over the world by helicopter.' } },
   { id: 'logoHunter', title: { tr: 'Logo avcısı', en: 'Logo hunter' }, text: { tr: 'Haritaya saklanmış bütün AÇ logolarını bul. Ödül: altın boya.', en: 'Find every AÇ logo hidden around the map. Reward: gold paint.' }, goal: HIDDEN_LOGOS.length },
+  { id: 'cabbie', title: { tr: 'Taksici', en: 'Cabbie' }, text: { tr: 'Tek vardiyada 5 yolcu taşı.', en: 'Deliver 5 passengers in a single shift.' } },
+  { id: 'ringMaster', title: { tr: 'Halka ustası', en: 'Ring master' }, text: { tr: 'Helikopter halka parkurunu bitir.', en: 'Finish the helicopter ring course.' } },
+  { id: 'sumo', title: { tr: 'Yokozuna', en: 'Yokozuna' }, text: { tr: 'Sumo arenasında üç rakibi de dışarı it.', en: 'Push all three rivals out of the sumo ring.' } },
   { id: 'road', title: { tr: 'Uzun yol', en: 'Road trip' }, text: { tr: '2 km yol yap.', en: 'Drive 2 km.' }, goal: 2000 },
 ]
 
@@ -84,11 +87,16 @@ function detectQuality() {
   return coarse || lowMemory ? 'low' : 'high'
 }
 
-const saved = { unlocked: {}, progress: {}, times: [], driftBest: 0, stuntBest: 0, golfBest: 0, ...readJSON(STORAGE_KEY, {}) }
+const saved = { unlocked: {}, progress: {}, times: [], driftBest: 0, stuntBest: 0, golfBest: 0, taxiBest: 0, ringsBest: 0, sumoBest: 0, ...readJSON(STORAGE_KEY, {}) }
 const settings = { quality: detectQuality(), muted: false, music: true, fpsCap: 60, carId: 'ae86', carColor: 'white', ...readJSON(SETTINGS_KEY, {}) }
 let toastId = 0
 
 const idleRace = { active: false, countdown: 0, start: 0, next: 0, finishedAt: 0, lastTime: 0 }
+// stage: 'pickup' (yolcuya git) | 'ride' (yolcuyu götür)
+const idleTaxi = { active: false, endsAt: 0, fares: 0, earned: 0, stage: 'pickup', pickup: null, dest: null, rideStart: 0, par: 0, last: 0 }
+const idleRings = { active: false, start: 0, next: 0 }
+// result: 'win' | 'lose' | null (son maçın sonucu, bir süre gösterilir)
+const idleSumo = { active: false, countdown: 0, start: 0, out: [], result: null, time: 0 }
 
 export const useStore = create((set, get) => ({
   view: '3d', // '3d' | 'classic'
@@ -112,6 +120,12 @@ export const useStore = create((set, get) => ({
   stunt: { score: 0, active: false },
   golfBest: saved.golfBest ?? 0, // en az vuruş (0 = henüz yok)
   golf: { strokes: 0 },
+  taxiBest: saved.taxiBest ?? 0, // tek vardiyada en yüksek kazanç (₺)
+  taxi: idleTaxi,
+  ringsBest: saved.ringsBest ?? 0, // en hızlı halka parkuru (ms, 0 = yok)
+  rings: idleRings,
+  sumoBest: saved.sumoBest ?? 0, // en hızlı sumo zaferi (ms, 0 = yok)
+  sumo: idleSumo,
   drift: { combo: 0, active: false },
   soccerSession: 0, // bu ziyaretteki goller
   cinematic: 0, // > performance.now() ise sinematik kamera
@@ -134,7 +148,7 @@ export const useStore = create((set, get) => ({
 
   persist: () => {
     const s = get()
-    writeJSON(STORAGE_KEY, { unlocked: s.unlocked, progress: s.progress, times: s.times, driftBest: s.driftBest, stuntBest: s.stuntBest, golfBest: s.golfBest })
+    writeJSON(STORAGE_KEY, { unlocked: s.unlocked, progress: s.progress, times: s.times, driftBest: s.driftBest, stuntBest: s.stuntBest, golfBest: s.golfBest, taxiBest: s.taxiBest, ringsBest: s.ringsBest, sumoBest: s.sumoBest })
     writeJSON(SETTINGS_KEY, { quality: s.quality, muted: s.muted, music: s.music, fpsCap: s.fpsCap, carId: s.carId, carColor: s.carColor })
   },
 
@@ -196,6 +210,13 @@ export const useStore = create((set, get) => ({
       set({ bowlingReset: Date.now() })
     } else if (spot.id === 'lookout') {
       get().startCinematic()
+    } else if (spot.id === 'taxi') {
+      if (get().taxi.active) get().endTaxi()
+      else get().startTaxi()
+    } else if (spot.id === 'helipad') {
+      get().startRings()
+    } else if (spot.id === 'sumo') {
+      if (!get().sumo.active) get().startSumo()
     } else if (spot.id === 'race') {
       if (!race.active && !race.countdown) get().requestRace()
     } else openModal({ type: spot.id })
@@ -214,13 +235,17 @@ export const useStore = create((set, get) => ({
   // ---------- Yarış ----------
   // requestRace: aracı başlangıca ışınlatır (Race bileşeni dinler) ve geri sayımı başlatır
   // Yarış her zaman arabayla: helikopterdeyse araca geçilir
-  requestRace: () => set({ mode: 'car', race: { ...idleRace, countdown: 3, requested: Date.now() } }),
+  requestRace: () => {
+    if (get().taxi.active) get().endTaxi()
+    set({ mode: 'car', race: { ...idleRace, countdown: 3, requested: Date.now() }, rings: idleRings, sumo: idleSumo, navTarget: null })
+  },
   setMode: (mode) => set({ mode }),
   // V tuşu / düğme: arabadan helikoptere geç ya da helikopterle in
   toggleHeli: () => {
-    const { mode, started, race } = get()
-    if (!started || race.active || race.countdown) return
+    const { mode, started, race, sumo, taxi } = get()
+    if (!started || race.active || race.countdown || sumo.active) return
     if (mode === 'car') {
+      if (taxi.active) get().endTaxi()
       set({ mode: 'heli' })
       get().unlock('pilot')
     } else if (mode === 'heli') set({ mode: 'landing' })
@@ -261,6 +286,54 @@ export const useStore = create((set, get) => ({
   bankStunt: (points) => {
     set((s) => ({ stuntBest: Math.max(s.stuntBest, Math.round(points)), stunt: { score: Math.round(points), active: false } }))
     if (points >= 1500) get().unlock('stuntman')
+    get().persist()
+  },
+
+  // ---------- Taksi ----------
+  startTaxi: (shift = 120000) => {
+    if (get().mode !== 'car') return
+    set({ taxi: { ...idleTaxi, active: true, endsAt: performance.now() + shift }, rings: idleRings, sumo: idleSumo })
+  },
+  setTaxi: (patch) => set((s) => ({ taxi: { ...s.taxi, ...patch } })),
+  endTaxi: () => {
+    const { taxi } = get()
+    if (!taxi.active) return
+    set((s) => ({ taxi: { ...idleTaxi, last: taxi.earned }, taxiBest: Math.max(s.taxiBest, taxi.earned), navTarget: null }))
+    if (taxi.fares >= 5) get().unlock('cabbie')
+    get().persist()
+  },
+
+  // ---------- Helikopter halka parkuru ----------
+  startRings: () => {
+    const { started, race } = get()
+    if (!started || race.active || race.countdown) return
+    if (get().taxi.active) get().endTaxi()
+    set({ mode: 'heli', rings: { active: true, start: performance.now(), next: 0 }, sumo: idleSumo, navTarget: null })
+    get().unlock('pilot')
+  },
+  passRing: (index) => set((s) => ({ rings: { ...s.rings, next: index + 1 } })),
+  finishRings: () => {
+    const ms = performance.now() - get().rings.start
+    set((s) => ({ rings: idleRings, ringsBest: s.ringsBest ? Math.min(s.ringsBest, ms) : ms }))
+    get().unlock('ringMaster')
+    get().persist()
+    return ms
+  },
+  cancelRings: () => set({ rings: idleRings }),
+
+  // ---------- Sumo ----------
+  startSumo: () => {
+    const { started, race, mode } = get()
+    if (!started || race.active || race.countdown || mode !== 'car') return
+    if (get().taxi.active) get().endTaxi()
+    set({ sumo: { ...idleSumo, active: true, countdown: 3 }, rings: idleRings, navTarget: null })
+  },
+  setSumo: (patch) => set((s) => ({ sumo: { ...s.sumo, ...patch } })),
+  endSumo: (win) => {
+    const { sumo } = get()
+    const time = sumo.start ? performance.now() - sumo.start : 0
+    set((s) => ({ sumo: { ...idleSumo, result: win ? 'win' : 'lose', time }, sumoBest: win ? (s.sumoBest ? Math.min(s.sumoBest, time) : time) : s.sumoBest }))
+    if (win) get().unlock('sumo')
     get().persist()
   },
 
@@ -368,7 +441,7 @@ export const useStore = create((set, get) => ({
   },
 
   resetProgress: () => {
-    set((s) => ({ unlocked: {}, progress: {}, times: [], driftBest: 0, stuntBest: 0, golfBest: 0, carColor: s.carColor === 'gold' ? 'white' : s.carColor }))
+    set((s) => ({ unlocked: {}, progress: {}, times: [], driftBest: 0, stuntBest: 0, golfBest: 0, taxiBest: 0, ringsBest: 0, sumoBest: 0, carColor: s.carColor === 'gold' ? 'white' : s.carColor }))
     get().persist()
   },
 }))
