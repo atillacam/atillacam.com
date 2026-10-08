@@ -41,7 +41,7 @@ Atilla Çam'ın kişisel web sitesi. Ziyaretçiler fizik tabanlı bir arabayla a
 - **Ses tasarımı:** gündüz/gece değişen prosedürel müzik, vitesli motor sesi, lastik sürtünmesi, rüzgâr, yağmur, kuş ve cırcır böceği sesleri (hepsi Web Audio ile üretilir, ses dosyası yok)
 - **Canlı dünya:** gerçekçi göl suyu, kuş sürüleri, gölde martılar, kelebekler, süzülen yapraklar, eğime göre kayalaşan arazi dokusu, sinematik açılış
 - **Garaj:** iki araç (GLB hatchback ve kodla üretilen spor coupé) ve 6 boya rengi; yeni GLB araç src/game/cars.js ile eklenir
-- **Araç fonksiyonları:** el freniyle drift (B/Ctrl), hidrolik (1–5), farlar (F), takip kamerası (C), hız göstergesi
+- **Araç fonksiyonları:** el freniyle drift (B/Q), hidrolik (1–5), farlar (F), takip kamerası (C), hız göstergesi
 - **Arayüz:** Türkçe/İngilizce, mini harita ve büyük harita ile ışınlanma, bölge başlık kartları, mobil joystick, gamepad, kalite ayarı, ses
 - **Gerçek GitHub verileri:** her yayından önce (`prebuild`) proje sayısı, yıldızlar ve son güncellemeler GitHub API'sinden çekilir; bağlantı yoksa kayıtlı veri kullanılır
 - **Hazır HTML (SEO):** klasik görünüm derlemede sunucu tarafında çizilir ve `/klasik` adresine tam içerikli sayfa olarak yazılır

@@ -87,6 +87,19 @@ export default function Game() {
 
   useEffect(() => bindKeyboard(), [])
 
+  // Bir oyun sürerken (yarış, taksi, halka parkuru, sumo) sekme yanlışlıkla kapatılırsa tarayıcı onay ister
+  useEffect(() => {
+    const guard = (event) => {
+      const s = useStore.getState()
+      if (s.race.active || s.race.countdown || s.taxi.active || s.rings.active || s.sumo.active) {
+        event.preventDefault()
+        event.returnValue = ''
+      }
+    }
+    window.addEventListener('beforeunload', guard)
+    return () => window.removeEventListener('beforeunload', guard)
+  }, [])
+
   // Geliştirme sırasında konsoldan test edebilmek için
   useEffect(() => {
     if (import.meta.env.DEV) window.__portfolio = Object.assign(window.__portfolio ?? {}, { input, vehicleState, store: useStore, world })

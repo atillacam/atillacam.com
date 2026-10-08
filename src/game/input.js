@@ -54,8 +54,9 @@ const KEYMAP = {
   ArrowRight: 'right',
   ShiftLeft: 'boost',
   ShiftRight: 'boost',
-  ControlLeft: 'brake',
+  // Ctrl kullanılmaz: Ctrl+W sekmeyi kapatır, Ctrl+R yeniler (tarayıcı engellenmesine izin vermez)
   KeyB: 'brake',
+  KeyQ: 'brake',
 }
 
 function isTyping(event) {
@@ -88,11 +89,16 @@ export function bindKeyboard() {
     // Pencere açıkken araç kontrolü yok; sadece Esc çalışır
     if (store.modal) return
     if (!store.started) return
+    // Tarayıcı kısayolları (Ctrl/Cmd/Alt + tuş) oyuna karışmasın; basılı tuşlar da bırakılsın
+    if (event.ctrlKey || event.metaKey || event.altKey) {
+      releaseAll()
+      return
+    }
 
     const key = KEYMAP[event.code]
     if (key) {
       input.keys[key] = true
-      if (event.code.startsWith('Arrow') || event.code === 'ControlLeft') event.preventDefault()
+      if (event.code.startsWith('Arrow')) event.preventDefault()
       return
     }
     if (event.repeat) return

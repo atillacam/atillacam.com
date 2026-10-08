@@ -433,7 +433,7 @@ export default function Vehicle() {
       const headroom = THREE.MathUtils.clamp(1 - Math.abs(speed) / limit, 0, 1)
       engine = throttle * ENGINE_FORCE * (boost ? BOOST_MULTIPLIER : 1) * simit * Math.min(1, headroom * 3)
     }
-    // El freni (B/Ctrl): arka tekerlekler kilitlenip tutuş azalır → kontrollü drift
+    // El freni (B/Q): arka tekerlekler kilitlenip tutuş azalır → kontrollü drift
     const handbrake = brake && Math.abs(speed) > 3
     const brakeForce = reversing ? BRAKE_FORCE : brake && !handbrake ? BRAKE_FORCE : throttle === 0 ? 0.14 : 0
     vehicleState.braking = brake || reversing
