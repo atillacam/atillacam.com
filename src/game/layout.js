@@ -98,6 +98,7 @@ export const SPOTS = [
   { id: 'bowling', label: 'areaBowling', action: 'spotBowlingAction', position: [93, 0, -6], color: '#ff8a3d' },
   { id: 'lookout', label: 'areaLookout', action: 'spotLookoutAction', position: [78, 0, -78], color: COLORS.violet },
   { id: 'credits', label: 'spotCredits', action: 'spotCreditsAction', position: [-21, 0, 18], color: '#c9b6ff' },
+  { id: 'simit', label: 'placeSimit', action: 'spotSimitAction', position: [13.6, 0, -7.6], color: '#c8302c' },
   { id: 'taxi', label: 'spotTaxi', action: 'spotTaxiAction', position: [6, 0, 5], color: '#f2c230' },
   { id: 'helipad', label: 'spotHelipad', action: 'spotHelipadAction', position: [13, 0, -30], color: '#7ad7ff' },
   { id: 'sumo', label: 'areaSumo', action: 'spotSumoAction', position: [23, 0, -23], color: '#e84a5f' },

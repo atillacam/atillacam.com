@@ -8,6 +8,8 @@ import { useT } from '../i18n.js'
 import { formatTime } from '../format.js'
 import { Icon, Logo } from './Icons.jsx'
 import { CARS, PAINTS } from '../game/cars.js'
+import { SHOP_CATEGORIES, SHOP_ITEMS, SIMIT, formatMoney } from '../game/shop.js'
+import { playHonk } from '../audio.js'
 import { explored, FOG, routeState } from '../game/navigation.js'
 import {
   AboutContent,
@@ -41,6 +43,7 @@ export default function Overlay() {
       <AchievementsPanel />
       <LeaderboardPanel />
       <MenuPanel />
+      <ShopPanel />
       <Modal />
       <Toasts />
     </>
@@ -133,6 +136,7 @@ function Hud() {
         </span>
       </header>
       <nav className="hud-actions" aria-label={t('menu')}>
+        <WalletButton />
         <button onClick={() => togglePanel('map')} title={`${t('map')} (M)`} aria-pressed={panel === 'map'}>
           <Icon name="map" />
           <span className="label">{t('map')}</span>
@@ -400,6 +404,115 @@ function SumoHud() {
   )
 }
 
+// Cüzdan: bakiye ve kazanınca yükselen "+₺" işareti; dükkânı açar
+function WalletButton() {
+  const { t, lang } = useT()
+  const wallet = useStore((s) => s.wallet)
+  const lastEarn = useStore((s) => s.lastEarn)
+  const open = useStore((s) => s.panel === 'shop')
+  return (
+    <button className="wallet-button" onClick={() => useStore.getState().togglePanel('shop')} title={t('shop')} aria-pressed={open}>
+      <span className="wallet-amount">{formatMoney(wallet, lang)}</span>
+      {lastEarn && (
+        <span className="wallet-pop" key={lastEarn.at} aria-hidden="true">
+          +{formatMoney(lastEarn.amount, lang)}
+        </span>
+      )}
+    </button>
+  )
+}
+
+// Garaj dükkânı: kategoriler, eşya kartları, satın al / tak / çıkar
+function ShopPanel() {
+  const { t, L, lang } = useT()
+  const open = useStore((s) => s.panel === 'shop')
+  const wallet = useStore((s) => s.wallet)
+  const owned = useStore((s) => s.owned)
+  const equipped = useStore((s) => s.equipped)
+  const carColor = useStore((s) => s.carColor)
+  const [category, setCategory] = useState('paint')
+  if (!open) return null
+  const store = useStore.getState()
+  const items = SHOP_ITEMS[category]
+  return (
+    <Panel id="shop" title={t('shop')}>
+      <div className="shop-wallet">
+        <span>{t('wallet')}</span>
+        <strong>{formatMoney(wallet, lang)}</strong>
+        <small>{t('shopIntro')}</small>
+      </div>
+      <div className="shop-tabs" role="tablist" aria-label={t('shop')}>
+        {SHOP_CATEGORIES.map((c) => (
+          <button key={c.id} role="tab" aria-selected={category === c.id} className={category === c.id ? 'active' : ''} onClick={() => setCategory(c.id)}>
+            {L(c.name)}
+          </button>
+        ))}
+      </div>
+      <div className="shop-grid">
+        {items.map((item) => {
+          const has = !item.price || owned.includes(`${category}:${item.id}`)
+          const on = category === 'paint' ? carColor === item.id : equipped[category] === item.id
+          const afford = wallet >= item.price
+          const swatch = item.color === 'rainbow' ? 'conic-gradient(#ff5d5d, #ffb547, #4fd99a, #3d7bff, #9b7bff, #ff5d5d)' : item.color
+          return (
+            <article key={item.id} className={on ? 'shop-item on' : 'shop-item'}>
+              <div className={`shop-preview shop-${category}${item.finish ? ' finish-' + item.finish : ''}`} style={swatch ? { '--swatch': swatch } : undefined}>
+                {category === 'horn' ? (
+                  <button className="link" onClick={() => playHonk(item.id)} aria-label={`${t('listen')}: ${L(item.name)}`}>
+                    🔊
+                  </button>
+                ) : category === 'roof' ? (
+                  <span aria-hidden="true">{item.id === 'roof-taxi' ? '🚕' : item.id === 'roof-surf' ? '🏄' : '🚨'}</span>
+                ) : category === 'trail' ? (
+                  <span aria-hidden="true">{item.id === 'trail-smoke' ? '💨' : item.id === 'trail-sparks' ? '✨' : '🌈'}</span>
+                ) : null}
+              </div>
+              <strong>{L(item.name)}</strong>
+              <small>{on ? t('equippedLabel') : has ? (item.price ? t('ownedLabel') : t('freeLabel')) : formatMoney(item.price, lang)}</small>
+              {!has ? (
+                <button className="shop-action buy" disabled={!afford} onClick={() => store.buy(category, item.id)} title={afford ? undefined : t('notEnough')}>
+                  {afford ? t('buy') : t('notEnough')}
+                </button>
+              ) : on ? (
+                category !== 'paint' && category !== 'horn' && (
+                  <button className="shop-action" onClick={() => store.equip(category, null)}>
+                    {t('unequip')}
+                  </button>
+                )
+              ) : (
+                <button className="shop-action" onClick={() => store.equip(category, item.id)}>
+                  {t('equip')}
+                </button>
+              )}
+            </article>
+          )
+        })}
+      </div>
+    </Panel>
+  )
+}
+
+// Simit gücü göstergesi (kalan saniye)
+function SimitChip() {
+  const { t } = useT()
+  const bought = useStore((s) => s.simitUntil > 0)
+  const chip = useRef()
+  const left = useRef()
+  // Süre bitince gösterge kendini gizler (React render'ı gerekmez)
+  const update = useCallback((now) => {
+    const rest = useStore.getState().simitUntil - now
+    if (chip.current) chip.current.style.display = rest > 0 ? '' : 'none'
+    if (left.current) left.current.textContent = Math.max(0, Math.ceil(rest / 1000)) + ' s'
+  }, [])
+  useTicker(bought, update)
+  if (!bought) return null
+  return (
+    <div className="simit-chip" role="status" ref={chip}>
+      🥯 {t('simitPower')} <strong ref={left}>{SIMIT.seconds} s</strong>
+    </div>
+  )
+}
+
 // Hız göstergesi, canlı drift puanı ve futbol sahasında gol sayacı
 function GameHud() {
   const { t } = useT()
@@ -442,6 +555,7 @@ function GameHud() {
   return (
     <>
       <HeliHud />
+      <SimitChip />
       <TaxiHud />
       <RingsHud />
       <SumoHud />
@@ -1035,6 +1149,9 @@ function MenuPanel() {
         </div>
       </div>
       <Garage />
+      <button className="shop-open" onClick={() => togglePanel('shop')}>
+        <span aria-hidden="true">₺</span> {t('shop')}
+      </button>
       <div className="menu-list">
         <button onClick={() => openModal({ type: 'welcome' })}>
           <Icon name="help" /> {t('help')}
@@ -1067,6 +1184,7 @@ function Garage() {
   const setCar = useStore((s) => s.setCar)
   const setCarColor = useStore((s) => s.setCarColor)
   const goldUnlocked = useStore((s) => !!s.unlocked.logoHunter)
+  const owned = useStore((s) => s.owned)
   return (
     <div className="garage">
       <h3>{t('garage')}</h3>
@@ -1078,13 +1196,14 @@ function Garage() {
         ))}
       </div>
       <div className="garage-paints" role="group" aria-label={t('carColor')}>
-        {PAINTS.filter((p) => !p.secret || goldUnlocked).map((p) => (
+        {PAINTS.filter((p) => (p.secret ? goldUnlocked : !p.price || owned.includes(`paint:${p.id}`))).map((p) => (
           <button
             key={p.id}
             className={carColor === p.id ? 'swatch active' : 'swatch'}
             style={{ background: p.hex }}
             onClick={() => setCarColor(p.id)}
-            aria-label={p.id}
+            aria-label={L(p.name)}
+            title={L(p.name)}
             aria-pressed={carColor === p.id}
           />
         ))}

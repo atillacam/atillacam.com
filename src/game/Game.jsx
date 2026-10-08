@@ -19,6 +19,7 @@ import Traffic from './Traffic.jsx'
 import Taxi from './Taxi.jsx'
 import SkyRings from './SkyRings.jsx'
 import Sumo from './Sumo.jsx'
+import { Trail } from './Cosmetics.jsx'
 import Zones from './Zones.jsx'
 import Bowling from './Bowling.jsx'
 import Showcase from './Showcase.jsx'
@@ -138,6 +139,7 @@ export default function Game() {
         <Ghost />
         <Helicopter />
         <Taxi />
+        <Trail />
         <SkyRings />
         <Atmosphere />
         <Seasons />

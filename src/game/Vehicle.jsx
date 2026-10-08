@@ -10,7 +10,9 @@ import { heightAt } from './terrain.js'
 import { bakedGeometry } from './geometry.js'
 import TurboFlame from './TurboFlame.jsx'
 import { fontBlack } from './fonts.js'
-import { buildRacer, paintHex, PAINTS } from './cars.js'
+import { buildRacer, paintHex, FINISHES, PAINTS } from './cars.js'
+import { SIMIT } from './shop.js'
+import { Underglow, RoofItem } from './Cosmetics.jsx'
 import { useStore } from '../store.js'
 import { playHonk, playSplash, playThud, setMuted, setMusic, updateAmbience, updateEngine } from '../audio.js'
 
@@ -136,7 +138,7 @@ function roofOf(body) {
     }
     box.union(part.copy(o.geometry.boundingBox).applyMatrix4(m))
   })
-  return { y: box.max.y, x: (box.min.x + box.max.x) / 2 - 0.12 }
+  return { y: box.max.y, x: (box.min.x + box.max.x) / 2 - 0.12, bottom: box.min.y }
 }
 
 // Taksi vardiyasında tavandaki "TAKSİ" lambası (gece yanar)
@@ -175,6 +177,8 @@ export default function Vehicle() {
   const carId = useStore((s) => s.carId)
   const carColor = useStore((s) => s.carColor)
   const taxi = useStore((s) => s.taxi.active)
+  const glow = useStore((s) => s.equipped.glow)
+  const roofItem = useStore((s) => s.equipped.roof)
   const car = carId === 'racer' ? racer : glbCar
   const roof = useMemo(() => roofOf(car.body), [car])
 
@@ -182,13 +186,13 @@ export default function Vehicle() {
   useEffect(() => {
     // Taksi vardiyasında araç geçici olarak taksi sarısına boyanır
     const hex = taxi ? TAXI_YELLOW : paintHex(carColor)
-    const metal = !taxi && PAINTS.find((p) => p.id === carColor)?.metal
+    const finish = !taxi && FINISHES[PAINTS.find((p) => p.id === carColor)?.finish]
     car.paint.forEach((m) => {
-      // Özgün yüzey değerleri bir kez saklanır; metalik boya geri alınabilsin
+      // Özgün yüzey değerleri bir kez saklanır; özel yüzeyli boya geri alınabilsin
       m.userData.base ??= { metalness: m.metalness, roughness: m.roughness }
       m.color.set(hex)
-      m.metalness = metal ? 0.65 : m.userData.base.metalness
-      m.roughness = metal ? 0.28 : m.userData.base.roughness
+      m.metalness = finish ? finish[0] : m.userData.base.metalness
+      m.roughness = finish ? finish[1] : m.userData.base.roughness
     })
   }, [car, carColor, taxi])
 
@@ -308,14 +312,16 @@ export default function Vehicle() {
     vehicleState.boost = boost && throttle > 0
 
     const speed = vehicle.currentVehicleSpeed()
-    const maxSpeed = boost ? MAX_BOOST_SPEED : MAX_SPEED
+    // Simit gücü: kısa süreli hız (yarışta geçersiz, sıralama adil kalsın)
+    const simit = store.simitUntil > performance.now() && !store.race.active && !store.race.countdown ? SIMIT.power : 1
+    const maxSpeed = (boost ? MAX_BOOST_SPEED : MAX_SPEED) * simit
     // Ters yönde gaz verilirse önce fren yap
     const reversing = throttle !== 0 && Math.sign(throttle) !== Math.sign(speed) && Math.abs(speed) > 1
     let engine = 0
     if (!reversing && throttle !== 0) {
       const limit = throttle > 0 ? maxSpeed : maxSpeed * 0.5
       const headroom = THREE.MathUtils.clamp(1 - Math.abs(speed) / limit, 0, 1)
-      engine = throttle * ENGINE_FORCE * (boost ? BOOST_MULTIPLIER : 1) * Math.min(1, headroom * 3)
+      engine = throttle * ENGINE_FORCE * (boost ? BOOST_MULTIPLIER : 1) * simit * Math.min(1, headroom * 3)
     }
     // El freni (B/Ctrl): arka tekerlekler kilitlenip tutuş azalır → kontrollü drift
     const handbrake = brake && Math.abs(speed) > 3
@@ -370,7 +376,7 @@ export default function Vehicle() {
         }
       }
       if (input.events.has('honk') && active) {
-        if (!store.muted) playHonk()
+        if (!store.muted) playHonk(store.equipped.horn)
         store.addProgress('honk', 1)
       }
       if (input.events.has('respawn')) {
@@ -391,7 +397,8 @@ export default function Vehicle() {
     const vehicle = controller.current
     const rb = body.current
     if (!vehicle || !rb) return
-    const dt = Math.min(delta, 0.1)
+    // Negatif süreye karşı koruma: zaman geriye akarsa yumuşatma katsayıları patlar
+    const dt = THREE.MathUtils.clamp(delta, 0, 0.1)
     const store = useStore.getState()
 
     // Tekerlek görselleri: 0 = sol ön, 1 = sağ ön, 2 = arka aks (iki arka tekerleğin ortalaması)
@@ -644,7 +651,9 @@ export default function Vehicle() {
       <group ref={visual} />
       <group position={[0, MODEL_OFFSET_Y, 0]}>
         <primitive object={car.body} />
-        {taxi && <TaxiRoofSign x={roof.x} y={roof.y} />}
+        {(taxi || roofItem === 'roof-taxi') && <TaxiRoofSign x={roof.x} y={roof.y} />}
+        {!taxi && roofItem && roofItem !== 'roof-taxi' && <RoofItem id={roofItem} x={roof.x} y={roof.y} />}
+        {glow && <Underglow id={glow} y={roof.bottom} />}
         {/* Stop lambaları */}
         {[-0.46, 0.46].map((z) => (
           <mesh key={z} position={[-1.235, 0.22, z]}>

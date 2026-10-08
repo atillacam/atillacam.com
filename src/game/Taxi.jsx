@@ -155,6 +155,7 @@ export default function Taxi() {
       const fares = taxi.fares + 1
       store.setTaxi({ stage: 'pickup', pickup: null, fares, earned: taxi.earned + fare + tip })
       store.setNavTarget(null)
+      store.earn(fare + tip) // ücret ve bahşiş cüzdana
       store.toast(`+₺${fare + tip}`, tip ? `${translate('taxiTip', lang)}: ₺${tip}` : translate('taxiNoTip', lang))
       if (!store.muted) playCoin()
       if (fares >= 5) store.unlock('cabbie')

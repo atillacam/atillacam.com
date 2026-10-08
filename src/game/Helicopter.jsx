@@ -147,7 +147,7 @@ export default function Helicopter() {
   )
 
   useFrame((_, delta) => {
-    const dt = Math.min(delta, 0.05)
+    const dt = THREE.MathUtils.clamp(delta, 0, 0.05)
     const store = useStore.getState()
     const h = s.current
     const g = group.current

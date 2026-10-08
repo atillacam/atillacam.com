@@ -401,9 +401,23 @@ function noiseBurst({ duration, volume, type = 'lowpass', freq = 800, endFreq = 
   return g
 }
 
-export function playHonk() {
-  tone({ freq: 415, type: 'square', duration: 0.32, volume: 0.06 })
-  tone({ freq: 523, type: 'square', duration: 0.32, volume: 0.05 })
+// Korna: garaj dükkânından seçilen ses
+export function playHonk(type = 'horn-classic') {
+  if (type === 'horn-dolmus') {
+    // Kısa, tiz, iki kez: dolmuş usulü "bip bip"
+    ;[0, 0.16].forEach((delay) => {
+      tone({ freq: 620, type: 'square', duration: 0.11, volume: 0.05, delay })
+      tone({ freq: 740, type: 'square', duration: 0.11, volume: 0.04, delay })
+    })
+  } else if (type === 'horn-ferry') {
+    playFerryHorn(0.9)
+  } else if (type === 'horn-melody') {
+    // Neşeli beş notalık melodi
+    ;[523, 523, 523, 698, 880].forEach((freq, i) => tone({ freq, type: 'square', duration: i < 3 ? 0.1 : 0.22, volume: 0.045, delay: [0, 0.12, 0.24, 0.38, 0.62][i] }))
+  } else {
+    tone({ freq: 415, type: 'square', duration: 0.32, volume: 0.06 })
+    tone({ freq: 523, type: 'square', duration: 0.32, volume: 0.05 })
+  }
 }
 
 export function playChime() {

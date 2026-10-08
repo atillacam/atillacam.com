@@ -1,7 +1,8 @@
 import { create } from 'zustand'
 import { profile, projects } from './content.js'
 import { playChime, playSecret } from './audio.js'
-import { AREAS, COLLECTIBLES, HIDDEN_LOGOS } from './game/layout.js'
+import { AREAS, COLLECTIBLES, GOLF_PAR, HIDDEN_LOGOS } from './game/layout.js'
+import { DEFAULT_EQUIPPED, REWARDS, SIMIT, findItem, isFree } from './game/shop.js'
 
 const COLLECTIBLE_COUNT = COLLECTIBLES.length
 const AREA_COUNT = AREAS.length
@@ -44,6 +45,8 @@ export const ACHIEVEMENTS = [
   { id: 'cabbie', title: { tr: 'Taksici', en: 'Cabbie' }, text: { tr: 'Tek vardiyada 5 yolcu taşı.', en: 'Deliver 5 passengers in a single shift.' } },
   { id: 'ringMaster', title: { tr: 'Halka ustası', en: 'Ring master' }, text: { tr: 'Helikopter halka parkurunu bitir.', en: 'Finish the helicopter ring course.' } },
   { id: 'sumo', title: { tr: 'Yokozuna', en: 'Yokozuna' }, text: { tr: 'Sumo arenasında üç rakibi de dışarı it.', en: 'Push all three rivals out of the sumo ring.' } },
+  { id: 'shopper', title: { tr: 'İlk alışveriş', en: 'First purchase' }, text: { tr: 'Garaj dükkânından bir şey satın al.', en: 'Buy something from the garage shop.' } },
+  { id: 'tycoon', title: { tr: 'Patron', en: 'Tycoon' }, text: { tr: 'Toplam ₺10.000 kazan.', en: 'Earn ₺10,000 in total.' }, goal: 10000 },
   { id: 'road', title: { tr: 'Uzun yol', en: 'Road trip' }, text: { tr: '2 km yol yap.', en: 'Drive 2 km.' }, goal: 2000 },
 ]
 
@@ -87,8 +90,9 @@ function detectQuality() {
   return coarse || lowMemory ? 'low' : 'high'
 }
 
-const saved = { unlocked: {}, progress: {}, times: [], driftBest: 0, stuntBest: 0, golfBest: 0, taxiBest: 0, ringsBest: 0, sumoBest: 0, ...readJSON(STORAGE_KEY, {}) }
+const saved = { unlocked: {}, progress: {}, times: [], driftBest: 0, stuntBest: 0, golfBest: 0, taxiBest: 0, ringsBest: 0, sumoBest: 0, wallet: 0, owned: [], ...readJSON(STORAGE_KEY, {}) }
 const settings = { quality: detectQuality(), muted: false, music: true, fpsCap: 60, carId: 'ae86', carColor: 'white', ...readJSON(SETTINGS_KEY, {}) }
+settings.equipped = { ...DEFAULT_EQUIPPED, ...settings.equipped }
 let toastId = 0
 
 const idleRace = { active: false, countdown: 0, start: 0, next: 0, finishedAt: 0, lastTime: 0 }
@@ -131,6 +135,11 @@ export const useStore = create((set, get) => ({
   cinematic: 0, // > performance.now() ise sinematik kamera
   carId: settings.carId,
   carColor: settings.carColor,
+  wallet: saved.wallet ?? 0, // ₺ bakiye
+  owned: saved.owned ?? [], // satın alınan eşyalar ('kategori:id')
+  equipped: settings.equipped, // takılı eşyalar { glow, trail, horn, roof }
+  lastEarn: null, // { amount, at }: cüzdan göstergesindeki "+₺" animasyonu
+  simitUntil: 0, // > performance.now() ise simit gücü (yarış dışında)
   headlights: 'auto', // 'auto' | 'on' | 'off'
   cameraMode: 'follow', // 'follow' | 'chase'
   rainbow: 0, // > performance.now() ise araba gökkuşağı renginde
@@ -148,8 +157,8 @@ export const useStore = create((set, get) => ({
 
   persist: () => {
     const s = get()
-    writeJSON(STORAGE_KEY, { unlocked: s.unlocked, progress: s.progress, times: s.times, driftBest: s.driftBest, stuntBest: s.stuntBest, golfBest: s.golfBest, taxiBest: s.taxiBest, ringsBest: s.ringsBest, sumoBest: s.sumoBest })
-    writeJSON(SETTINGS_KEY, { quality: s.quality, muted: s.muted, music: s.music, fpsCap: s.fpsCap, carId: s.carId, carColor: s.carColor })
+    writeJSON(STORAGE_KEY, { unlocked: s.unlocked, progress: s.progress, times: s.times, driftBest: s.driftBest, stuntBest: s.stuntBest, golfBest: s.golfBest, taxiBest: s.taxiBest, ringsBest: s.ringsBest, sumoBest: s.sumoBest, wallet: s.wallet, owned: s.owned })
+    writeJSON(SETTINGS_KEY, { quality: s.quality, muted: s.muted, music: s.music, fpsCap: s.fpsCap, carId: s.carId, carColor: s.carColor, equipped: s.equipped })
   },
 
   setView: (view) => set({ view, modal: null, panel: null }),
@@ -210,6 +219,14 @@ export const useStore = create((set, get) => ({
       set({ bowlingReset: Date.now() })
     } else if (spot.id === 'lookout') {
       get().startCinematic()
+    } else if (spot.id === 'simit') {
+      const { lang, race } = get()
+      const tr = lang !== 'en'
+      if (race.active || race.countdown) get().toast('🥯', tr ? 'Yarışta simit molası yok!' : 'No snack breaks during a race!')
+      else if (get().buySimit()) {
+        get().toast(tr ? 'Simit aldın 🥯' : 'Simit bought 🥯', tr ? `${SIMIT.seconds} sn simit gücü: daha hızlı!` : `${SIMIT.seconds} s of simit power: faster!`)
+        if (!get().muted) playChime()
+      } else get().toast('🥯', tr ? `Simit ₺${SIMIT.price}. Önce biraz para kazan (ör. taksi).` : `A simit is ₺${SIMIT.price}. Earn some money first (e.g. taxi).`)
     } else if (spot.id === 'taxi') {
       if (get().taxi.active) get().endTaxi()
       else get().startTaxi()
@@ -256,6 +273,7 @@ export const useStore = create((set, get) => ({
   finishRace: () => {
     const { race, times } = get()
     const ms = performance.now() - race.start
+    get().earn(REWARDS.raceFinish + (!times.length || ms < times[0].ms ? REWARDS.raceRecord : 0))
     const nextTimes = [...times, { ms, at: Date.now() }].sort((a, b) => a.ms - b.ms).slice(0, 5)
     set({ race: { ...idleRace, lastTime: ms, finishedAt: Date.now() }, times: nextTimes })
     get().unlock('racer')
@@ -268,6 +286,7 @@ export const useStore = create((set, get) => ({
   // ---------- Futbol ----------
   scoreGoal: () => {
     set((s) => ({ soccerSession: s.soccerSession + 1 }))
+    get().earn(REWARDS.goal)
     get().unlock('goal')
     get().addProgress('hattrick', 1)
   },
@@ -276,6 +295,7 @@ export const useStore = create((set, get) => ({
   setDrift: (drift) => set({ drift }),
   bankDrift: (points) => {
     const best = Math.max(get().driftBest, Math.round(points))
+    get().earn(Math.min(Math.floor(points / 50), 120))
     set({ driftBest: best, drift: { combo: 0, active: false } })
     if (points >= 3000) get().unlock('drifter')
     get().persist()
@@ -284,9 +304,44 @@ export const useStore = create((set, get) => ({
   // ---------- Stunt parkı ----------
   setStunt: (stunt) => set({ stunt }),
   bankStunt: (points) => {
+    get().earn(Math.min(Math.floor(points / 40), 100))
     set((s) => ({ stuntBest: Math.max(s.stuntBest, Math.round(points)), stunt: { score: Math.round(points), active: false } }))
     if (points >= 1500) get().unlock('stuntman')
     get().persist()
+  },
+
+  // ---------- Cüzdan ve garaj dükkânı ----------
+  earn: (amount) => {
+    const value = Math.round(amount)
+    if (value <= 0) return
+    set((s) => ({ wallet: s.wallet + value, lastEarn: { amount: value, at: performance.now() } }))
+    get().addProgress('tycoon', value)
+    get().persist()
+  },
+  buy: (category, id) => {
+    const item = findItem(category, id)
+    const key = `${category}:${id}`
+    const { wallet, owned } = get()
+    if (!item || owned.includes(key) || item.price > wallet) return false
+    set({ wallet: wallet - item.price, owned: [...owned, key] })
+    get().unlock('shopper')
+    get().equip(category, id)
+    return true
+  },
+  // Takma / çıkarma (id null = çıkar). Boya için garajdaki renk değişir.
+  equip: (category, id) => {
+    if (category === 'paint') return get().setCarColor(id)
+    const { owned, equipped } = get()
+    if (id && !isFree(category, id) && !owned.includes(`${category}:${id}`)) return
+    set({ equipped: { ...equipped, [category]: id ?? (category === 'horn' ? 'horn-classic' : null) } })
+    get().persist()
+  },
+  buySimit: () => {
+    const { wallet } = get()
+    if (wallet < SIMIT.price) return false
+    set({ wallet: wallet - SIMIT.price, simitUntil: performance.now() + SIMIT.seconds * 1000 })
+    get().persist()
+    return true
   },
 
   // ---------- Taksi ----------
@@ -314,6 +369,8 @@ export const useStore = create((set, get) => ({
   passRing: (index) => set((s) => ({ rings: { ...s.rings, next: index + 1 } })),
   finishRings: () => {
     const ms = performance.now() - get().rings.start
+    const { ringsBest } = get()
+    get().earn(REWARDS.ringsFinish + (!ringsBest || ms < ringsBest ? REWARDS.ringsRecord : 0))
     set((s) => ({ rings: idleRings, ringsBest: s.ringsBest ? Math.min(s.ringsBest, ms) : ms }))
     get().unlock('ringMaster')
     get().persist()
@@ -332,6 +389,7 @@ export const useStore = create((set, get) => ({
   endSumo: (win) => {
     const { sumo } = get()
     const time = sumo.start ? performance.now() - sumo.start : 0
+    if (win) get().earn(REWARDS.sumoWin + (!get().sumoBest || time < get().sumoBest ? REWARDS.sumoRecord : 0))
     set((s) => ({ sumo: { ...idleSumo, result: win ? 'win' : 'lose', time }, sumoBest: win ? (s.sumoBest ? Math.min(s.sumoBest, time) : time) : s.sumoBest }))
     if (win) get().unlock('sumo')
     get().persist()
@@ -340,6 +398,7 @@ export const useStore = create((set, get) => ({
   // ---------- Mini golf ----------
   setGolf: (golf) => set({ golf }),
   sinkGolf: (strokes) => {
+    get().earn(strokes === 1 ? REWARDS.holeInOne : strokes <= GOLF_PAR ? REWARDS.golfPar : 0)
     set((s) => ({ golfBest: s.golfBest ? Math.min(s.golfBest, strokes) : strokes, golf: { strokes } }))
     get().unlock('golfer')
     if (strokes === 1) get().unlock('holeInOne')
@@ -353,6 +412,9 @@ export const useStore = create((set, get) => ({
     get().persist()
   },
   setCarColor: (carColor) => {
+    const { owned, unlocked } = get()
+    const allowed = isFree('paint', carColor) || owned.includes(`paint:${carColor}`) || (carColor === 'gold' && unlocked.logoHunter)
+    if (!allowed) return
     set({ carColor })
     get().unlock('garage')
     get().persist()
@@ -390,11 +452,17 @@ export const useStore = create((set, get) => ({
   },
 
   // ---------- Toplanabilirler ----------
-  collect: (id) => get().addToSet('collector', id),
+  collect: (id) => {
+    if ((get().progress.collector ?? []).includes(id)) return
+    get().addToSet('collector', id)
+    get().earn(REWARDS.core)
+  },
   // Gizli logo: sonuncusu bulununca altın boya açılır ve havai fişek patlar
   findLogo: (id) => {
     const had = !!get().unlocked.logoHunter
+    if ((get().progress.logoHunter ?? []).includes(id)) return
     get().addToSet('logoHunter', id)
+    get().earn(REWARDS.logo)
     if (!had && get().unlocked.logoHunter) {
       set({ celebrate: performance.now(), carColor: 'gold' })
       get().persist()
@@ -409,6 +477,7 @@ export const useStore = create((set, get) => ({
     if (!achievement) return
     const toast = { key: ++toastId, title: achievement.title[lang], text: achievement.text[lang] }
     set((s) => ({ unlocked: { ...s.unlocked, [id]: Date.now() }, toasts: [...s.toasts, toast] }))
+    get().earn(REWARDS.achievement)
     get().persist()
     if (!muted) playChime()
     setTimeout(() => set((s) => ({ toasts: s.toasts.filter((t) => t.key !== toast.key) })), 4200)
@@ -441,7 +510,7 @@ export const useStore = create((set, get) => ({
   },
 
   resetProgress: () => {
-    set((s) => ({ unlocked: {}, progress: {}, times: [], driftBest: 0, stuntBest: 0, golfBest: 0, taxiBest: 0, ringsBest: 0, sumoBest: 0, carColor: s.carColor === 'gold' ? 'white' : s.carColor }))
+    set((s) => ({ unlocked: {}, progress: {}, times: [], driftBest: 0, stuntBest: 0, golfBest: 0, taxiBest: 0, ringsBest: 0, sumoBest: 0, wallet: 0, owned: [], equipped: DEFAULT_EQUIPPED, carColor: isFree('paint', s.carColor) ? s.carColor : 'white' }))
     get().persist()
   },
 }))
