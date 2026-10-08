@@ -32,7 +32,7 @@ Atilla Çam'ın kişisel web sitesi. Ziyaretçiler fizik tabanlı bir arabayla a
 - **Taksi modu:** duraktan 2 dakikalık vardiya; yolcuyu al, GPS ile götür, hızlı varırsan bahşiş
 - **Helikopter halka parkuru:** pistten kalk, haritanın üzerindeki 10 halkadan sırayla geç (kılavuz ok, rekor süresi)
 - **Sumo arenası:** eğimli platformda üç çarpışan arabayı dışarı it; son kalan kazanır
-- **Cüzdan ve garaj dükkânı:** taksi, sumo, halka parkuru, yarış, golf ve başarımlardan ₺ kazan; boya (krom, mat, metalik), neon taban ışığı, iz efektleri, korna sesleri ve tavan aksesuarları satın al. Yalnızca görünüm satılır, yarışlar adil kalır
+- **Cüzdan ve garaj dükkânı:** taksi, sumo, halka parkuru, yarış, golf ve başarımlardan ₺ kazan; boya (krom, mat, metalik), neon taban (polis, gün batımı, nabız, gökkuşağı), iz efektleri (alev, yıldız tozu, lale yaprakları), korna (tır, nostaljik tramvay, vapur), tavan (altın taç, Türk bayrağı, çakar) ve turbo alevi rengi satın al. Yalnızca görünüm satılır, yarışlar adil kalır
 - **Simitçi:** ₺15'e simit al, 15 saniye simit gücü (yarışta geçersiz)
 - **Navigasyon:** yol ağı üzerinde GPS rotası (yerde akan ok şeridi + yön oku), keşfedildikçe açılan harita sisi
 - **Laboratuvar ve Kariyer Yolu:** canlı shader / Lorenz çekicisi / fraktal deneyleri; zaman çizelgesi panoları

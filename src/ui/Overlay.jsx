@@ -422,6 +422,28 @@ function WalletButton() {
   )
 }
 
+// Dükkân kartı önizlemeleri: çok renkli/animasyonlu eşyalar için degrade, diğerlerine simge
+const SWATCHES = {
+  rainbow: 'conic-gradient(#ff5d5d, #ffb547, #4fd99a, #3d7bff, #9b7bff, #ff5d5d)',
+  sunset: 'linear-gradient(135deg, #ff7a2e, #ff3fa4)',
+  police: 'linear-gradient(90deg, #ff2a3a 0 50%, #2a6bff 50% 100%)',
+}
+const ICONS = {
+  'roof-taxi': '🚕',
+  'roof-surf': '🏄',
+  'roof-police': '🚨',
+  'roof-crown': '👑',
+  'roof-flag': '☾★',
+  'trail-smoke': '💨',
+  'trail-sparks': '🎇',
+  'trail-rainbow': '🌈',
+  'trail-fire': '🔥',
+  'trail-stardust': '✨',
+  'trail-tulip': '🌷',
+}
+// Bu kategorilerde her zaman bir seçim takılıdır (çıkarılamaz, varsayılana dönülür)
+const FIXED_CATEGORIES = ['paint', 'horn', 'flame']
+
 // Garaj dükkânı: kategoriler, eşya kartları, satın al / tak / çıkar
 function ShopPanel() {
   const { t, L, lang } = useT()
@@ -453,7 +475,7 @@ function ShopPanel() {
           const has = !item.price || owned.includes(`${category}:${item.id}`)
           const on = category === 'paint' ? carColor === item.id : equipped[category] === item.id
           const afford = wallet >= item.price
-          const swatch = item.color === 'rainbow' ? 'conic-gradient(#ff5d5d, #ffb547, #4fd99a, #3d7bff, #9b7bff, #ff5d5d)' : item.color
+          const swatch = SWATCHES[item.color] ?? (category === 'flame' ? `radial-gradient(circle at 30% 50%, ${item.inner} 0 18%, ${item.color} 45%, transparent 75%), #0b0f1c` : item.color)
           return (
             <article key={item.id} className={on ? 'shop-item on' : 'shop-item'}>
               <div className={`shop-preview shop-${category}${item.finish ? ' finish-' + item.finish : ''}`} style={swatch ? { '--swatch': swatch } : undefined}>
@@ -461,10 +483,8 @@ function ShopPanel() {
                   <button className="link" onClick={() => playHonk(item.id)} aria-label={`${t('listen')}: ${L(item.name)}`}>
                     🔊
                   </button>
-                ) : category === 'roof' ? (
-                  <span aria-hidden="true">{item.id === 'roof-taxi' ? '🚕' : item.id === 'roof-surf' ? '🏄' : '🚨'}</span>
-                ) : category === 'trail' ? (
-                  <span aria-hidden="true">{item.id === 'trail-smoke' ? '💨' : item.id === 'trail-sparks' ? '✨' : '🌈'}</span>
+                ) : ICONS[item.id] ? (
+                  <span aria-hidden="true">{ICONS[item.id]}</span>
                 ) : null}
               </div>
               <strong>{L(item.name)}</strong>
@@ -474,7 +494,7 @@ function ShopPanel() {
                   {afford ? t('buy') : t('notEnough')}
                 </button>
               ) : on ? (
-                category !== 'paint' && category !== 'horn' && (
+                !FIXED_CATEGORIES.includes(category) && (
                   <button className="shop-action" onClick={() => store.equip(category, null)}>
                     {t('unequip')}
                   </button>

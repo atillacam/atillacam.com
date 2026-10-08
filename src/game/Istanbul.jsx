@@ -101,7 +101,7 @@ function Galata({ windows }) {
 }
 
 // Türk bayrağı: kırmızı zemin, ay için üst üste iki daire, yıldız için beşgen
-function Flag({ position }) {
+export function Flag({ position }) {
   const flag = useRef()
   useFrame((state) => {
     if (flag.current) flag.current.rotation.y = Math.sin(state.clock.elapsedTime * 2.1) * 0.12

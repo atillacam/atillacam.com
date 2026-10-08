@@ -2827,7 +2827,7 @@ kbd {
 .shop-preview.shop-glow {
   background: radial-gradient(closest-side, var(--swatch), transparent), #0b0f1c;
 }
-.shop-preview.shop-glow[style*='conic'] {
+.shop-preview.shop-glow[style*='gradient'] {
   background: var(--swatch);
   filter: saturate(1.2) blur(0.5px);
 }
@@ -2906,4 +2906,12 @@ kbd {
     padding: 0 8px;
     font-size: 0.82rem;
   }
+}
+.shop-preview.shop-flame,
+.shop-preview.shop-glow {
+  background-color: #0b0f1c;
+}
+.shop-item .shop-preview span {
+  font-size: 1.5rem;
+  line-height: 1;
 }

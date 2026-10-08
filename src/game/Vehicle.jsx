@@ -64,9 +64,114 @@ const _pos = new THREE.Vector3()
 const _right = new THREE.Vector3()
 const _axis = new THREE.Vector3()
 const _wheel = new THREE.Vector3()
+const _v = new THREE.Vector3()
+const IDENTITY = new THREE.Quaternion()
 const WORLD_UP = new THREE.Vector3(0, 1, 0)
 
 // Tekerleğin görsel süspansiyon hareketi çamurluk boşluğuyla sınırlı (yukarı 7 cm, aşağı 5 cm)
+// Tekerleği kendi gerçek aksına hizalar; modeldeki duruş eğimini (kamber/toe) ayrı döndürür.
+// Modelde arka tekerlekler ≈8°, önler ≈2-3° eğik. Düz z ekseninde döndürülünce yalpalıyorlardı.
+// Aks: dönen bir cisim kendi ekseni boyunca bakıldığında tam daire görünür. Küçük eğimler denenir;
+// izdüşümünün yuvarlaklık hatası en az olan eksen seçilir. Merkez: izdüşümün destek fonksiyonunun
+// birinci harmoniği (dönerken zemine değen nokta sabit kalır, zıplamaz).
+// Dönüş: geometri z eksenine hizalanmış hâlde; tilt, modeldeki duruşu geri veren sabit dönüştür.
+const WHEEL_DIRS = 48
+const WHEEL_TRIG = Array.from({ length: WHEEL_DIRS }, (_, k) => [Math.cos((k / WHEEL_DIRS) * Math.PI * 2), Math.sin((k / WHEEL_DIRS) * Math.PI * 2)])
+
+function wheelRoundness(points, ax, ay) {
+  const cxa = Math.cos(ax)
+  const sxa = Math.sin(ax)
+  const cya = Math.cos(ay)
+  const sya = Math.sin(ay)
+  const h = new Float64Array(WHEEL_DIRS).fill(-Infinity)
+  for (let i = 0; i < points.length; i += 3) {
+    // Önce y, sonra x etrafında döndür (Rx·Ry)
+    const x = points[i] * cya + points[i + 2] * sya
+    const z1 = -points[i] * sya + points[i + 2] * cya
+    const y = points[i + 1] * cxa - z1 * sxa
+    for (let k = 0; k < WHEEL_DIRS; k++) {
+      const d = x * WHEEL_TRIG[k][0] + y * WHEEL_TRIG[k][1]
+      if (d > h[k]) h[k] = d
+    }
+  }
+  let mean = 0
+  let fx = 0
+  let fy = 0
+  for (let k = 0; k < WHEEL_DIRS; k++) {
+    mean += h[k]
+    fx += h[k] * WHEEL_TRIG[k][0]
+    fy += h[k] * WHEEL_TRIG[k][1]
+  }
+  mean /= WHEEL_DIRS
+  fx *= 2 / WHEEL_DIRS
+  fy *= 2 / WHEEL_DIRS
+  let lo = Infinity
+  let hi = -Infinity
+  for (let k = 0; k < WHEEL_DIRS; k++) {
+    const r = h[k] - mean - fx * WHEEL_TRIG[k][0] - fy * WHEEL_TRIG[k][1]
+    lo = Math.min(lo, r)
+    hi = Math.max(hi, r)
+  }
+  return { error: hi - lo, cx: fx, cy: fy }
+}
+
+function alignWheel(geometry) {
+  const pos = geometry.attributes.position
+  // Bölünmüş parçada (arka aksın bir yarısı) yalnızca kullanılan köşeler hesaba katılır
+  const used = geometry.index ? [...new Set(geometry.index.array)] : Array.from({ length: pos.count }, (_, i) => i)
+  const box = new THREE.Box3()
+  for (const i of used) box.expandByPoint(_v.fromBufferAttribute(pos, i))
+  const mid = box.getCenter(new THREE.Vector3())
+  geometry.translate(-mid.x, -mid.y, -mid.z)
+  // Arama için en fazla ~1500 nokta
+  const stride = Math.max(1, Math.floor(used.length / 1500))
+  const points = []
+  for (let j = 0; j < used.length; j += stride) points.push(pos.getX(used[j]), pos.getY(used[j]), pos.getZ(used[j]))
+  // Kaba-ince koordinat inişi (radyan)
+  let best = { ax: 0, ay: 0, ...wheelRoundness(points, 0, 0) }
+  for (const step of [0.035, 0.01, 0.003, 0.001]) {
+    let improved = true
+    while (improved) {
+      improved = false
+      for (const [dx, dy] of [[step, 0], [-step, 0], [0, step], [0, -step]]) {
+        if (Math.abs(best.ax + dx) > 0.35 || Math.abs(best.ay + dy) > 0.35) continue
+        const r = wheelRoundness(points, best.ax + dx, best.ay + dy)
+        if (r.error < best.error - 1e-7) {
+          best = { ax: best.ax + dx, ay: best.ay + dy, ...r }
+          improved = true
+        }
+      }
+    }
+  }
+  const align = new THREE.Matrix4().makeRotationX(best.ax).multiply(new THREE.Matrix4().makeRotationY(best.ay))
+  geometry.applyMatrix4(align)
+  let zmin = Infinity
+  let zmax = -Infinity
+  for (const i of used) {
+    zmin = Math.min(zmin, pos.getZ(i))
+    zmax = Math.max(zmax, pos.getZ(i))
+  }
+  geometry.translate(-best.cx, -best.cy, -(zmin + zmax) / 2)
+  geometry.computeBoundingBox()
+  geometry.computeBoundingSphere()
+  // Modeldeki duruş: hizalamanın tersi
+  return new THREE.Quaternion().setFromRotationMatrix(align).invert()
+}
+
+// Geometrinin z'ye göre bir yarısı (side: -1 sol, 1 sağ): üçgen ağırlık merkezine göre ayrılır
+function splitBySide(source, side) {
+  const geometry = source.clone()
+  const pos = geometry.attributes.position
+  const index = geometry.index ? geometry.index.array : Array.from({ length: pos.count }, (_, i) => i)
+  const keep = []
+  for (let t = 0; t < index.length; t += 3) {
+    const z = pos.getZ(index[t]) + pos.getZ(index[t + 1]) + pos.getZ(index[t + 2])
+    if (z * side > 0) keep.push(index[t], index[t + 1], index[t + 2])
+  }
+  geometry.setIndex(keep)
+  return geometry
+}
+
 function visualSuspension(length) {
   return THREE.MathUtils.clamp(length ?? REST_LENGTH, REST_LENGTH - 0.07, REST_LENGTH + 0.05)
 }
@@ -96,11 +201,16 @@ function useCarModel() {
       // GLTFLoader düğüm adlarındaki boşlukları alt çizgiye çevirir
       const name = (o.name || o.parent?.name || '').replace(/_/g, ' ')
       const wheelName = ['front left wheel', 'front right wheel', 'rear wheels'].find((n) => name.startsWith(n))
-      if (wheelName) {
-        mesh.geometry.computeBoundingBox()
-        const center = new THREE.Vector3()
-        mesh.geometry.boundingBox.getCenter(center)
-        mesh.geometry.translate(-center.x, -center.y, -center.z)
+      if (wheelName === 'rear wheels') {
+        // İki arka tekerlek tek parça ve ayna simetrik eğimli: ikiye bölünür, her biri kendi aksına hizalanır
+        for (const [key, side] of [['rear left wheel', -1], ['rear right wheel', 1]]) {
+          const half = mesh.clone()
+          half.geometry = splitBySide(mesh.geometry, side)
+          half.userData.tilt = alignWheel(half.geometry)
+          wheels[key] = half
+        }
+      } else if (wheelName) {
+        mesh.userData.tilt = alignWheel(mesh.geometry)
         wheels[wheelName] = mesh
       } else {
         // Boya: gövde malzemesi garajdaki renge boyanır (doku ile çarpılır)
@@ -401,20 +511,22 @@ export default function Vehicle() {
     const dt = THREE.MathUtils.clamp(delta, 0, 0.1)
     const store = useStore.getState()
 
-    // Tekerlek görselleri: 0 = sol ön, 1 = sağ ön, 2 = arka aks (iki arka tekerleğin ortalaması)
-    for (let i = 0; i < 3; i++) {
+    // Tekerlek görselleri: her tekerlek kendi süspansiyonu ve dönüşüyle. Arka aks tek parçaysa
+    // (prosedürel araba) 2 = arka aks, iki arka tekerleğin ortalamasıyla.
+    const split = !!car.wheels['rear left wheel']
+    for (let i = 0; i < (split ? 4 : 3); i++) {
       const group = wheelGroups.current[i]
       if (!group) continue
-      if (i < 2) {
+      if (split || i < 2) {
         const c = vehicle.wheelChassisConnectionPointCs(i)
         const s = visualSuspension(vehicle.wheelSuspensionLength(i))
         group.position.set(c.x, c.y - s, c.z)
         group.rotation.set(0, (vehicle.wheelSteering(i) ?? 0) * VISUAL_STEER, 0)
-        group.children[0].rotation.z = vehicle.wheelRotation(i) ?? 0
+        group.children[0].children[0].rotation.z = vehicle.wheelRotation(i) ?? 0
       } else {
         const s = (visualSuspension(vehicle.wheelSuspensionLength(2)) + visualSuspension(vehicle.wheelSuspensionLength(3))) / 2
         group.position.set(WHEELS[2].position.x, -s, 0)
-        group.children[0].rotation.z = vehicle.wheelRotation(2) ?? 0
+        group.children[0].children[0].rotation.z = vehicle.wheelRotation(2) ?? 0
       }
     }
 
@@ -663,9 +775,14 @@ export default function Vehicle() {
         ))}
       </group>
       {/* Tekerlekler: dış grup süspansiyon + direksiyon, iç grup dönüş */}
-      {[car.wheels['front left wheel'], car.wheels['front right wheel'], car.wheels['rear wheels']].map((wheel, i) => (
+      {(car.wheels['rear left wheel']
+        ? [car.wheels['front left wheel'], car.wheels['front right wheel'], car.wheels['rear left wheel'], car.wheels['rear right wheel']]
+        : [car.wheels['front left wheel'], car.wheels['front right wheel'], car.wheels['rear wheels']]
+      ).map((wheel, i) => (
         <group key={i} ref={(el) => (wheelGroups.current[i] = el)}>
-          <group>{wheel && <primitive object={wheel} />}</group>
+          <group quaternion={wheel?.userData.tilt ?? IDENTITY}>
+            <group>{wheel && <primitive object={wheel} />}</group>
+          </group>
         </group>
       ))}
       {/* Turbo alevi: egzoz ağzı (car.glb ölçülerinden) */}

@@ -2,6 +2,8 @@ import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { vehicleState } from './input.js'
+import { findItem } from './shop.js'
+import { useStore } from '../store.js'
 
 // Turbo alevi: egzozdan arkaya doğru, iki katmanlı (dış turuncu, iç mavi-beyaz) titreyen koni.
 // Araç gövdesinin içine (RigidBody altına) yerleştirilir; yerel -x araç arkasıdır.
@@ -72,6 +74,12 @@ export default function TurboFlame({ position }) {
     const t = state.clock.elapsedTime
     const flicker = 0.85 + Math.sin(t * 47) * 0.08 + Math.sin(t * 23.3) * 0.07
     outer.uniforms.uTime.value = inner.uniforms.uTime.value = t
+    // Garaj dükkânından seçilen alev rengi
+    const item = findItem('flame', useStore.getState().equipped.flame) ?? findItem('flame', 'flame-classic')
+    if (item.color === 'rainbow') outer.uniforms.uColor.value.setHSL((t * 0.6) % 1, 1, 0.55)
+    else outer.uniforms.uColor.value.set(item.color)
+    inner.uniforms.uColor.value.set(item.inner)
+    if (light.current) light.current.color.copy(outer.uniforms.uColor.value)
     outer.uniforms.uStrength.value = s * 0.9
     inner.uniforms.uStrength.value = s
     if (group.current) {

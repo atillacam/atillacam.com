@@ -7,53 +7,100 @@ import { vehicleState } from './input.js'
 import { world } from './time.js'
 import { heightAt } from './terrain.js'
 import { useStore } from '../store.js'
+import { Flag } from './Istanbul.jsx'
 
 // Garaj dükkânının görsel eşyaları: neon taban ışığı, tavan aksesuarları ve iz efektleri.
 
-// Yumuşak, beyaz radyal leke: renk malzemeden gelir
+// Araç izdüşümü biçiminde yumuşak ışık: yuvarlatılmış dikdörtgene uzaklığa göre sönen beyaz leke
+// (renk malzemeden gelir). Elips yerine arabanın altına düşen gerçek bir neon havuzu gibi görünür.
 let glowTexture = null
 function getGlowTexture() {
   if (glowTexture) return glowTexture
-  const size = 128
+  const w = 192
+  const h = 128
   const canvas = document.createElement('canvas')
-  canvas.width = canvas.height = size
+  canvas.width = w
+  canvas.height = h
   const ctx = canvas.getContext('2d')
-  const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2)
-  g.addColorStop(0, 'rgba(255,255,255,1)')
-  g.addColorStop(0.45, 'rgba(255,255,255,0.45)')
-  g.addColorStop(1, 'rgba(255,255,255,0)')
-  ctx.fillStyle = g
-  ctx.fillRect(0, 0, size, size)
+  const img = ctx.createImageData(w, h)
+  // Kutu yarı ölçüleri ve köşe yarıçapı (piksel), dışa doğru sönme mesafesi
+  const hx = w * 0.28
+  const hy = h * 0.2
+  const corner = h * 0.14
+  const fade = h * 0.3
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const qx = Math.abs(x + 0.5 - w / 2) - (hx - corner)
+      const qy = Math.abs(y + 0.5 - h / 2) - (hy - corner)
+      const d = Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - corner
+      // İçeride dolu, kenarda parlak bir hale, dışarıda yumuşak sönme
+      const inside = d < 0 ? 0.55 : 0
+      const rim = Math.exp(-((d / (fade * 0.35)) ** 2)) * 0.55
+      const outside = d > 0 ? Math.max(0, 1 - d / fade) ** 2 : 1
+      const alpha = Math.min(1, Math.max(inside, 0.6 * outside + rim))
+      const i = (y * w + x) * 4
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = 255
+      img.data[i + 3] = Math.round(alpha * 255)
+    }
+  }
+  ctx.putImageData(img, 0, 0)
   glowTexture = new THREE.CanvasTexture(canvas)
   return glowTexture
 }
 
-// Neon taban: aracın altında zemine düşen renkli ışık (gece daha belirgin)
+const _glow = new THREE.Color()
+const POLICE = [new THREE.Color('#ff2a3a'), new THREE.Color('#2a6bff')]
+const SUNSET = [new THREE.Color('#ff7a2e'), new THREE.Color('#ff3fa4')]
+
+// Modlar: sabit renk, rainbow (renk döngüsü), pulse (nefes alır), sunset (turuncu↔pembe), police (kırmızı/mavi çakar)
+function glowColor(item, t, out) {
+  if (item.mode === 'rainbow') return { color: out.setHSL((t * 0.25) % 1, 0.9, 0.55), power: 1 }
+  if (item.mode === 'police') return { color: out.copy(POLICE[Math.floor(t * 5) % 2]), power: 0.75 + 0.25 * Math.abs(Math.sin(t * 15.7)) }
+  if (item.mode === 'sunset') return { color: out.copy(SUNSET[0]).lerp(SUNSET[1], 0.5 + 0.5 * Math.sin(t * 1.4)), power: 1 }
+  if (item.mode === 'pulse') return { color: out.set(item.color), power: 0.45 + 0.55 * (0.5 + 0.5 * Math.sin(t * 3)) }
+  return { color: out.set(item.color), power: 1 }
+}
+
+// Neon taban: zemine düşen araç biçimli ışık havuzu + gövde altında iki parlak neon tüp
 export function Underglow({ id, y }) {
   const item = findItem('glow', id)
-  const mesh = useRef()
-  const material = useMemo(
+  const pool = useRef()
+  const pool2 = useRef()
+  const glowMaterial = useMemo(
     () => new THREE.MeshBasicMaterial({ map: getGlowTexture(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }),
     [],
   )
+  const tubeMaterial = useMemo(() => new THREE.MeshBasicMaterial({ toneMapped: false }), [])
   useFrame((state) => {
     if (!item) return
-    if (item.color === 'rainbow') material.color.setHSL((state.clock.elapsedTime * 0.25) % 1, 0.9, 0.55)
-    else material.color.set(item.color)
-    material.opacity = 0.55 + world.night * 0.45
+    const { color, power } = glowColor(item, state.clock.elapsedTime, _glow)
+    glowMaterial.color.copy(color)
+    glowMaterial.opacity = (0.5 + world.night * 0.5) * power
+    // Tüpler doygun renkte parlar (HDR: bloom olmadan da canlı)
+    tubeMaterial.color.copy(color).multiplyScalar(1.4 + power)
     // Işık gövdenin altında değil zeminde görünsün: yerel yükseklik zemine göre ayarlanır
-    const m = mesh.current
-    if (m) {
-      const p = vehicleState.position
-      const local = heightAt(p.x, p.z) + 0.04 - (p.y + vehicleState.modelOffsetY)
-      m.position.y = THREE.MathUtils.clamp(local, y - 0.7, y)
-    }
+    const p = vehicleState.position
+    const local = THREE.MathUtils.clamp(heightAt(p.x, p.z) + 0.04 - (p.y + vehicleState.modelOffsetY), y - 0.7, y)
+    if (pool.current) pool.current.position.y = local
+    if (pool2.current) pool2.current.position.y = local + 0.01
   })
   if (!item) return null
   return (
-    <mesh ref={mesh} rotation={[-Math.PI / 2, 0, 0]} position={[0, y, 0]} scale={[4.4, 2.9, 1]} material={material} renderOrder={2}>
-      <planeGeometry args={[1, 1]} />
-    </mesh>
+    <group>
+      {/* Geniş, yumuşak havuz ve daha sıkı, parlak çekirdek */}
+      <mesh ref={pool} rotation={[-Math.PI / 2, 0, 0]} position={[0, y, 0]} scale={[4.6, 3.1, 1]} material={glowMaterial} renderOrder={2}>
+        <planeGeometry args={[1, 1]} />
+      </mesh>
+      <mesh ref={pool2} rotation={[-Math.PI / 2, 0, 0]} position={[0, y, 0]} scale={[3.2, 2.1, 1]} material={glowMaterial} renderOrder={2}>
+        <planeGeometry args={[1, 1]} />
+      </mesh>
+      {/* Yan neon tüpler: gövdenin alt kenarı boyunca */}
+      {[0.5, -0.5].map((z) => (
+        <mesh key={z} position={[0.02, y + 0.05, z]} rotation={[0, 0, Math.PI / 2]} material={tubeMaterial}>
+          <capsuleGeometry args={[0.018, 1.7, 4, 8]} />
+        </mesh>
+      ))}
+    </group>
   )
 }
 
@@ -61,7 +108,46 @@ export function Underglow({ id, y }) {
 export function RoofItem({ id, x, y }) {
   if (id === 'roof-police') return <LightBar x={x} y={y} />
   if (id === 'roof-surf') return <Surfboard x={x} y={y} />
+  if (id === 'roof-crown') return <Crown x={x} y={y} />
+  if (id === 'roof-flag') return <FlagPole x={x} y={y} />
   return null
+}
+
+function Crown({ x, y }) {
+  const crown = useRef()
+  useFrame((state) => {
+    if (crown.current) crown.current.position.y = y + 0.09 + Math.sin(state.clock.elapsedTime * 2.4) * 0.015
+  })
+  const gold = useMemo(() => new THREE.MeshStandardMaterial({ color: '#e7b947', metalness: 0.85, roughness: 0.22, emissive: '#5a3c08', emissiveIntensity: 0.4 }), [])
+  return (
+    <group ref={crown} position={[x, y + 0.09, 0]}>
+      <mesh material={gold} castShadow>
+        <cylinderGeometry args={[0.24, 0.22, 0.14, 24, 1, true]} />
+      </mesh>
+      {Array.from({ length: 6 }, (_, i) => {
+        const a = (i / 6) * Math.PI * 2
+        return (
+          <group key={i} position={[Math.cos(a) * 0.23, 0.13, Math.sin(a) * 0.23]}>
+            <mesh material={gold} castShadow>
+              <coneGeometry args={[0.055, 0.14, 8]} />
+            </mesh>
+            <mesh position={[0, 0.09, 0]}>
+              <sphereGeometry args={[0.028, 10, 8]} />
+              <meshStandardMaterial color={i % 2 ? '#e84a5f' : '#3d7bff'} emissive={i % 2 ? '#e84a5f' : '#3d7bff'} emissiveIntensity={0.6} roughness={0.2} />
+            </mesh>
+          </group>
+        )
+      })}
+    </group>
+  )
+}
+
+function FlagPole({ x, y }) {
+  return (
+    <group position={[x - 0.45, y, 0]} scale={0.62}>
+      <Flag position={[0, 0.3, 0]} />
+    </group>
+  )
 }
 
 function LightBar({ x, y }) {
@@ -118,7 +204,14 @@ const TRAILS = {
   'trail-smoke': { rate: 40, life: 1.4, size: 0.9, grow: 1.6, rise: 0.8, gravity: 0, spread: 0.6, additive: false },
   'trail-sparks': { rate: 60, life: 0.5, size: 0.22, grow: -0.2, rise: 1.6, gravity: -9, spread: 2.6, additive: true },
   'trail-rainbow': { rate: 55, life: 1.0, size: 0.45, grow: 0.2, rise: 0.2, gravity: 0, spread: 0.25, additive: true },
+  // Alev: sarıdan kırmızıya döner, yükselir ve küçülür
+  'trail-fire': { rate: 75, life: 0.45, size: 0.55, grow: -0.7, rise: 2.4, gravity: 3, spread: 0.7, additive: true, ramp: ['#ffe08a', '#ff3a1f'] },
+  // Yıldız tozu: küçük, altın-beyaz, pırıl pırıl
+  'trail-stardust': { rate: 50, life: 1.3, size: 0.2, grow: -0.3, rise: 0.4, gravity: -0.4, spread: 1.3, additive: true, twinkle: true, palette: ['#ffffff', '#ffe7a3', '#ffd27a', '#bfe0ff'] },
+  // Lale yaprakları: pembe-kırmızı yapraklar havada süzülüp düşer
+  'trail-tulip': { rate: 26, life: 2.0, size: 0.32, grow: 0, rise: 1.8, gravity: -1.6, spread: 1.8, additive: false, palette: ['#ff5f8f', '#e8335d', '#ff8fb1', '#c8102e'] },
 }
+const _ramp = [new THREE.Color(), new THREE.Color()]
 
 const trailVertex = /* glsl */ `
   attribute float aSize;
@@ -201,6 +294,7 @@ export function Trail() {
         part.age = 0
         part.life = style.life * (0.7 + Math.random() * 0.6)
         if (color === 'rainbow') _c.setHSL((t * 0.5 + Math.random() * 0.08) % 1, 0.95, 0.6)
+        else if (style.palette) _c.set(style.palette[Math.floor(Math.random() * style.palette.length)])
         else _c.set(color).offsetHSL(0, 0, (Math.random() - 0.5) * 0.15)
         part.r = _c.r
         part.g = _c.g
@@ -226,10 +320,18 @@ export function Trail() {
       pos[i * 3 + 1] = part.y
       pos[i * 3 + 2] = part.z
       size[i] = Math.max(0.02, style.size * (1 + style.grow * k))
-      alpha[i] = (1 - k) * (style.additive ? 1 : 0.5)
-      col[i * 3] = part.r
-      col[i * 3 + 1] = part.g
-      col[i * 3 + 2] = part.b
+      alpha[i] = (1 - k) * (style.additive ? 1 : style.palette ? 0.9 : 0.5) * (style.twinkle ? 0.4 + 0.6 * Math.abs(Math.sin(part.age * 18 + i)) : 1)
+      if (style.ramp) {
+        // Ömür boyunca renk geçişi (alev: sarı → kırmızı)
+        _ramp[0].set(style.ramp[0]).lerp(_ramp[1].set(style.ramp[1]), k)
+        col[i * 3] = _ramp[0].r
+        col[i * 3 + 1] = _ramp[0].g
+        col[i * 3 + 2] = _ramp[0].b
+      } else {
+        col[i * 3] = part.r
+        col[i * 3 + 1] = part.g
+        col[i * 3 + 2] = part.b
+      }
     })
     for (const name of ['position', 'aSize', 'aAlpha', 'aColor']) sim.geometry.attributes[name].needsUpdate = true
   })

@@ -333,7 +333,7 @@ export const useStore = create((set, get) => ({
     if (category === 'paint') return get().setCarColor(id)
     const { owned, equipped } = get()
     if (id && !isFree(category, id) && !owned.includes(`${category}:${id}`)) return
-    set({ equipped: { ...equipped, [category]: id ?? (category === 'horn' ? 'horn-classic' : null) } })
+    set({ equipped: { ...equipped, [category]: id ?? DEFAULT_EQUIPPED[category] } })
     get().persist()
   },
   buySimit: () => {

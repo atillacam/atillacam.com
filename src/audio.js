@@ -411,6 +411,18 @@ export function playHonk(type = 'horn-classic') {
     })
   } else if (type === 'horn-ferry') {
     playFerryHorn(0.9)
+  } else if (type === 'horn-truck') {
+    // Alçak, kalın, iki tonlu tır kornası
+    tone({ freq: 98, type: 'sawtooth', duration: 0.8, volume: 0.07, wet: true })
+    tone({ freq: 117, type: 'sawtooth', duration: 0.8, volume: 0.06, wet: true })
+    tone({ freq: 147, type: 'square', duration: 0.8, volume: 0.025 })
+  } else if (type === 'horn-tram') {
+    // İstiklal tramvayının zili: iki kez "çın çın"
+    ;[0, 0.28].forEach((delay) => {
+      tone({ freq: 1318, type: 'sine', duration: 0.5, volume: 0.07, delay, wet: true })
+      tone({ freq: 1975, type: 'sine', duration: 0.35, volume: 0.035, delay, wet: true })
+      tone({ freq: 2637, type: 'triangle', duration: 0.12, volume: 0.02, delay })
+    })
   } else if (type === 'horn-melody') {
     // Neşeli beş notalık melodi
     ;[523, 523, 523, 698, 880].forEach((freq, i) => tone({ freq, type: 'square', duration: i < 3 ? 0.1 : 0.22, volume: 0.045, delay: [0, 0.12, 0.24, 0.38, 0.62][i] }))
