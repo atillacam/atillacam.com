@@ -2915,3 +2915,24 @@ kbd {
   font-size: 1.5rem;
   line-height: 1;
 }
+
+/* Dar ekran düzeltmesi: satın alınan boyalar arttıkça renk satırı paneli genişletmesin */
+.garage-paints {
+  flex-wrap: wrap;
+}
+.panel {
+  overflow-x: hidden;
+}
+.panel > * {
+  min-width: 0;
+}
+.menu-row {
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+.menu-row > .lang-switch {
+  margin-left: auto;
+  max-width: 100%;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
