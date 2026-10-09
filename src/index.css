@@ -2,19 +2,19 @@
   font-family: 'Nunito';
   font-weight: 600;
   font-display: swap;
-  src: url('@expo-google-fonts/nunito/600SemiBold/Nunito_600SemiBold.ttf') format('truetype');
+  src: url('/src/assets/fonts/Nunito-SemiBold.woff2') format('woff2');
 }
 @font-face {
   font-family: 'Nunito';
   font-weight: 800;
   font-display: swap;
-  src: url('@expo-google-fonts/nunito/800ExtraBold/Nunito_800ExtraBold.ttf') format('truetype');
+  src: url('/src/assets/fonts/Nunito-ExtraBold.woff2') format('woff2');
 }
 @font-face {
   font-family: 'Nunito';
   font-weight: 900;
   font-display: swap;
-  src: url('@expo-google-fonts/nunito/900Black/Nunito_900Black.ttf') format('truetype');
+  src: url('/src/assets/fonts/Nunito-Black.woff2') format('woff2');
 }
 
 :root {

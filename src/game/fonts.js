@@ -1,4 +1,4 @@
-// Türkçe karakterleri (ç ğ ı ö ş ü) eksiksiz içeren yerel font dosyaları
-export { default as fontBlack } from '@expo-google-fonts/nunito/900Black/Nunito_900Black.ttf?url'
-export { default as fontBold } from '@expo-google-fonts/nunito/800ExtraBold/Nunito_800ExtraBold.ttf?url'
-export { default as fontRegular } from '@expo-google-fonts/nunito/600SemiBold/Nunito_600SemiBold.ttf?url'
+// 3D yazı tipleri (troika). Sitenin karakterlerine indirgenmiş kopyalar: scripts/subset-fonts.mjs üretir.
+export { default as fontBlack } from '../assets/fonts/Nunito-Black.ttf?url'
+export { default as fontBold } from '../assets/fonts/Nunito-ExtraBold.ttf?url'
+export { default as fontRegular } from '../assets/fonts/Nunito-SemiBold.ttf?url'

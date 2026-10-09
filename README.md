@@ -22,6 +22,7 @@ Atilla Çam'ın kişisel web sitesi. Ziyaretçiler fizik tabanlı bir arabayla a
 - **Mevsimler:** gerçek takvimden başlayan döngü; ilkbahar çiçekleri, sonbahar yaprakları, kışın kar örtüsü ve buz tutan göl
 - **İzler ve su:** karda, kumda, toprakta ve ıslak çimende tekerlek izleri; gölde dalga ve yağmur halkaları
 - **Gece detayları:** renkli fener dizileri, neon "İş tekliflerine açık" tabelası, kayan yıldızlar; gündüz kayan bulut gölgeleri
+- **Hız:** sabit yapılar tek çizimde birleştirilir (StaticMerge), ince parçalar gölge düşürmez, zayıf ekran kartında düşük kaliteyle açılır, yazı tipleri sitenin karakterlerine indirgenir (`node scripts/subset-fonts.mjs`: sayfa için WOFF2, 3D için TTF)
 - **Performans koruması:** FPS sınırı (30/60/sınırsız), takılınca otomatik kalite düşürme, pencere açıkken 24 FPS
 - **Patlayan TNT kasaları:** zincirleme patlama, alev topu ve duman
 - **Kendini düzeltme:** yan yatan, ters dönen ya da takılan araç kendiliğinden doğrulur

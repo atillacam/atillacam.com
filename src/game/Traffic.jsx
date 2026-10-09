@@ -9,6 +9,7 @@ import { vehicleState } from './input.js'
 import { world } from './time.js'
 import { useStore } from '../store.js'
 import { fontBlack } from './fonts.js'
+import StaticMerge from './StaticMerge.jsx'
 
 // Çevre yolunda kendi şeridinde dolaşan araçlar. Önlerinde oyuncu ya da başka araç
 // varsa yavaşlayıp durur, yol açılınca devam eder. Yarış sırasında yoldan çekilir.
@@ -22,7 +23,7 @@ const _up = new THREE.Vector3(0, 1, 0)
 
 function CarModel({ color, taxi, lights }) {
   return (
-    <group>
+    <StaticMerge>
       <mesh position={[0, 0.55, 0]} castShadow receiveShadow>
         <boxGeometry args={[2.3, 0.5, 1.12]} />
         <meshStandardMaterial color={color} roughness={0.45} metalness={0.2} />
@@ -81,7 +82,7 @@ function CarModel({ color, taxi, lights }) {
           ))}
         </group>
       )}
-    </group>
+    </StaticMerge>
   )
 }
 

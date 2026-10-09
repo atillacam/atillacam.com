@@ -10,6 +10,7 @@ import { useStore } from '../store.js'
 import { translate } from '../i18n.js'
 import { playBoom, playCountdown, playChime, playThud } from '../audio.js'
 import { formatTime } from '../format.js'
+import StaticMerge from './StaticMerge.jsx'
 
 // Sumo arenası: yükseltilmiş yuvarlak platformda üç çarpışan arabaya karşı.
 // Platformun dışına çıkan elenir; üç rakibi de dışarı iten kazanır.
@@ -39,7 +40,7 @@ function Ring() {
   const geometry = useMemo(() => platformHull(), [])
   const hull = useMemo(() => geometry.attributes.position.array, [geometry])
   return (
-    <group position={[SUMO.x, GROUND, SUMO.z]}>
+    <StaticMerge position={[SUMO.x, GROUND, SUMO.z]}>
       <RigidBody type="fixed" colliders={false}>
         <ConvexHullCollider args={[hull]} friction={0.9} />
         {PILLARS.map((p) => (
@@ -75,7 +76,7 @@ function Ring() {
           </group>
         )
       })}
-    </group>
+    </StaticMerge>
   )
 }
 

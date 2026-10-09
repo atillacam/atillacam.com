@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { CuboidCollider, CylinderCollider, RigidBody } from '@react-three/rapier'
 import { RoundedBox, Text } from '@react-three/drei'
 import * as THREE from 'three'
+import StaticMerge from './StaticMerge.jsx'
 import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader.js'
 import { siGithub, siInstagram } from 'simple-icons'
 import { profile, skillCubes } from '../content.js'
@@ -338,16 +339,19 @@ function CreditsSign() {
 export default function Landmarks() {
   return (
     <>
-      {PROJECT_BOARDS.map(({ project, position }) => (
-        <ProjectBoard key={project.id} project={project} position={position} />
-      ))}
+      {/* Sabit yapılar tek çizimde: aynı malzemeli parçalar birleştirilir */}
+      <StaticMerge>
+        {PROJECT_BOARDS.map(({ project, position }) => (
+          <ProjectBoard key={project.id} project={project} position={position} />
+        ))}
+        <Mailbox />
+        <Signpost position={[5.5, 0, 2]} />
+        <CreditsSign />
+      </StaticMerge>
       <AboutStand />
-      <Mailbox />
       {SOCIAL_PEDESTALS.map(({ social, position }, i) => (
         <SocialPedestal key={social.id} social={social} position={position} index={i} />
       ))}
-      <Signpost position={[5.5, 0, 2]} />
-      <CreditsSign />
     </>
   )
 }

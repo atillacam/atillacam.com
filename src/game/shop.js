@@ -1,4 +1,4 @@
-import { PAINTS } from './cars.js'
+import { PAINTS } from './catalog.js'
 
 // Garaj dükkânı: oyunlarda kazanılan ₺ ile yalnızca görünüm satın alınır.
 // Performans satılmaz: yarış ve dünya sıralaması herkes için adil kalır.

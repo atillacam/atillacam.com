@@ -10,6 +10,7 @@ import { world } from './time.js'
 import { useStore } from '../store.js'
 import { playFerryHorn } from '../audio.js'
 import { fontBlack } from './fonts.js'
+import StaticMerge from './StaticMerge.jsx'
 
 // İstanbul dokunuşları: Galata Kulesi, gölde Kız Kulesi ve etrafında dönen vapur, meydanda simitçi.
 // Hepsi basit, az poligonlu parçalardan kurulur; gece pencereler yanar.
@@ -47,7 +48,7 @@ function Galata({ windows }) {
     return list
   }, [])
   return (
-    <group position={[x, y, z]}>
+    <StaticMerge position={[x, y, z]}>
       <RigidBody type="fixed" colliders={false}>
         <CylinderCollider args={[8, 2.75]} position={[0, 8, 0]} />
       </RigidBody>
@@ -96,7 +97,7 @@ function Galata({ windows }) {
         <sphereGeometry args={[0.16, 12, 8]} />
         <meshStandardMaterial color="#e2b546" metalness={0.8} roughness={0.3} />
       </mesh>
-    </group>
+    </StaticMerge>
   )
 }
 
@@ -107,7 +108,7 @@ export function Flag({ position }) {
     if (flag.current) flag.current.rotation.y = Math.sin(state.clock.elapsedTime * 2.1) * 0.12
   })
   return (
-    <group position={position}>
+    <group position={position} userData={{ noMerge: true }}>
       <mesh position={[0, 0.5, 0]}>
         <cylinderGeometry args={[0.025, 0.025, 1.6, 6]} />
         <meshStandardMaterial color="#d9d9d9" metalness={0.6} roughness={0.4} />
@@ -146,7 +147,7 @@ function MaidenTower({ windows }) {
   const top = LAKE.waterLevel + 0.45
   const rock = top - bottom
   return (
-    <group position={[x, 0, z]}>
+    <StaticMerge position={[x, 0, z]}>
       <RigidBody type="fixed" colliders={false}>
         <CylinderCollider args={[(rock + 3.6) / 2, 2.6]} position={[0, bottom + (rock + 3.6) / 2, 0]} />
       </RigidBody>
@@ -195,7 +196,7 @@ function MaidenTower({ windows }) {
         <meshStandardMaterial color={LEAD} roughness={0.55} metalness={0.25} />
       </mesh>
       <Flag position={[1.5, top + 1.35, 0.9]} />
-    </group>
+    </StaticMerge>
   )
 }
 
@@ -265,6 +266,7 @@ function Ferry({ windows }) {
     <RigidBody ref={body} type="kinematicPosition" colliders={false} position={[LAKE.x + ISTANBUL.ferryRadius, LAKE.waterLevel, LAKE.z]}>
       <CuboidCollider args={[2.35, 1.1, 0.82]} position={[0, -0.1, 0]} />
       <group ref={model}>
+        <StaticMerge>
         <mesh geometry={geometries.hull} position={[0, -0.45, 0]} castShadow>
           <meshStandardMaterial color="#1f2a3a" roughness={0.7} />
         </mesh>
@@ -295,6 +297,7 @@ function Ferry({ windows }) {
           <cylinderGeometry args={[0.205, 0.205, 0.12, 14]} />
           <meshStandardMaterial color="#16181d" roughness={0.6} />
         </mesh>
+        </StaticMerge>
       </group>
     </RigidBody>
   )
@@ -313,6 +316,7 @@ function SimitCart() {
   return (
     <RigidBody colliders={false} position={[x, y, z]} rotation={[0, rot, 0]} linearDamping={0.6} angularDamping={0.8}>
       <CuboidCollider args={[0.8, 0.85, 0.48]} position={[0, 0.85, 0]} mass={60} />
+      <StaticMerge>
       {/* Kasa ve tekerlekler */}
       <mesh position={[0, 0.72, 0]} castShadow receiveShadow>
         <boxGeometry args={[1.5, 0.55, 0.85]} />
@@ -361,6 +365,7 @@ function SimitCart() {
         <cylinderGeometry args={[1.06, 1.06, 0.06, 8, 1, true]} />
         <meshStandardMaterial color="#c8302c" roughness={0.7} side={THREE.DoubleSide} />
       </mesh>
+      </StaticMerge>
     </RigidBody>
   )
 }

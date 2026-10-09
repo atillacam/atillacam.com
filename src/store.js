@@ -83,11 +83,30 @@ function detectLanguage() {
   return nav.toLowerCase().startsWith('tr') ? 'tr' : 'en'
 }
 
+// Ekran kartının adı (yalnızca ilk açılışta, kısa ömürlü bir bağlamla okunur)
+function gpuName() {
+  try {
+    const gl = document.createElement('canvas').getContext('webgl')
+    if (!gl) return ''
+    const info = gl.getExtension('WEBGL_debug_renderer_info')
+    const name = info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)
+    gl.getExtension('WEBGL_lose_context')?.loseContext()
+    return String(name || '')
+  } catch {
+    return ''
+  }
+}
+
+// İlk açılış kalitesi: zayıf cihazda düşük başlar (kullanıcının kendi seçimi her zaman önceliklidir).
+// Düşük: dokunmatik cihaz, ≤4 GB bellek, ≤4 çekirdek, eski tümleşik/ mobil ekran kartı ya da yazılımsal çizim.
 function detectQuality() {
   if (typeof window === 'undefined') return 'high'
   const coarse = window.matchMedia?.('(pointer: coarse)').matches
   const lowMemory = navigator.deviceMemory && navigator.deviceMemory <= 4
-  return coarse || lowMemory ? 'low' : 'high'
+  const fewCores = navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4
+  const gpu = gpuName()
+  const weakGpu = /SwiftShader|llvmpipe|Basic Render|Intel.*\b(U?HD) Graphics|Mali|Adreno \(TM\) [2-5]\d\d|PowerVR/i.test(gpu)
+  return coarse || lowMemory || fewCores || weakGpu ? 'low' : 'high'
 }
 
 const saved = { unlocked: {}, progress: {}, times: [], driftBest: 0, stuntBest: 0, golfBest: 0, taxiBest: 0, ringsBest: 0, sumoBest: 0, wallet: 0, owned: [], ...readJSON(STORAGE_KEY, {}) }

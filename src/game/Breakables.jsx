@@ -174,7 +174,9 @@ function Breakable({ kind, x, z, rot, parts }) {
       onCollisionEnter={(p) => shatter(p.other)}
     >
       <CuboidCollider args={size.map((v) => v / 2)} mass={mass} />
-      <mesh castShadow receiveShadow>
+      {/* İnce parçalar (korkuluk, dikme, çıta) gölge düşürmez: gölgeleri görünmez ama her biri ayrı bir
+          gölge çizimi demek (ölçüldü: gölge geçişindeki ~230 çağrının ~170'i bunlardı) */}
+      <mesh castShadow={Math.min(...size) >= 0.15} receiveShadow>
         <boxGeometry args={size} />
         <meshStandardMaterial color={color} roughness={0.8} metalness={color === METAL ? 0.5 : 0} />
       </mesh>
