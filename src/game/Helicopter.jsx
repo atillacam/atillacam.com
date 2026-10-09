@@ -3,7 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js'
 import { input, vehicleState } from './input.js'
-import { WORLD_HALF } from './layout.js'
+import { WORLD } from './layout.js'
 import { heightAt } from './terrain.js'
 import { world } from './time.js'
 import { useStore } from '../store.js'
@@ -17,7 +17,7 @@ const CLIMB_SPEED = 8
 const MIN_CLEARANCE = 2.2 // kızakların arazinin üstünde kalacağı yükseklik
 const MAX_ALTITUDE = 85
 const TOUCH_CLEARANCE = 18 // dokunmatikte otomatik irtifa
-const LIMIT = WORLD_HALF - 6
+const MARGIN = 6 // dünya sınırından içeride
 
 function buildHelicopter() {
   const root = new THREE.Group()
@@ -214,8 +214,8 @@ export default function Helicopter() {
     h.pos.addScaledVector(h.vel, dt)
 
     // Sınırlar: arazinin üstünde, dünyanın içinde, belli bir irtifanın altında
-    h.pos.x = THREE.MathUtils.clamp(h.pos.x, -LIMIT, LIMIT)
-    h.pos.z = THREE.MathUtils.clamp(h.pos.z, -LIMIT, LIMIT)
+    h.pos.x = THREE.MathUtils.clamp(h.pos.x, WORLD.minX + MARGIN, WORLD.maxX - MARGIN)
+    h.pos.z = THREE.MathUtils.clamp(h.pos.z, WORLD.minZ + MARGIN, WORLD.maxZ - MARGIN)
     const floor = heightAt(h.pos.x, h.pos.z) + MIN_CLEARANCE * (landing ? 0.35 : 1)
     if (h.pos.y < floor) {
       h.pos.y = floor

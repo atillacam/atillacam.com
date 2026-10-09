@@ -1,4 +1,4 @@
-import { WORLD_HALF } from './layout.js'
+import { WORLD } from './layout.js'
 
 // GPS rotasının canlı durumu (React render'ı tetiklemez; HUD ve harita rAF ile okur)
 export const routeState = {
@@ -8,21 +8,33 @@ export const routeState = {
   next: null, // aracın ilerisindeki hedef nokta (yön oku için)
 }
 
-// Keşif sisi: dünya ızgara hücrelerine bölünür; gezilen hücreler açılır ve tarayıcıda saklanır
-export const FOG = { cells: 36, size: (WORLD_HALF * 2) / 36 }
-const STORAGE_KEY = 'atillacam-explored-v1'
+// Keşif sisi: dünya dikdörtgeni ızgara hücrelerine bölünür; gezilen hücreler açılır ve tarayıcıda saklanır.
+// Hücre boyu eski kare dünyayla aynı (280 / 36 m): eski kayıt yeni ızgaranın sol kısmına birebir taşınır.
+const SIZE = (WORLD.maxZ - WORLD.minZ) / 36
+export const FOG = { cols: Math.ceil((WORLD.maxX - WORLD.minX) / SIZE), rows: 36, size: SIZE }
+const STORAGE_KEY = 'atillacam-explored-v2'
+const OLD_KEY = 'atillacam-explored-v1'
+
+const decode = (raw) => Uint8Array.from(atob(raw), (c) => c.charCodeAt(0))
 
 function load() {
+  const grid = new Uint8Array(FOG.cols * FOG.rows)
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) {
-      const bytes = Uint8Array.from(atob(raw), (c) => c.charCodeAt(0))
-      if (bytes.length === FOG.cells * FOG.cells) return bytes
+      const bytes = decode(raw)
+      if (bytes.length === grid.length) return bytes
+    }
+    // Eski kare ızgara (36×36): aynı başlangıç ve hücre boyu
+    const old = localStorage.getItem(OLD_KEY)
+    if (old) {
+      const bytes = decode(old)
+      if (bytes.length === 36 * 36) for (let j = 0; j < 36; j++) for (let i = 0; i < 36; i++) grid[j * FOG.cols + i] = bytes[j * 36 + i]
     }
   } catch {
     // yok say
   }
-  return new Uint8Array(FOG.cells * FOG.cells)
+  return grid
 }
 
 export const explored = { grid: load(), count: 0, version: 0 }
@@ -42,18 +54,18 @@ function save() {
 
 // Aracın çevresindeki hücreleri açar (görüş yarıçapı ~ 2 hücre)
 export function revealAround(x, z, radius = 22) {
-  const { cells, size } = FOG
+  const { cols, rows, size } = FOG
   let changed = false
-  const cx = Math.floor((x + WORLD_HALF) / size)
-  const cz = Math.floor((z + WORLD_HALF) / size)
+  const cx = Math.floor((x - WORLD.minX) / size)
+  const cz = Math.floor((z - WORLD.minZ) / size)
   const r = Math.ceil(radius / size)
   for (let i = cx - r; i <= cx + r; i++) {
     for (let j = cz - r; j <= cz + r; j++) {
-      if (i < 0 || j < 0 || i >= cells || j >= cells) continue
-      const wx = -WORLD_HALF + (i + 0.5) * size
-      const wz = -WORLD_HALF + (j + 0.5) * size
+      if (i < 0 || j < 0 || i >= cols || j >= rows) continue
+      const wx = WORLD.minX + (i + 0.5) * size
+      const wz = WORLD.minZ + (j + 0.5) * size
       if (Math.hypot(wx - x, wz - z) > radius) continue
-      const k = j * cells + i
+      const k = j * cols + i
       if (!explored.grid[k]) {
         explored.grid[k] = 1
         explored.count++

@@ -1,7 +1,14 @@
 import { profile, projects } from '../content.js'
 
 // Dünyanın yerleşimi. Kuzey = -z, doğu = +x. Birimler metre.
-export const WORLD_HALF = 140 // görünmez duvarlar
+export const WORLD_HALF = 140 // görünmez duvarlar (kuzey, güney, batı)
+// Dünya dikdörtgeni: doğuda Boğaz ve Asya Yakası ile genişler
+export const WORLD = { minX: -WORLD_HALF, maxX: 320, minZ: -WORLD_HALF, maxZ: WORLD_HALF }
+// Boğaz: x ekseninde kıyıdan kıyıya; deniz tabanı kıyılardan yumuşakça iner
+export const STRAIT = { beachWest: 134, west: 162, east: 210, beachEast: 238, seaLevel: -0.75, depth: -7, centerX: 186 }
+// Asma köprü (z = 30 boyunca): rampalar karada, tabliye denizin üstünde, iki kule.
+// Rampalar 40 m (~11°): daha dik rampada araç inişte burnunu yere gömüyordu
+export const BRIDGE = { z: 30, startX: 110, deckStart: 150, deckEnd: 222, endX: 262, deckY: 8, width: 8, towers: [162, 210], towerTop: 36 }
 export const OUTER = 78 // dış bölgelerin çapraz uzaklığı (x ve z)
 export const RING_RADIUS = 66 // çevre yarış yolu
 export const RING_WIDTH = 7
@@ -39,6 +46,7 @@ export const AREAS = [
   { id: 'career', label: 'areaCareer', center: [-106, 0, 0], radius: 18, color: COLORS.amber, spawn: [-84, 1.2, 0], yaw: Math.PI, pad: 'alley', outer: true },
   { id: 'bowling', label: 'areaBowling', center: [108, 0, 0], radius: 18, color: '#ff8a3d', spawn: [86, 1.2, 0], yaw: 0, pad: 'alley', outer: true },
   { id: 'lookout', label: 'areaLookout', center: [78, 0, -78], radius: 14, color: COLORS.violet, spawn: [60, 1.2, -60], yaw: Math.PI / 4, pad: 'hill', outer: true },
+  { id: 'asia', label: 'areaAsia', center: [282, 0, 30], radius: 16, color: '#2ec4b6', spawn: [268, 1.2, 30], yaw: 0, outer: true },
   { id: 'stunt', label: 'areaStunt', center: [0, 0, 108], radius: 20, color: '#ff5d5d', spawn: [-18, 1.2, 108], yaw: 0, pad: 'asphalt', outer: true },
 ]
 
@@ -135,6 +143,10 @@ export const PATHS = [
   { from: [0, -(RING_RADIUS + RING_WIDTH / 2)], to: [0, -90], outer: true },
   // Stunt parkı: güneydeki START/BİTİŞ kapısının direklerinden kaçınmak için çaprazdan bağlanır
   { from: ringPoint(Math.PI / 2 + 0.32, RING_RADIUS + RING_WIDTH / 2), to: [-9.2, 90.3], outer: true },
+  // Köprü yolu: çevre yolundan köprü başına, köprü (bridge: arazide çizilmez, yalnızca GPS için) ve Asya Yakası
+  { from: [Math.sqrt((RING_RADIUS + RING_WIDTH / 2) ** 2 - 30 ** 2), 30], to: [110, 30], outer: true },
+  { from: [110, 30], to: [262, 30], outer: true, bridge: true },
+  { from: [262, 30], to: [266.5, 30], outer: true },
   // Çevre yoldan dış bölgelere: tepeleri yararak geçen yollar
   ...[
     [1, 1, 20],

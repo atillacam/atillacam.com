@@ -2936,3 +2936,14 @@ kbd {
   flex-wrap: wrap;
   justify-content: flex-end;
 }
+
+/* Haritada Boğaz ve köprü */
+.map-sea {
+  fill: #2f78b0;
+  opacity: 0.85;
+}
+.map-bridge {
+  stroke: #e3e6eb;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+}

@@ -19,6 +19,7 @@ import Traffic from './Traffic.jsx'
 import Taxi from './Taxi.jsx'
 import SkyRings from './SkyRings.jsx'
 import Sumo from './Sumo.jsx'
+import Bosphorus from './Bosphorus.jsx'
 import { Trail } from './Cosmetics.jsx'
 import Zones from './Zones.jsx'
 import Bowling from './Bowling.jsx'
@@ -135,6 +136,7 @@ export default function Game() {
           <Istanbul />
           <Traffic />
           <Sumo />
+          <Bosphorus />
           <Zones />
           <Bowling />
           <Showcase />

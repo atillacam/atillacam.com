@@ -2,7 +2,7 @@ import { useLayoutEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { CLOUD_GLSL } from './cloudShadow.js'
-import { AREAS, LAKE, PATHS, RING_RADIUS, RING_WIDTH, SPOTS } from './layout.js'
+import { AREAS, LAKE, PATHS, RING_RADIUS, RING_WIDTH, SPOTS, STRAIT } from './layout.js'
 import { heightAt } from './terrain.js'
 import { world } from './time.js'
 import { vehicleState } from './input.js'
@@ -33,6 +33,8 @@ function distanceToSegment(px, pz, [ax, az], [bx, bz]) {
 }
 
 function allowed(x, z) {
+  // Boğaz kumsalı ve denizi
+  if (x > STRAIT.beachWest - 6 && x < STRAIT.beachEast + 4) return false
   if (PATHS.some((p) => distanceToSegment(x, z, p.from, p.to) < 3.2)) return false
   if (Math.hypot(x, z) < 6.5) return false
   if (Math.abs(Math.hypot(x, z) - RING_RADIUS) < RING_WIDTH / 2 + 0.9) return false

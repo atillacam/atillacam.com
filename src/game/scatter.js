@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import * as THREE from 'three'
-import { AREAS, CLEARINGS, LAKE, LAMPS, PATHS, RING_RADIUS, RING_WIDTH, SPOTS, WORLD_HALF } from './layout.js'
+import { AREAS, BRIDGE, CLEARINGS, LAKE, LAMPS, PATHS, RING_RADIUS, RING_WIDTH, SPOTS, STRAIT, WORLD, WORLD_HALF } from './layout.js'
 import { heightAt } from './terrain.js'
 
 // Bitki örtüsü, çit, duvar ve lamba yerleşimleri (bileşen değil, saf veri)
@@ -34,7 +34,9 @@ function distanceToSegment(px, pz, [ax, az], [bx, bz]) {
 }
 
 function isFree(x, z, margin) {
-  if (Math.abs(x) > WORLD_HALF - 2 || Math.abs(z) > WORLD_HALF - 2) return false
+  if (x < WORLD.minX + 2 || x > WORLD.maxX - 2 || Math.abs(z) > WORLD.maxZ - 2) return false
+  // Boğaz ve kumsalları
+  if (x > STRAIT.beachWest - 8 && x < STRAIT.beachEast + 6) return false
   if (CLEARINGS.some((c) => Math.hypot(x - c.x, z - c.z) < c.r + margin)) return false
   if (PATHS.some((p) => distanceToSegment(x, z, p.from, p.to) < 4 + margin)) return false
   if (Math.abs(Math.hypot(x, z) - RING_RADIUS) < RING_WIDTH / 2 + 2.5 + margin) return false
@@ -92,11 +94,12 @@ export function lampPlacements() {
 export function useScatter(density = 1) {
   return useMemo(() => {
     const rand = seeded(11)
-    const place = (count, margin, minGap, list, extra = () => ({})) => {
+    // area: x aralığı (varsayılan: eski kare dünya); z her zaman dünya boyunca
+    const place = (count, margin, minGap, list, extra = () => ({}), area = { x0: -(WORLD_HALF - 3), x1: WORLD_HALF - 3 }) => {
       let guard = 0
       const out = []
       while (out.length < count && guard++ < count * 60) {
-        const x = (rand() * 2 - 1) * (WORLD_HALF - 3)
+        const x = area.x0 + rand() * (area.x1 - area.x0)
         const z = (rand() * 2 - 1) * (WORLD_HALF - 3)
         if (!isFree(x, z, margin)) continue
         if ([...list, ...out].some((t) => Math.hypot(t.x - x, t.z - z) < minGap)) continue
@@ -149,7 +152,25 @@ export function useScatter(density = 1) {
 
     const lamps = lampPlacements()
 
-    return { trees, rocks, bushes, decor, fences, walls, lamps }
+    // Asya Yakası: ayrı alanda ağaç, kaya ve çalı (eski yerleşimlerin sırası değişmesin diye en sonda)
+    const east = { x0: STRAIT.beachEast + 6, x1: WORLD.maxX - 3 }
+    const eastTrees = place(Math.round(45 * density), 1.5, 5.5, trees, () => ({ kind: ['tree', 'maple', 'oak'][Math.floor(rand() * 3)] }), east)
+    const eastRocks = place(Math.round(14 * density), 0.5, 3, [...trees, ...eastTrees], () => ({ scale: 0.5 + rand() * 1.1 }), east)
+    const eastBushes = place(Math.round(30 * density), 0, 2.2, [...eastTrees, ...eastRocks], () => ({}), east)
+
+    // Köprü yolunun geçtiği yerde çevre duvarı açık kalır (sıra bozulmasın diye sonradan süzülür)
+    const bridgeGap = Math.atan2(BRIDGE.z, Math.sqrt((RING_RADIUS + RING_WIDTH / 2) ** 2 - BRIDGE.z ** 2))
+    const openWalls = walls.filter((w) => Math.abs(Math.atan2(w.z, w.x) - bridgeGap) > 0.12)
+
+    return {
+      trees: [...trees, ...eastTrees],
+      rocks: [...rocks, ...eastRocks],
+      bushes: [...bushes, ...eastBushes],
+      decor,
+      fences,
+      walls: openWalls,
+      lamps,
+    }
   }, [density])
 }
 

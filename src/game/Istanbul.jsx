@@ -214,10 +214,18 @@ function hullShape(length, width) {
   return s
 }
 
-function Ferry({ windows }) {
+// Göl turu: Kız Kulesi'nin çevresinde daire
+const LAKE_ROUTE = {
+  speed: 0.11,
+  start: 0.6,
+  at: (a) => ({ x: LAKE.x + Math.cos(a) * ISTANBUL.ferryRadius, z: LAKE.z + Math.sin(a) * ISTANBUL.ferryRadius, dx: -Math.sin(a), dz: Math.cos(a) }),
+}
+
+// route: { speed (rad/sn), start, at(açı) → { x, z, dx, dz } (konum ve gidiş yönü) }, scale: boyut, level: su seviyesi
+export function Ferry({ windows, route = LAKE_ROUTE, scale = 1, level = LAKE.waterLevel }) {
   const body = useRef()
   const model = useRef()
-  const state = useRef({ angle: 0.6, hornAt: 0, nearAt: 0 })
+  const state = useRef({ angle: route.start, hornAt: 0, nearAt: 0 })
   const geometries = useMemo(() => {
     const extrude = (shape, depth) => {
       const g = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false })
@@ -233,14 +241,12 @@ function Ferry({ windows }) {
   useFrame((frame, delta) => {
     const s = state.current
     const dt = Math.min(delta, 0.05)
-    s.angle += dt * 0.11
-    const r = ISTANBUL.ferryRadius
-    const x = LAKE.x + Math.cos(s.angle) * r
-    const z = LAKE.z + Math.sin(s.angle) * r
+    s.angle += dt * route.speed
+    const { x, z, dx, dz } = route.at(s.angle)
     const t = frame.clock.elapsedTime
-    const y = LAKE.waterLevel - 0.28 + Math.sin(t * 1.3) * 0.04
-    // Teğet yönünde ilerler (+x burnu): yaw = atan2(-dz, dx)
-    const yaw = Math.atan2(-Math.cos(s.angle), -Math.sin(s.angle))
+    const y = level - 0.28 * scale + Math.sin(t * 1.3) * 0.04
+    // Gidiş yönünde ilerler (+x burnu): yaw = atan2(-dz, dx)
+    const yaw = Math.atan2(-dz, dx)
     _q.setFromAxisAngle(_up, yaw)
     body.current?.setNextKinematicTranslation({ x, y, z })
     body.current?.setNextKinematicRotation(_q)
@@ -252,20 +258,20 @@ function Ferry({ windows }) {
     const p = vehicleState.position
     const d = Math.hypot(p.x - x, p.z - z)
     const now = performance.now()
-    if (d < 7 && now - s.nearAt > 9000) {
+    if (d < 7 * scale && now - s.nearAt > 9000) {
       s.nearAt = now
       s.hornAt = now
       playFerryHorn(1)
-    } else if (d < 45 && now - s.hornAt > 42000) {
+    } else if (d < 45 * scale && now - s.hornAt > 42000) {
       s.hornAt = now
-      playFerryHorn(Math.max(0.25, 1 - d / 45))
+      playFerryHorn(Math.max(0.25, 1 - d / (45 * scale)))
     }
   })
 
   return (
-    <RigidBody ref={body} type="kinematicPosition" colliders={false} position={[LAKE.x + ISTANBUL.ferryRadius, LAKE.waterLevel, LAKE.z]}>
-      <CuboidCollider args={[2.35, 1.1, 0.82]} position={[0, -0.1, 0]} />
-      <group ref={model}>
+    <RigidBody ref={body} type="kinematicPosition" colliders={false} position={[route.at(route.start).x, level, route.at(route.start).z]}>
+      <CuboidCollider args={[2.35 * scale, 1.1 * scale, 0.82 * scale]} position={[0, -0.1 * scale, 0]} />
+      <group ref={model} scale={scale}>
         <StaticMerge>
         <mesh geometry={geometries.hull} position={[0, -0.45, 0]} castShadow>
           <meshStandardMaterial color="#1f2a3a" roughness={0.7} />

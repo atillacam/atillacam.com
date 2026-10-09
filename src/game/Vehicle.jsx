@@ -4,9 +4,9 @@ import { CuboidCollider, RigidBody, useBeforePhysicsStep, useRapier } from '@rea
 import { Text, useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 import { input, pollGamepad, vehicleState } from './input.js'
-import { AREAS, LAKE, SPAWN, WORLD_HALF } from './layout.js'
+import { AREAS, BRIDGE, LAKE, SPAWN, STRAIT, WORLD } from './layout.js'
 import { world as worldTime } from './time.js'
-import { heightAt } from './terrain.js'
+import { heightAt, seaMask } from './terrain.js'
 import { bakedGeometry } from './geometry.js'
 import TurboFlame from './TurboFlame.jsx'
 import { fontBlack } from './fonts.js'
@@ -592,19 +592,22 @@ export default function Vehicle() {
     }
 
     // Dünyadan düşerse geri getir
-    if (phys.y < -12 || Math.abs(phys.x) > WORLD_HALF + 10 || Math.abs(phys.z) > WORLD_HALF + 10) {
+    if (phys.y < -12 || phys.x < WORLD.minX - 10 || phys.x > WORLD.maxX + 10 || Math.abs(phys.z) > WORLD.maxZ + 10) {
       respawn(SPAWN.position, SPAWN.yaw)
     }
 
     // Göle düşerse: sıçrama, başarım ve kıyıya geri dönüş
     const s = stats.current
     const inLake = Math.hypot(t.x - LAKE.x, t.z - LAKE.z) < LAKE.radius + 1 && t.y < LAKE.waterLevel + 0.15
-    if (inLake) {
+    // Boğaz'a düşerse köprü başına (Avrupa yakası) döner
+    const inSea = seaMask(t.x) > 0.3 && t.y < STRAIT.seaLevel + 0.15
+    if (inLake || inSea) {
       if (s.splash === 0 && !store.muted) playSplash()
       s.splash += dt
       if (s.splash > 1.1) {
         const lake = AREAS.find((a) => a.id === 'lake')
-        respawn(lake.spawn, lake.yaw)
+        if (inSea) respawn([BRIDGE.startX - 8, 1.2, BRIDGE.z], 0)
+        else respawn(lake.spawn, lake.yaw)
         store.unlock('swim')
         s.splash = 0
       }

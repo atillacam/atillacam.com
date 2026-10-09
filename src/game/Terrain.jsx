@@ -1,17 +1,22 @@
 import { useMemo } from 'react'
 import { CuboidCollider, RigidBody, TrimeshCollider } from '@react-three/rapier'
 import * as THREE from 'three'
-import { AREAS, COLORS, PATHS, RING_RADIUS, RING_WIDTH, WORLD_HALF } from './layout.js'
+import { AREAS, COLORS, PATHS, RING_RADIUS, RING_WIDTH, WORLD } from './layout.js'
 import { fbm, heightAt, shoreFactor } from './terrain.js'
 import Water from './Water.jsx'
 import { createTerrainMaterial } from './terrainMaterial.js'
 
+// Ana karo (merkezde, 1,5 m aralık) ve doğu karosu (Boğaz + Asya Yakası). Aralıklar aynı olduğundan
+// karoların ortak kenarındaki köşeler aynı noktalara düşer; aynı yükseklik fonksiyonu dikiş bırakmaz.
 const SIZE = 330
 const SEGMENTS = 220
+const EAST_WIDTH = 171 // x: 165 → 336 (doğu sınırı + kenar dağları)
+const EAST_SEGMENTS = 114
 
-function buildTerrain() {
-  const geometry = new THREE.PlaneGeometry(SIZE, SIZE, SEGMENTS, SEGMENTS)
+function buildTerrain(width = SIZE, depth = SIZE, segX = SEGMENTS, segZ = SEGMENTS, offsetX = 0) {
+  const geometry = new THREE.PlaneGeometry(width, depth, segX, segZ)
   geometry.rotateX(-Math.PI / 2)
+  geometry.translate(offsetX, 0, 0)
   const pos = geometry.attributes.position
   const colors = new Float32Array(pos.count * 3)
   const grassA = new THREE.Color('#4c7a3c')
@@ -172,6 +177,7 @@ function roadGeometry(p, width, lift) {
 
 export default function Terrain() {
   const terrain = useMemo(() => buildTerrain(), [])
+  const eastTerrain = useMemo(() => buildTerrain(EAST_WIDTH, SIZE, EAST_SEGMENTS, SEGMENTS, SIZE / 2 + EAST_WIDTH / 2), [])
   const terrainMaterial = useMemo(() => createTerrainMaterial(), [])
   const ring = useMemo(() => buildRing(), [])
   const dashes = useMemo(() => buildDashes(), [])
@@ -193,6 +199,7 @@ export default function Terrain() {
     const indices = terrain.index.array.slice()
     return { vertices, indices }
   }, [terrain])
+  const eastCollider = useMemo(() => ({ vertices: eastTerrain.attributes.position.array.slice(), indices: eastTerrain.index.array.slice() }), [eastTerrain])
 
   const paths = useMemo(
     () =>
@@ -210,16 +217,16 @@ export default function Terrain() {
     <>
       <RigidBody type="fixed" colliders={false} friction={1}>
         <TrimeshCollider args={[collider.vertices, collider.indices]} />
-        {/* Görünmez sınır duvarları */}
-        <CuboidCollider args={[WORLD_HALF, 12, 0.5]} position={[0, 10, -WORLD_HALF]} />
-        <CuboidCollider args={[WORLD_HALF, 12, 0.5]} position={[0, 10, WORLD_HALF]} />
-        <CuboidCollider args={[0.5, 12, WORLD_HALF]} position={[-WORLD_HALF, 10, 0]} />
-        <CuboidCollider args={[0.5, 12, WORLD_HALF]} position={[WORLD_HALF, 10, 0]} />
+        <TrimeshCollider args={[eastCollider.vertices, eastCollider.indices]} />
+        {/* Görünmez sınır duvarları (dünya dikdörtgeni) */}
+        <CuboidCollider args={[(WORLD.maxX - WORLD.minX) / 2, 12, 0.5]} position={[(WORLD.maxX + WORLD.minX) / 2, 10, WORLD.minZ]} />
+        <CuboidCollider args={[(WORLD.maxX - WORLD.minX) / 2, 12, 0.5]} position={[(WORLD.maxX + WORLD.minX) / 2, 10, WORLD.maxZ]} />
+        <CuboidCollider args={[0.5, 12, (WORLD.maxZ - WORLD.minZ) / 2]} position={[WORLD.minX, 10, 0]} />
+        <CuboidCollider args={[0.5, 12, (WORLD.maxZ - WORLD.minZ) / 2]} position={[WORLD.maxX, 10, 0]} />
       </RigidBody>
 
-      <mesh geometry={terrain} receiveShadow>
-        <primitive object={terrainMaterial} attach="material" />
-      </mesh>
+      <mesh geometry={terrain} material={terrainMaterial} receiveShadow />
+      <mesh geometry={eastTerrain} material={terrainMaterial} receiveShadow />
 
       {/* Bölge zeminleri */}
       {AREAS.filter((a) => a.id !== 'lake' && a.id !== 'race' && (!a.pad || a.pad === 'alley')).map((a) => (
@@ -237,7 +244,8 @@ export default function Terrain() {
       ))}
 
       {/* Yollar */}
-      {paths.map((p, i) => (
+      {paths.map((p, i) =>
+        PATHS[i].bridge ? null : (
         <group key={i}>
           <mesh geometry={p.road} receiveShadow>
             <meshStandardMaterial map={textures.paths[i]} color="#e2d6b8" roughness={0.95} polygonOffset polygonOffsetFactor={-2} />
@@ -246,7 +254,8 @@ export default function Terrain() {
             <meshStandardMaterial color={COLORS.pathEdge} roughness={1} polygonOffset polygonOffsetFactor={-1.5} />
           </mesh>
         </group>
-      ))}
+        ),
+      )}
 
       {/* Çevre yarış yolu */}
       {ring.map((r, i) => (

@@ -1,4 +1,4 @@
-import { AREAS, LAKE, PATHS, RING_RADIUS, RING_WIDTH } from './layout.js'
+import { AREAS, LAKE, PATHS, RING_RADIUS, RING_WIDTH, STRAIT, WORLD } from './layout.js'
 
 // Arazi yüksekliği tek bir fonksiyondan gelir: görsel mesh, fizik çarpışması ve
 // ağaç/lamba yerleşimi aynı değeri kullanır, böylece hiçbir şey havada kalmaz.
@@ -55,6 +55,7 @@ export function flatMask(x, z) {
     if (a.id === 'lake' || a.pad === 'dirt' || a.pad === 'hill') continue
     d = Math.min(d, Math.hypot(x - a.center[0], z - a.center[2]) - a.radius - 2)
   }
+  // Köprü yolu da düzleştirir: rampaların altı düz kara olur; deniz tabanı sonradan uygulandığından etkilenmez
   for (const p of PATHS) d = Math.min(d, distanceToSegment(x, z, p.from, p.to) - 5)
   const r = Math.hypot(x, z)
   d = Math.min(d, Math.abs(r - RING_RADIUS) - RING_WIDTH / 2 - 2.5)
@@ -75,9 +76,9 @@ export function heightAt(x, z) {
   const band = smoothstep(RING_RADIUS + RING_WIDTH / 2 + 3, 84, r)
   h += band * (2.5 + fbm(x * 0.035, z * 0.035, 4) * 7) * mask
 
-  // Dünyanın kenarında yüksek dağlar (görünmez duvarların arkası)
-  const edge = Math.max(Math.abs(x), Math.abs(z))
-  h += smoothstep(122, 150, edge) * (10 + fbm(x * 0.02, z * 0.02, 3) * 16)
+  // Dünyanın kenarında yüksek dağlar (görünmez duvarların arkası): sınıra 18 m kala yükselmeye başlar
+  const edge = Math.min(x - WORLD.minX, WORLD.maxX - x, z - WORLD.minZ, WORLD.maxZ - z)
+  h += smoothstep(18, -10, edge) * (10 + fbm(x * 0.02, z * 0.02, 3) * 16)
 
   // Arazi parkuru: tekerlek zıplatan dalgalı zemin
   const od = Math.hypot(x - OFFROAD.center[0], z - OFFROAD.center[2])
@@ -93,11 +94,25 @@ export function heightAt(x, z) {
   const bowl = 1 - smoothstep(LAKE.radius * 0.35, LAKE.radius + 3, ld)
   h -= bowl * 3.2
 
+  // Boğaz: kıyıya yaklaştıkça tepeler düzleşir (kumsal), sonra deniz tabanına iner
+  const coast = smoothstep(STRAIT.beachWest - 16, STRAIT.beachWest + 2, x) * (1 - smoothstep(STRAIT.beachEast - 2, STRAIT.beachEast + 14, x))
+  h *= 1 - coast
+  const sea = seaMask(x)
+  if (sea > 0) h = h * (1 - sea) + STRAIT.depth * sea
+
   return h
+}
+
+// 0 = kara, 1 = Boğaz'ın derin kısmı (kumsallar arası yumuşak geçiş)
+export function seaMask(x) {
+  return smoothstep(STRAIT.beachWest, STRAIT.west, x) * (1 - smoothstep(STRAIT.east, STRAIT.beachEast, x))
 }
 
 // Zemin rengi için: 0 = kum/kıyı, 1 = çimen
 export function shoreFactor(x, z) {
   const ld = Math.hypot(x - LAKE.x, z - LAKE.z)
-  return smoothstep(LAKE.radius - 1, LAKE.radius + 3.5, ld)
+  const lake = smoothstep(LAKE.radius - 1, LAKE.radius + 3.5, ld)
+  // Boğaz kıyıları kumsal
+  const strait = 1 - smoothstep(STRAIT.beachWest - 8, STRAIT.beachWest + 2, x) * (1 - smoothstep(STRAIT.beachEast - 2, STRAIT.beachEast + 8, x))
+  return Math.min(lake, strait)
 }

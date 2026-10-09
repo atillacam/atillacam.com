@@ -45,6 +45,7 @@ export const ACHIEVEMENTS = [
   { id: 'cabbie', title: { tr: 'Taksici', en: 'Cabbie' }, text: { tr: 'Tek vardiyada 5 yolcu taşı.', en: 'Deliver 5 passengers in a single shift.' } },
   { id: 'ringMaster', title: { tr: 'Halka ustası', en: 'Ring master' }, text: { tr: 'Helikopter halka parkurunu bitir.', en: 'Finish the helicopter ring course.' } },
   { id: 'sumo', title: { tr: 'Yokozuna', en: 'Yokozuna' }, text: { tr: 'Sumo arenasında üç rakibi de dışarı it.', en: 'Push all three rivals out of the sumo ring.' } },
+  { id: 'continents', title: { tr: 'Kıtalar arası', en: 'Intercontinental' }, text: { tr: "Köprüden geçip Asya Yakası'na ulaş.", en: 'Cross the bridge to the Asian shore.' } },
   { id: 'shopper', title: { tr: 'İlk alışveriş', en: 'First purchase' }, text: { tr: 'Garaj dükkânından bir şey satın al.', en: 'Buy something from the garage shop.' } },
   { id: 'tycoon', title: { tr: 'Patron', en: 'Tycoon' }, text: { tr: 'Toplam ₺10.000 kazan.', en: 'Earn ₺10,000 in total.' }, goal: 10000 },
   { id: 'road', title: { tr: 'Uzun yol', en: 'Road trip' }, text: { tr: '2 km yol yap.', en: 'Drive 2 km.' }, goal: 2000 },
@@ -264,6 +265,7 @@ export const useStore = create((set, get) => ({
   enterArea: (id) => {
     set({ area: id, zone: id })
     get().addToSet('explorer', id)
+    if (id === 'asia') get().unlock('continents')
   },
 
   leaveZone: (id) => set((s) => (s.zone === id ? { zone: null } : {})),

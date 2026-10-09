@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { profile } from '../content.js'
 import { ACHIEVEMENTS, progressOf, useStore } from '../store.js'
-import { AREAS, COLLECTIBLES, GOLF_PAR, LAKE, PATHS, RACE, RING_RADIUS, SKY_RINGS, SUMO, WORLD_HALF } from '../game/layout.js'
+import { AREAS, BRIDGE, COLLECTIBLES, GOLF_PAR, LAKE, PATHS, RACE, RING_RADIUS, SKY_RINGS, STRAIT, SUMO, WORLD } from '../game/layout.js'
 import { input, teleport, trigger, vehicleState } from '../game/input.js'
 import { initAudio } from '../audio.js'
 import { useT } from '../i18n.js'
@@ -690,16 +690,24 @@ const AREA_ICONS = {
   career: '🛣️',
   stunt: '🔥',
   golf: '⛳',
+  sumo: '🥋',
+  asia: '🌉',
 }
+
+// Dünya dikdörtgeni ve Boğaz'ın haritadaki yeri (su çizgisi yaklaşık kumsalların ortası)
+const WORLD_W = WORLD.maxX - WORLD.minX
+const WORLD_H = WORLD.maxZ - WORLD.minZ
+const SEA_X0 = (STRAIT.beachWest + STRAIT.west) / 2
+const SEA_X1 = (STRAIT.east + STRAIT.beachEast) / 2
 
 // Harita çizimi: büyük harita ve mini harita aynı katmanları kullanır
 function FogLayer({ version }) {
   // Gezilmemiş hücreler koyu bulutla örtülür; gezilenler maskede delik açar
   const holes = []
-  for (let j = 0; j < FOG.cells; j++) {
-    for (let i = 0; i < FOG.cells; i++) {
-      if (!explored.grid[j * FOG.cells + i]) continue
-      holes.push(<circle key={j * FOG.cells + i} cx={-WORLD_HALF + (i + 0.5) * FOG.size} cy={-WORLD_HALF + (j + 0.5) * FOG.size} r={FOG.size * 0.95} />)
+  for (let j = 0; j < FOG.rows; j++) {
+    for (let i = 0; i < FOG.cols; i++) {
+      if (!explored.grid[j * FOG.cols + i]) continue
+      holes.push(<circle key={j * FOG.cols + i} cx={WORLD.minX + (i + 0.5) * FOG.size} cy={WORLD.minZ + (j + 0.5) * FOG.size} r={FOG.size * 0.95} />)
     }
   }
   return (
@@ -709,11 +717,11 @@ function FogLayer({ version }) {
           <feGaussianBlur stdDeviation="3" />
         </filter>
         <mask id="fog-mask">
-          <rect x={-WORLD_HALF - 10} y={-WORLD_HALF - 10} width={WORLD_HALF * 2 + 20} height={WORLD_HALF * 2 + 20} fill="white" />
+          <rect x={WORLD.minX - 10} y={WORLD.minZ - 10} width={WORLD_W + 20} height={WORLD_H + 20} fill="white" />
           <g fill="black" filter="url(#fog-blur)">{holes}</g>
         </mask>
       </defs>
-      <rect x={-WORLD_HALF} y={-WORLD_HALF} width={WORLD_HALF * 2} height={WORLD_HALF * 2} rx="14" className="map-fog" mask="url(#fog-mask)" />
+      <rect x={WORLD.minX} y={WORLD.minZ} width={WORLD_W} height={WORLD_H} rx="14" className="map-fog" mask="url(#fog-mask)" />
     </g>
   )
 }
@@ -739,10 +747,13 @@ function RoutePath({ className }) {
 function MapLayers({ collected, visited, onArea, labels = true, t, fog = false, fogVersion = 0 }) {
   return (
     <>
-      <rect x={-WORLD_HALF} y={-WORLD_HALF} width={WORLD_HALF * 2} height={WORLD_HALF * 2} rx="14" className="map-ground" />
+      <rect x={WORLD.minX} y={WORLD.minZ} width={WORLD_W} height={WORLD_H} rx="14" className="map-ground" />
       <circle cx="0" cy="0" r="98" className="map-hills" />
+      {/* Boğaz ve köprü */}
+      <rect x={SEA_X0} y={WORLD.minZ} width={SEA_X1 - SEA_X0} height={WORLD_H} className="map-sea" />
+      <line x1={BRIDGE.deckStart - 4} y1={BRIDGE.z} x2={BRIDGE.deckEnd + 4} y2={BRIDGE.z} className="map-bridge" />
       <circle cx="0" cy="0" r={RING_RADIUS} className="map-ring" />
-      {PATHS.map((p, i) => (
+      {PATHS.filter((p) => !p.bridge).map((p, i) => (
         <line key={i} x1={p.from[0]} y1={p.from[1]} x2={p.to[0]} y2={p.to[1]} className="map-path" />
       ))}
       <circle cx={LAKE.x} cy={LAKE.z} r={LAKE.radius} className="map-lake" />
@@ -893,12 +904,13 @@ function Panel({ id, title, children }) {
 }
 
 // Büyük harita: tekerlekle yakınlaştır, sürükleyerek kaydır, bölgeye tıklayınca bilgi kartı ve ışınlanma
-const FULL_VIEW = { x: 0, y: 0, size: WORLD_HALF * 2 + 8 }
+const FULL_VIEW = { x: (WORLD.minX + WORLD.maxX) / 2, y: (WORLD.minZ + WORLD.maxZ) / 2, size: Math.max(WORLD.maxX - WORLD.minX, WORLD.maxZ - WORLD.minZ) + 8 }
 
+// Görünümü dünya dikdörtgeninin içinde tut; görünüm dünyadan büyükse ortala
 function clampView(v) {
   const size = Math.min(Math.max(v.size, 60), FULL_VIEW.size)
-  const lim = FULL_VIEW.size / 2 - size / 2
-  return { size, x: Math.min(Math.max(v.x, -lim), lim), y: Math.min(Math.max(v.y, -lim), lim) }
+  const clampAxis = (value, min, max) => (max - min <= size ? (min + max) / 2 : Math.min(Math.max(value, min + size / 2), max - size / 2))
+  return { size, x: clampAxis(v.x, WORLD.minX - 4, WORLD.maxX + 4), y: clampAxis(v.y, WORLD.minZ - 4, WORLD.maxZ + 4) }
 }
 
 function MapPanel() {
@@ -989,7 +1001,7 @@ function MapPanel() {
           🧭 {visited.length}/{AREAS.length} {t('areasLabel')}
         </span>
         <span>
-          🗺️ %{Math.round((explored.count / (FOG.cells * FOG.cells)) * 100)} {t('explored')}
+          🗺️ %{Math.round((explored.count / (FOG.cols * FOG.rows)) * 100)} {t('explored')}
         </span>
         <span>
           💠 {collected.length}/{COLLECTIBLES.length}
