@@ -255,8 +255,40 @@ export const TRAFFIC = [
   { lane: RING_RADIUS + 1.75, dir: -1, angle: 2.2 + Math.PI, color: '#2f6fe0' },
 ]
 
+// Asya Yakası silüeti: tepedeki cami (kubbe + iki minare) ve yamaçlara yayılan binalar.
+// Yerleşim sabit tohumla üretilir (her açılışta aynı); meydan, yol, fener ve tabela çevresi boş kalır.
+export const ASIA_MOSQUE = { x: 276, z: -64 }
+export const ASIA_BUILDINGS = (() => {
+  let seed = 977
+  const rand = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646
+  const plaza = AREAS.find((a) => a.id === 'asia')
+  const keepOut = [
+    { x: plaza.center[0], z: plaza.center[2], r: plaza.radius + 7 },
+    { x: ASIA_MOSQUE.x, z: ASIA_MOSQUE.z, r: 17 },
+    { x: STRAIT.beachEast - 4, z: -26, r: 12 }, // deniz feneri
+  ]
+  const list = []
+  // Sütunlar arasında meydandan kuzey-güneye uzanan ~6 m'lik ana cadde (x ≈ 283) ve 3-6 m'lik sokaklar
+  for (const x of [252, 264, 274, 292, 302]) {
+    for (let z = -122; z <= 122; z += 13) {
+      const bx = x + (rand() - 0.5) * 2
+      const bz = z + (rand() - 0.5) * 2
+      const w = 5 + rand() * 2.5
+      const d = 5 + rand() * 2.5
+      const h = 6 + rand() * rand() * 20
+      const tint = Math.floor(rand() * 6)
+      if (Math.abs(bz - BRIDGE.z) < 10 && bx < plaza.center[0]) continue // köprüden meydana yol
+      if (keepOut.some((k) => Math.hypot(bx - k.x, bz - k.z) < k.r)) continue
+      list.push({ x: bx, z: bz, w, d, h, tint })
+    }
+  }
+  return list
+})()
+
 // Ağaç ve kaya yerleştirirken boş bırakılacak alanlar
 export const CLEARINGS = [
+  ...ASIA_BUILDINGS.map((b) => ({ x: b.x, z: b.z, r: Math.max(b.w, b.d) * 0.75 })),
+  { x: ASIA_MOSQUE.x, z: ASIA_MOSQUE.z, r: 15 },
   { x: ISTANBUL.galata.x, z: ISTANBUL.galata.z, r: 7 },
   ...AREAS.map((a) => ({ x: a.center[0], z: a.center[2], r: a.radius + 3 })),
   { x: 0, z: -9, r: 11 },

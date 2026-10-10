@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { CuboidCollider, RigidBody } from '@react-three/rapier'
 import { Text } from '@react-three/drei'
 import * as THREE from 'three'
-import { TRAFFIC } from './layout.js'
+import { BRIDGE, TRAFFIC } from './layout.js'
 import { heightAt } from './terrain.js'
 import { vehicleState } from './input.js'
 import { world } from './time.js'
@@ -158,4 +158,99 @@ export default function Traffic() {
     lights.tail.emissiveIntensity = 0.3 + world.night * 1.6
   })
   return TRAFFIC.map((spec, i) => <NpcCar key={i} spec={spec} s={cars[i]} cars={cars} lights={lights} />)
+}
+
+// ---------- Köprü trafiği ----------
+// Avrupa yakasından Asya meydanına iki şerit (sağdan akış: doğuya giden +z şeridinde).
+// Yükseklik köprü profilini izler (rampa → tabliye → rampa), rampada araç eğilir.
+const BRIDGE_CRUISE = 9.5
+const LANE_X0 = 96
+const LANE_X1 = 276
+
+function bridgeProfile(x) {
+  const { startX, deckStart, deckEnd, endX, deckY } = BRIDGE
+  if (x <= startX || x >= endX) return { y: heightAt(x, BRIDGE.z), slope: 0 }
+  if (x < deckStart) return { y: ((x - startX) / (deckStart - startX)) * deckY, slope: deckY / (deckStart - startX) }
+  if (x > deckEnd) return { y: ((endX - x) / (endX - deckEnd)) * deckY, slope: -deckY / (endX - deckEnd) }
+  return { y: deckY, slope: 0 }
+}
+
+const BRIDGE_CARS = [
+  { dir: 1, offset: 0, color: '#d8322f' },
+  { dir: 1, offset: 62, color: '#f2c230', taxi: true },
+  { dir: 1, offset: 124, color: '#2f6fe0' },
+  { dir: -1, offset: 20, color: '#f2f2f0' },
+  { dir: -1, offset: 82, color: '#2fae8a' },
+  { dir: -1, offset: 144, color: '#24262c' },
+]
+
+function BridgeCar({ s, cars, lights }) {
+  const body = useRef()
+  const _e = useMemo(() => new THREE.Euler(), [])
+  useFrame((_, delta) => {
+    const rb = body.current
+    if (!rb) return
+    const dt = Math.min(delta, 0.05)
+    const p = vehicleState.position
+    const start = s.dir > 0 ? LANE_X0 : LANE_X1
+    // Yol sonu: başlangıç boşsa şeridin başına dön (oyuncunun üstünde belirmesin)
+    if (s.dir > 0 ? s.x > LANE_X1 : s.x < LANE_X0) {
+      const blocked = Math.hypot(p.x - start, p.z - s.lane) < 14 || cars.some((o) => o !== s && o.dir === s.dir && Math.abs(o.x - start) < 8)
+      if (blocked) {
+        rb.setNextKinematicTranslation({ x: s.x, y: HIDDEN_Y, z: s.lane })
+        return
+      }
+      s.x = start
+      s.speed = BRIDGE_CRUISE * 0.6
+    }
+    // Önde engel varsa yavaşla (oyuncu ve aynı şeritteki araçlar)
+    let target = BRIDGE_CRUISE
+    const check = (ox, oz, width) => {
+      const along = (ox - s.x) * s.dir
+      if (along > 0 && along < LOOK_AHEAD && Math.abs(oz - s.lane) < width) target = Math.min(target, Math.max(0, (along - STOP_GAP) * 1.6))
+    }
+    check(p.x, p.z, 2.4)
+    for (const o of cars) if (o !== s && o.dir === s.dir) check(o.x, o.lane, 1)
+    const rate = target > s.speed ? 3 : 9
+    s.speed += THREE.MathUtils.clamp(target - s.speed, -rate * dt, rate * dt)
+    // Yatay hız rampada eğimle azalır (yol boyunca sabit hız)
+    const { y, slope } = bridgeProfile(s.x)
+    s.x += (s.dir * s.speed * dt) / Math.sqrt(1 + slope * slope)
+    // Burnu gidiş yönüne (+x yerel), rampada yokuşa göre eğilir
+    _e.set(0, s.dir > 0 ? 0 : Math.PI, s.dir > 0 ? Math.atan(slope) : -Math.atan(slope))
+    _q.setFromEuler(_e)
+    rb.setNextKinematicTranslation({ x: s.x, y, z: s.lane })
+    rb.setNextKinematicRotation(_q)
+  })
+  return (
+    <RigidBody ref={body} name="npc" type="kinematicPosition" colliders={false} position={[s.x, HIDDEN_Y, s.lane]}>
+      <CuboidCollider args={[1.15, 0.55, 0.58]} position={[0, 0.65, 0]} />
+      <CarModel color={s.color} taxi={s.taxi} lights={lights} />
+    </RigidBody>
+  )
+}
+
+export function BridgeTraffic() {
+  const cars = useMemo(
+    () =>
+      BRIDGE_CARS.map((c) => ({
+        ...c,
+        lane: BRIDGE.z + c.dir * 1.8,
+        x: c.dir > 0 ? LANE_X0 + c.offset : LANE_X1 - c.offset,
+        speed: BRIDGE_CRUISE,
+      })),
+    [],
+  )
+  const lights = useMemo(
+    () => ({
+      head: new THREE.MeshStandardMaterial({ color: '#fff6dc', emissive: '#fff2c6', emissiveIntensity: 0.2, toneMapped: false }),
+      tail: new THREE.MeshStandardMaterial({ color: '#7a1010', emissive: '#ff2a2a', emissiveIntensity: 0.3, toneMapped: false }),
+    }),
+    [],
+  )
+  useFrame(() => {
+    lights.head.emissiveIntensity = 0.2 + world.night * 2.4
+    lights.tail.emissiveIntensity = 0.3 + world.night * 1.6
+  })
+  return cars.map((s, i) => <BridgeCar key={i} s={s} cars={cars} lights={lights} />)
 }

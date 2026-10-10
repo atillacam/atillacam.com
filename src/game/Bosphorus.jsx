@@ -9,6 +9,8 @@ import { world } from './time.js'
 import { fontBlack, fontBold } from './fonts.js'
 import { Ferry } from './Istanbul.jsx'
 import StaticMerge from './StaticMerge.jsx'
+import AsiaShore from './AsiaShore.jsx'
+import { BridgeTraffic } from './Traffic.jsx'
 import Halo from './Halo.jsx'
 
 // Boğaz: Avrupa ile Asya yakası arasında deniz, üzerinde asma köprü, altından geçen vapur,
@@ -447,12 +449,18 @@ function WelcomeSign() {
   )
 }
 
-// Boğaz vapuru: kanal boyunca uzun bir elips çizer, köprünün altından geçer
-const STRAIT_ROUTE = {
-  speed: 0.06,
-  start: 0,
-  at: (a) => ({ x: STRAIT.centerX + Math.cos(a) * 9, z: Math.sin(a) * 112, dx: -Math.sin(a) * 9, dz: Math.cos(a) * 112 }),
-}
+// Boğaz vapurları. Rotalar kesişmez: iki vapur kanal boyunca aynı uzun elipste yarım tur arayla
+// (köprünün altından geçer), biri güneyde karşıdan karşıya geçer.
+const ellipse = (cx, cz, rx, rz, speed, start) => ({
+  speed,
+  start,
+  at: (a) => ({ x: cx + Math.cos(a) * rx, z: cz + Math.sin(a) * rz, dx: -Math.sin(a) * rx, dz: Math.cos(a) * rz }),
+})
+const FERRY_ROUTES = [
+  { route: ellipse(STRAIT.centerX, 16, 9, 96, 0.065, 0), scale: 2.2 },
+  { route: ellipse(STRAIT.centerX, 16, 9, 96, 0.065, Math.PI), scale: 2.2 },
+  { route: ellipse(STRAIT.centerX, -104, 28, 5, 0.09, 1), scale: 1.7 },
+]
 
 function useFerryWindows() {
   const material = useMemo(() => new THREE.MeshStandardMaterial({ color: '#2d3340', emissive: '#ffc970', emissiveIntensity: 0, roughness: 0.6 }), [])
@@ -468,7 +476,11 @@ export default function Bosphorus() {
     <>
       <Sea />
       <Bridge />
-      <Ferry windows={windows} route={STRAIT_ROUTE} scale={2.2} level={STRAIT.seaLevel} />
+      {FERRY_ROUTES.map((f, i) => (
+        <Ferry key={i} windows={windows} route={f.route} scale={f.scale} level={STRAIT.seaLevel} />
+      ))}
+      <BridgeTraffic />
+      <AsiaShore />
       <Lighthouse />
       <WelcomeSign />
     </>

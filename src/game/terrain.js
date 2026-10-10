@@ -74,7 +74,9 @@ export function heightAt(x, z) {
 
   // Çevre yolun ötesinde yuvarlak tepeler; yollar bu tepeleri yararak geçer
   const band = smoothstep(RING_RADIUS + RING_WIDTH / 2 + 3, 84, r)
-  h += band * (2.5 + fbm(x * 0.035, z * 0.035, 4) * 7) * mask
+  // Asya Yakası şehri: tepeler alçak (yokuşlar sürülebilir kalsın)
+  const city = smoothstep(STRAIT.beachEast + 2, STRAIT.beachEast + 12, x) * (1 - smoothstep(WORLD.maxX - 18, WORLD.maxX - 8, x))
+  h += band * (2.5 + fbm(x * 0.035, z * 0.035, 4) * 7) * mask * (1 - 0.8 * city)
 
   // Dünyanın kenarında yüksek dağlar (görünmez duvarların arkası): sınıra 18 m kala yükselmeye başlar
   const edge = Math.min(x - WORLD.minX, WORLD.maxX - x, z - WORLD.minZ, WORLD.maxZ - z)

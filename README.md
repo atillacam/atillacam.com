@@ -29,7 +29,7 @@ Atilla Çam'ın kişisel web sitesi. Ziyaretçiler fizik tabanlı bir arabayla a
 - **Oyun:** kontrol noktalı zamanlı yarış, yerel + dünya skor tablosu, 14 veri çekirdeği, 40 başarım, bowling, rampa
 - **Gizli AÇ logoları:** haritaya saklanmış 10 logo; hepsini bulan metalik altın boyayı ve havai fişek gösterisini açar
 - **İstanbul dokunuşları:** Galata Kulesi, gölde Kız Kulesi ve etrafında dönen düdüklü şehir hatları vapuru, itilip devrilebilen simitçi tezgâhı
-- **Boğaz ve Asya Yakası:** dünya doğuya genişler; dalgalı deniz, asma köprü (kuleler, kablolar, gece renk değiştiren LED), köprü altından geçen vapur, deniz feneri; köprüyü geçince "Kıtalar arası" başarımı
+- **Boğaz ve Asya Yakası:** dünya doğuya genişler; dalgalı deniz, asma köprü (kuleler, kablolar, gece renk değiştiren LED), köprüde iki yönlü trafik, Boğaz'da üç vapur ve martılar, deniz feneri, Asya Yakası'nda pastel binalar (gece yanan pencereler), ana cadde ve tepede cami; köprüyü geçince "Kıtalar arası" başarımı
 - **Trafik:** çevre yolunda sağdan akan araçlar (sarı taksi dahil); önüne çıkınca durur, yarışta yoldan çekilir
 - **Taksi modu:** duraktan 2 dakikalık vardiya; yolcuyu al, GPS ile götür, hızlı varırsan bahşiş
 - **Helikopter halka parkuru:** pistten kalk, haritanın üzerindeki 10 halkadan sırayla geç (kılavuz ok, rekor süresi)
@@ -106,7 +106,7 @@ Bütün modeller **CC BY 4.0** lisanslı. Yazar adları sitede "Emeği geçenler
 | `src/game/HiddenLogos.jsx` | Gizli AÇ logoları ve havai fişek |
 | `src/game/shop.js` · `Cosmetics.jsx` | Dükkân kataloğu ve ödüller; neon taban, tavan aksesuarları, iz efektleri |
 | `src/game/Taxi.jsx` · `SkyRings.jsx` · `Sumo.jsx` | Taksi modu, helikopter halka parkuru, sumo arenası |
-| `src/game/Bosphorus.jsx` | Boğaz denizi, asma köprü, Boğaz vapuru, deniz feneri |
+| `src/game/Bosphorus.jsx` · `AsiaShore.jsx` | Boğaz denizi, asma köprü, vapurlar, deniz feneri; Asya Yakası binaları ve cami |
 | `src/game/Istanbul.jsx` · `Traffic.jsx` | Galata, Kız Kulesi, vapur, simitçi; çevre yolu trafiği |
 | `src/game/Effects.jsx` | MSAA, vinyet, ACES ton eşleme |
 | `src/game/Skids.jsx` · `Dust.jsx` | Lastik izleri ve toz parçacıkları |

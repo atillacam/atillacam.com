@@ -1,7 +1,7 @@
 import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { AREAS, LAKE } from './layout.js'
+import { AREAS, BRIDGE, LAKE, STRAIT } from './layout.js'
 import { heightAt } from './terrain.js'
 import { world } from './time.js'
 
@@ -197,17 +197,17 @@ function Leaves() {
 }
 
 // Martılar: Kız Kulesi'nin çevresinde alçaktan, tek tek süzülerek döner
-function Gulls() {
+function Gulls({ center = [LAKE.x, LAKE.z], level = LAKE.waterLevel, count = 7, spread = 1, seed = 57 }) {
   const gulls = useMemo(() => {
-    const rand = seeded(57)
-    return Array.from({ length: 7 }, () => ({
-      r: 5 + rand() * 9,
-      y: 5.5 + rand() * 6,
+    const rand = seeded(seed)
+    return Array.from({ length: count }, () => ({
+      r: (5 + rand() * 9) * spread,
+      y: (5.5 + rand() * 6) * Math.sqrt(spread),
       speed: (0.32 + rand() * 0.25) * (rand() > 0.3 ? 1 : -1),
       phase: rand() * Math.PI * 2,
       wobble: rand() * 6,
     }))
-  }, [])
+  }, [count, spread, seed])
   const geometry = useMemo(() => wingGeometry(0.62, 0.3), [])
   const material = useMemo(() => flapMaterial('#f4f3ee', 6, 0.28), [])
   const mesh = useRef()
@@ -222,7 +222,7 @@ function Gulls() {
       const r = g.r + Math.sin(t * 0.4 + g.wobble) * 1.5
       const dir = Math.sign(g.speed)
       _q.setFromAxisAngle(_up, Math.atan2(-Math.sin(a) * dir, Math.cos(a) * dir))
-      _p.set(LAKE.x + Math.cos(a) * r, LAKE.waterLevel + g.y + Math.sin(t * 0.9 + g.wobble) * 0.6, LAKE.z + Math.sin(a) * r)
+      _p.set(center[0] + Math.cos(a) * r, level + g.y + Math.sin(t * 0.9 + g.wobble) * 0.6, center[1] + Math.sin(a) * r)
       _m.compose(_p, _q, _s)
       mesh.current.setMatrixAt(i, _m)
     })
@@ -240,6 +240,7 @@ export default function Life() {
     <>
       <Birds />
       <Gulls />
+      <Gulls center={[STRAIT.centerX, BRIDGE.z]} level={STRAIT.seaLevel} count={10} spread={2.6} seed={91} />
       <Butterflies />
       <Leaves />
     </>
