@@ -82,7 +82,9 @@ export default function Letters({ position = [0, 0, -9] }) {
       {letters.map((l, i) => (
         <RigidBody
           key={i}
-          ref={(el) => (bodies.current[i] = el)}
+          ref={(el) => {
+            bodies.current[i] = el
+          }}
           colliders={false}
           position={[l.x, l.size.y / 2 + 0.02, 0]}
           friction={0.8}

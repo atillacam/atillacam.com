@@ -161,7 +161,9 @@ function SpeedBars() {
   return (
     <group position={[-((BARS - 1) * 0.14) / 2, -0.9, 0]}>
       {Array.from({ length: BARS }, (_, i) => (
-        <mesh key={i} ref={(el) => (refs.current[i] = el)} position={[i * 0.14, 0.1, 0]}>
+        <mesh key={i} ref={(el) => {
+            refs.current[i] = el
+          }} position={[i * 0.14, 0.1, 0]}>
           <boxGeometry args={[0.1, 1, 0.1]} />
           <meshStandardMaterial color="#3d7bff" emissive="#3d7bff" emissiveIntensity={0.5} toneMapped={false} />
         </mesh>

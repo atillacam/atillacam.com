@@ -163,7 +163,9 @@ function Breakable({ kind, x, z, rot, parts }) {
   return parts.map(([size, , color, mass], i) => (
     <RigidBody
       key={i}
-      ref={(el) => (bodies.current[i] = el)}
+      ref={(el) => {
+            bodies.current[i] = el
+          }}
       type="fixed"
       colliders={false}
       position={[homes[i].pos.x, homes[i].pos.y, homes[i].pos.z]}

@@ -239,6 +239,34 @@ export const useStore = create((set, get) => ({
       set({ bowlingReset: Date.now() })
     } else if (spot.id === 'lookout') {
       get().startCinematic()
+    } else if (spot.id === 'wish') {
+      // Dilek çeşmesi: ₺5 at, dilek tut; şanslıysan ikramiye
+      const { lang, wallet } = get()
+      const tr = lang !== 'en'
+      if (wallet < 5) get().toast('🪙', tr ? 'Çeşmeye atacak ₺5 bile yok… önce biraz kazan.' : 'Not even ₺5 to toss… earn a little first.')
+      else {
+        set({ wallet: wallet - 5 })
+        const wishes = tr
+          ? ['Yolun açık olsun!', 'Dileğin suya düştü, gerçek olacak.', 'Bugün şansın yaver gidecek.', 'Kod ilk derlemede çalışsın!', 'Hayalindeki iş seni bulacak.', 'Bir çay, bir simit ve güzel bir manzara…']
+          : ['May your road be clear!', 'Your wish is in the water.', 'Luck is on your side today.', 'May your code compile on the first try!', 'Your dream job will find you.', 'A tea, a simit and a great view…']
+        const lucky = Math.random() < 0.15
+        if (lucky) get().earn(50)
+        get().toast(lucky ? (tr ? 'Dileğin kabul oldu! +₺50' : 'Wish granted! +₺50') : '🪙 ✨', wishes[Math.floor(Math.random() * wishes.length)])
+        if (!get().muted) playChime()
+        get().persist()
+      }
+    } else if (spot.id === 'tea') {
+      // Çay bahçesi: ₺10'a çay; kamera Boğaz manzarasında tur atar
+      const { lang, wallet } = get()
+      const tr = lang !== 'en'
+      if (wallet < 10) get().toast('🍵', tr ? 'Çay ₺10. Önce biraz para kazan (ör. taksi).' : 'Tea is ₺10. Earn some money first (e.g. taxi).')
+      else {
+        set({ wallet: wallet - 10 })
+        get().startCinematic(10000)
+        get().toast(tr ? 'Çay molası 🍵' : 'Tea break 🍵', tr ? 'Boğaz manzarasının tadını çıkar.' : 'Enjoy the Bosphorus view.')
+        if (!get().muted) playChime()
+        get().persist()
+      }
     } else if (spot.id === 'simit') {
       const { lang, race } = get()
       const tr = lang !== 'en'

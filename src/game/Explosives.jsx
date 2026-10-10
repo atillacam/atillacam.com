@@ -65,7 +65,9 @@ function Blasts() {
   return (
     <>
       {pool.map((_, i) => (
-        <mesh key={i} ref={(el) => (flashes.current[i] = el)} visible={false}>
+        <mesh key={i} ref={(el) => {
+            flashes.current[i] = el
+          }} visible={false}>
           <sphereGeometry args={[1, 20, 14]} />
           <meshBasicMaterial color="#ffb347" transparent depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} />
         </mesh>

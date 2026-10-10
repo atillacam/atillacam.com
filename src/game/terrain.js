@@ -1,4 +1,4 @@
-import { AREAS, LAKE, PATHS, RING_RADIUS, RING_WIDTH, STRAIT, WORLD } from './layout.js'
+import { AREAS, LAKE, PATHS, RING_RADIUS, RING_WIDTH, ROUNDABOUTS, STRAIT, WORLD } from './layout.js'
 
 // Arazi yüksekliği tek bir fonksiyondan gelir: görsel mesh, fizik çarpışması ve
 // ağaç/lamba yerleşimi aynı değeri kullanır, böylece hiçbir şey havada kalmaz.
@@ -57,6 +57,8 @@ export function flatMask(x, z) {
   }
   // Köprü yolu da düzleştirir: rampaların altı düz kara olur; deniz tabanı sonradan uygulandığından etkilenmez
   for (const p of PATHS) d = Math.min(d, distanceToSegment(x, z, p.from, p.to) - 5)
+  // Göbek kavşaklar düz
+  for (const r of Object.values(ROUNDABOUTS)) d = Math.min(d, Math.hypot(x - r.x, z - r.z) - r.lane - 3.5)
   const r = Math.hypot(x, z)
   d = Math.min(d, Math.abs(r - RING_RADIUS) - RING_WIDTH / 2 - 2.5)
   return smoothstep(0, 9, d)

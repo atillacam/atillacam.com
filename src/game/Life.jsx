@@ -147,7 +147,9 @@ function Butterflies() {
     meshes.current.forEach((m) => m && (m.instanceMatrix.needsUpdate = true))
   })
   return materials.map((m, k) => (
-    <instancedMesh key={k} ref={(el) => (meshes.current[k] = el)} args={[geometry, m, Math.ceil(COUNT / 3)]} frustumCulled={false} />
+    <instancedMesh key={k} ref={(el) => {
+            meshes.current[k] = el
+          }} args={[geometry, m, Math.ceil(COUNT / 3)]} frustumCulled={false} />
   ))
 }
 

@@ -9,6 +9,29 @@ export const STRAIT = { beachWest: 134, west: 162, east: 210, beachEast: 238, se
 // Asma köprü (z = 30 boyunca): rampalar karada, tabliye denizin üstünde, iki kule.
 // Rampalar 40 m (~11°): daha dik rampada araç inişte burnunu yere gömüyordu
 export const BRIDGE = { z: 30, startX: 110, deckStart: 150, deckEnd: 222, endX: 262, deckY: 8, width: 8, towers: [162, 210], towerTop: 36 }
+
+// Asya Yakası sokakları (asfalt): sahil yolu, meydandan geçen ana cadde ve iki ara sokak.
+// Kesişimler aynı noktalarda biter (GPS grafı birbirine bağlar). street: asfalt olarak çizilir.
+export const ASIA_STREETS = [
+  [[247, -110], [247, -31]],
+  [[247, -31], [247, 73]],
+  [[247, 73], [247, 110]],
+  [[247, -31], [283, -31]],
+  [[283, -31], [300, -31]],
+  [[247, 73], [283, 73]],
+  [[283, 73], [300, 73]],
+  [[283, 14], [283, -31]],
+  [[283, -31], [283, -48]],
+  [[283, 46], [283, 73]],
+  [[283, 73], [283, 118]],
+]
+// Göbekli kavşaklar: köprü trafiği bunların çevresinden U dönüşü yapar
+export const ROUNDABOUTS = {
+  europe: { x: 91, z: 30, island: 3.2, lane: 7.5 },
+  asia: { x: 282, z: 30, island: 4.5, lane: 11 }, // ortada dilek çeşmesi
+}
+export const TEA_GARDEN = { x: 238.5, z: 62 }
+
 export const OUTER = 78 // dış bölgelerin çapraz uzaklığı (x ve z)
 export const RING_RADIUS = 66 // çevre yarış yolu
 export const RING_WIDTH = 7
@@ -107,6 +130,8 @@ export const SPOTS = [
   { id: 'lookout', label: 'areaLookout', action: 'spotLookoutAction', position: [78, 0, -78], color: COLORS.violet },
   { id: 'credits', label: 'spotCredits', action: 'spotCreditsAction', position: [-21, 0, 18], color: '#c9b6ff' },
   { id: 'simit', label: 'placeSimit', action: 'spotSimitAction', position: [13.6, 0, -7.6], color: '#c8302c' },
+  { id: 'wish', label: 'spotWish', action: 'spotWishAction', position: [282, 0, 37.5], color: '#7ad7ff' },
+  { id: 'tea', label: 'spotTea', action: 'spotTeaAction', position: [TEA_GARDEN.x + 5.2, 0, TEA_GARDEN.z], color: '#c8302c' },
   { id: 'taxi', label: 'spotTaxi', action: 'spotTaxiAction', position: [6, 0, 5], color: '#f2c230' },
   { id: 'helipad', label: 'spotHelipad', action: 'spotHelipadAction', position: [13, 0, -30], color: '#7ad7ff' },
   { id: 'sumo', label: 'areaSumo', action: 'spotSumoAction', position: [23, 0, -23], color: '#e84a5f' },
@@ -147,6 +172,7 @@ export const PATHS = [
   { from: [Math.sqrt((RING_RADIUS + RING_WIDTH / 2) ** 2 - 30 ** 2), 30], to: [110, 30], outer: true },
   { from: [110, 30], to: [262, 30], outer: true, bridge: true },
   { from: [262, 30], to: [266.5, 30], outer: true },
+  ...ASIA_STREETS.map(([from, to]) => ({ from, to, outer: true, street: true })),
   // Çevre yoldan dış bölgelere: tepeleri yararak geçen yollar
   ...[
     [1, 1, 20],
@@ -269,7 +295,7 @@ export const ASIA_BUILDINGS = (() => {
   ]
   const list = []
   // Sütunlar arasında meydandan kuzey-güneye uzanan ~6 m'lik ana cadde (x ≈ 283) ve 3-6 m'lik sokaklar
-  for (const x of [252, 264, 274, 292, 302]) {
+  for (const x of [258, 270, 293, 303]) {
     for (let z = -122; z <= 122; z += 13) {
       const bx = x + (rand() - 0.5) * 2
       const bz = z + (rand() - 0.5) * 2
@@ -279,6 +305,10 @@ export const ASIA_BUILDINGS = (() => {
       const tint = Math.floor(rand() * 6)
       if (Math.abs(bz - BRIDGE.z) < 10 && bx < plaza.center[0]) continue // köprüden meydana yol
       if (keepOut.some((k) => Math.hypot(bx - k.x, bz - k.z) < k.r)) continue
+      // Sokaklardan en az yarım bina + 4 m (kaldırım) uzak
+      const clear = Math.max(w, d) / 2 + 4
+      if (ASIA_STREETS.some(([[ax, az], [cx, cz]]) => Math.hypot(Math.max(Math.min(bx, Math.max(ax, cx)), Math.min(ax, cx)) - bx, Math.max(Math.min(bz, Math.max(az, cz)), Math.min(az, cz)) - bz) < clear)) continue
+      if (Math.hypot(bx - TEA_GARDEN.x, bz - TEA_GARDEN.z) < 14) continue
       list.push({ x: bx, z: bz, w, d, h, tint })
     }
   }

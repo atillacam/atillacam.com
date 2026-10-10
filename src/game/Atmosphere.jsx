@@ -74,7 +74,9 @@ function Clouds() {
   })
 
   return clouds.map((c, i) => (
-    <sprite key={i} ref={(el) => (refs.current[i] = el)} position={[c.x, c.y, c.z]} scale={[c.scale, c.scale * 0.45, 1]}>
+    <sprite key={i} ref={(el) => {
+            refs.current[i] = el
+          }} position={[c.x, c.y, c.z]} scale={[c.scale, c.scale * 0.45, 1]}>
       <spriteMaterial map={getCloudTexture()} transparent depthWrite={false} fog={false} />
     </sprite>
   ))

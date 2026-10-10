@@ -165,7 +165,9 @@ export default function SkyRings() {
       {COURSE.map((ring, i) => (
         <mesh
           key={i}
-          ref={(el) => (rings.current[i] = el)}
+          ref={(el) => {
+            rings.current[i] = el
+          }}
           position={ring.center}
           quaternion={ring.quaternion}
           material={materials[i]}

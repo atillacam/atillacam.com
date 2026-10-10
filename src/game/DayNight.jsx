@@ -97,7 +97,9 @@ function LampLights() {
   return (
     <>
       {[0, 1, 2, 3].map((i) => (
-        <pointLight key={i} ref={(el) => (lights.current[i] = el)} color="#ffc98a" distance={16} decay={1.6} intensity={0} />
+        <pointLight key={i} ref={(el) => {
+            lights.current[i] = el
+          }} color="#ffc98a" distance={16} decay={1.6} intensity={0} />
       ))}
     </>
   )

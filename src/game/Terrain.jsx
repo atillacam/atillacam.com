@@ -208,7 +208,8 @@ export default function Terrain() {
         const dx = to[0] - from[0]
         const dz = to[1] - from[1]
         const p = { length: Math.hypot(dx, dz), angle: Math.atan2(dx, dz), center: [(from[0] + to[0]) / 2, (from[1] + to[1]) / 2] }
-        return { ...p, road: roadGeometry(p, 5, 0.04), edge: roadGeometry(p, 5.6, 0.03) }
+        // Asfalt sokaklar daha geniş ve iki yanında kaldırım var
+        return path.street ? { ...p, road: roadGeometry(p, 6, 0.045), edge: roadGeometry(p, 9, 0.03) } : { ...p, road: roadGeometry(p, 5, 0.04), edge: roadGeometry(p, 5.6, 0.03) }
       }),
     [],
   )
@@ -247,12 +248,25 @@ export default function Terrain() {
       {paths.map((p, i) =>
         PATHS[i].bridge ? null : (
         <group key={i}>
-          <mesh geometry={p.road} receiveShadow>
-            <meshStandardMaterial map={textures.paths[i]} color="#e2d6b8" roughness={0.95} polygonOffset polygonOffsetFactor={-2} />
-          </mesh>
-          <mesh geometry={p.edge} receiveShadow>
-            <meshStandardMaterial color={COLORS.pathEdge} roughness={1} polygonOffset polygonOffsetFactor={-1.5} />
-          </mesh>
+          {PATHS[i].street ? (
+            <>
+              <mesh geometry={p.road} receiveShadow>
+                <meshStandardMaterial color={COLORS.ring} roughness={0.92} polygonOffset polygonOffsetFactor={-2} />
+              </mesh>
+              <mesh geometry={p.edge} receiveShadow>
+                <meshStandardMaterial color="#c9c1b0" roughness={0.95} polygonOffset polygonOffsetFactor={-1.5} />
+              </mesh>
+            </>
+          ) : (
+            <>
+              <mesh geometry={p.road} receiveShadow>
+                <meshStandardMaterial map={textures.paths[i]} color="#e2d6b8" roughness={0.95} polygonOffset polygonOffsetFactor={-2} />
+              </mesh>
+              <mesh geometry={p.edge} receiveShadow>
+                <meshStandardMaterial color={COLORS.pathEdge} roughness={1} polygonOffset polygonOffsetFactor={-1.5} />
+              </mesh>
+            </>
+          )}
         </group>
         ),
       )}

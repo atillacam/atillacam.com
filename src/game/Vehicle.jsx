@@ -782,7 +782,9 @@ export default function Vehicle() {
         ? [car.wheels['front left wheel'], car.wheels['front right wheel'], car.wheels['rear left wheel'], car.wheels['rear right wheel']]
         : [car.wheels['front left wheel'], car.wheels['front right wheel'], car.wheels['rear wheels']]
       ).map((wheel, i) => (
-        <group key={i} ref={(el) => (wheelGroups.current[i] = el)}>
+        <group key={i} ref={(el) => {
+            wheelGroups.current[i] = el
+          }}>
           <group quaternion={wheel?.userData.tilt ?? IDENTITY}>
             <group>{wheel && <primitive object={wheel} />}</group>
           </group>
