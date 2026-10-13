@@ -59,3 +59,6 @@ export function boarding(side, t) {
 
 // Sahnedeki vapurların canlı konumları (martılar ve taşınan araç izler)
 export const ferryLive = [{ x: DOCK_X.europe, y: 0, z: PIERS.z }, { x: DOCK_X.asia, y: 0, z: PIERS.z }]
+
+// Boğaz'da tur atan yolcu vapurlarının canlı konumları (yarım boy ve yarım en: jet-ski çarpışması)
+export const passengerLive = [0, 1].map(() => ({ x: 0, z: -999, yaw: 0, half: 5.4, beam: 1.9 }))

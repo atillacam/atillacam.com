@@ -29,11 +29,12 @@ Atilla Çam'ın kişisel web sitesi. Ziyaretçiler fizik tabanlı bir arabayla a
 - **Oyun:** kontrol noktalı zamanlı yarış, yerel + dünya skor tablosu, 14 veri çekirdeği, 44 başarım, bowling, rampa
 - **Gizli AÇ logoları:** haritaya saklanmış 10 logo; hepsini bulan metalik altın boyayı ve havai fişek gösterisini açar
 - **İstanbul dokunuşları:** Galata Kulesi, gölde Kız Kulesi ve etrafında dönen düdüklü şehir hatları vapuru, itilip devrilebilen simitçi tezgâhı
-- **Boğaz ve Asya Yakası:** dünya doğuya genişler; dalgalı deniz, asma köprü (kuleler, kablolar, gece renk değiştiren LED), köprüde iki göbek kavşak arasında kesintisiz gidiş-geliş trafiği, Asya Yakası'nda sahil yolu ve asfalt sokaklar, dilek çeşmesi (₺5) ve çay bahçesi (₺10, Boğaz manzarası), iki yakada iskele ve karşılıklı sefer yapan araba vapurları (arabanla karşıya geç), rıhtımda balık tutma, Maraş dondurmacısı, sahil yolunda nostaljik tramvay, Boğaz'da üç vapur ve martılar, deniz feneri, Asya Yakası'nda pastel binalar (gece yanan pencereler), ana cadde ve tepede cami; köprüyü geçince "Kıtalar arası" başarımı
+- **Boğaz ve Asya Yakası:** dünya doğuya genişler; dalgalı deniz, asma köprü (kuleler, kablolar, gece renk değiştiren LED), köprüde iki göbek kavşak arasında kesintisiz gidiş-geliş trafiği, Asya Yakası'nda sahil yolu ve asfalt sokaklar, dilek çeşmesi (₺5) ve çay bahçesi (₺10, Boğaz manzarası), iki yakada iskele ve karşılıklı sefer yapan araba vapurları (arabanla karşıya geç), rıhtımda balık tutma, Maraş dondurmacısı, sahil yolunda nostaljik tramvay, Boğaz'da vapurlar ve martılar, deniz feneri; Asya Yakası'nda sokaklara dizili pastel binalar (cepheleri sokağa bakar, gece yanan pencereler), ağaçlı sahil bulvarı, şadırvanlı avlusuyla cami; köprüyü geçince "Kıtalar arası" başarımı. Denize düşen araç en yakın kumsala çıkar
 - **Trafik:** çevre yolunda sağdan akan araçlar (sarı taksi dahil); önüne çıkınca durur, yarışta yoldan çekilir
 - **Taksi modu:** duraktan 2 dakikalık vardiya; yolcuyu al, GPS ile götür, hızlı varırsan bahşiş
 - **Helikopter halka parkuru:** pistten kalk, haritanın üzerindeki 10 halkadan sırayla geç (kılavuz ok, rekor süresi)
 - **Sumo arenası:** eğimli platformda üç çarpışan arabayı dışarı it; son kalan kazanır
+- **Lunapark ve jet-ski:** Asya Yakası'nda gece renk renk yanan dev dönme dolap (kabinden bir tur boyunca Boğaz manzarası); kumsaldaki kulübeden jet-ski kirala, dalgalarda kay, zıpla, vapurlardan kaç ve Boğaz boyunca 10 kapılı şamandıra slalomunda rekor kır
 - **Cüzdan ve garaj dükkânı:** taksi, sumo, halka parkuru, yarış, golf ve başarımlardan ₺ kazan; boya (krom, mat, metalik), neon taban (polis, gün batımı, nabız, gökkuşağı), iz efektleri (alev, yıldız tozu, lale yaprakları), korna (tır, nostaljik tramvay, vapur), tavan (altın taç, Türk bayrağı, çakar) ve turbo alevi rengi satın al. Yalnızca görünüm satılır, yarışlar adil kalır
 - **Simitçi:** ₺15'e simit al, 15 saniye simit gücü (yarışta geçersiz)
 - **Navigasyon:** yol ağı üzerinde GPS rotası (yerde akan ok şeridi + yön oku), keşfedildikçe açılan harita sisi
@@ -106,7 +107,8 @@ Bütün modeller **CC BY 4.0** lisanslı. Yazar adları sitede "Emeği geçenler
 | `src/game/HiddenLogos.jsx` | Gizli AÇ logoları ve havai fişek |
 | `src/game/shop.js` · `Cosmetics.jsx` | Dükkân kataloğu ve ödüller; neon taban, tavan aksesuarları, iz efektleri |
 | `src/game/Taxi.jsx` · `SkyRings.jsx` · `Sumo.jsx` | Taksi modu, helikopter halka parkuru, sumo arenası |
-| `src/game/Bosphorus.jsx` · `AsiaShore.jsx` | Boğaz denizi, asma köprü, vapurlar, deniz feneri; Asya Yakası binaları ve cami |
+| `src/game/Bosphorus.jsx` · `AsiaShore.jsx` | Boğaz denizi, asma köprü, vapurlar, deniz feneri; Asya Yakası binaları ve cami avlusu |
+| `src/game/Lunapark.jsx` · `Jetski.jsx` · `wheel.js` | Dönme dolap ve kabin turu; jet-ski sürüşü, kiralama iskelesi ve slalom kapıları |
 | `src/game/Istanbul.jsx` · `Traffic.jsx` | Galata, Kız Kulesi, vapur, simitçi; çevre yolu trafiği |
 | `src/game/Effects.jsx` | MSAA, vinyet, ACES ton eşleme |
 | `src/game/Skids.jsx` · `Dust.jsx` | Lastik izleri ve toz parçacıkları |

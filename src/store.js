@@ -1,9 +1,10 @@
 import { create } from 'zustand'
 import { profile, projects } from './content.js'
 import { playChime, playSecret } from './audio.js'
-import { AREAS, COLLECTIBLES, GOLF_PAR, HIDDEN_LOGOS } from './game/layout.js'
+import { AREAS, COLLECTIBLES, GOLF_PAR, HIDDEN_LOGOS, SLALOM } from './game/layout.js'
 import { DEFAULT_EQUIPPED, REWARDS, SIMIT, findItem, isFree } from './game/shop.js'
 import { boarding } from './game/ferry.js'
+import { bottomCabin } from './game/wheel.js'
 
 const COLLECTIBLE_COUNT = COLLECTIBLES.length
 const AREA_COUNT = AREAS.length
@@ -50,6 +51,9 @@ export const ACHIEVEMENTS = [
   { id: 'ferry', title: { tr: 'Vapur sefası', en: 'Ferry ride' }, text: { tr: 'Araba vapuruyla karşıya geç.', en: 'Cross the strait on the car ferry.' } },
   { id: 'fisher', title: { tr: 'Balıkçı', en: 'Angler' }, text: { tr: 'Rıhtımda bir balık tut.', en: 'Catch a fish at the pier.' } },
   { id: 'maras', title: { tr: 'Maraş usulü', en: 'Maraş style' }, text: { tr: 'Dondurmacıdan dondurmanı al.', en: 'Finally get your ice cream from the vendor.' } },
+  { id: 'jetski', title: { tr: 'Dalga sörfçüsü', en: 'Wave rider' }, text: { tr: 'Asya kumsalında jet-ski kirala.', en: 'Rent a jet ski on the Asian beach.' } },
+  { id: 'slalom', title: { tr: 'Slalom', en: 'Slalom' }, text: { tr: "Boğaz'daki şamandıra slalomunu bitir.", en: 'Finish the buoy slalom on the Bosphorus.' } },
+  { id: 'wheel', title: { tr: 'Tepeden İstanbul', en: 'Istanbul from above' }, text: { tr: 'Lunaparktaki dönme dolaba bin.', en: 'Ride the Ferris wheel at the funfair.' } },
   { id: 'shopper', title: { tr: 'İlk alışveriş', en: 'First purchase' }, text: { tr: 'Garaj dükkânından bir şey satın al.', en: 'Buy something from the garage shop.' } },
   { id: 'tycoon', title: { tr: 'Patron', en: 'Tycoon' }, text: { tr: 'Toplam ₺10.000 kazan.', en: 'Earn ₺10,000 in total.' }, goal: 10000 },
   { id: 'road', title: { tr: 'Uzun yol', en: 'Road trip' }, text: { tr: '2 km yol yap.', en: 'Drive 2 km.' }, goal: 2000 },
@@ -125,6 +129,8 @@ const idleTaxi = { active: false, endsAt: 0, fares: 0, earned: 0, stage: 'pickup
 const idleRings = { active: false, start: 0, next: 0 }
 // result: 'win' | 'lose' | null (son maçın sonucu, bir süre gösterilir)
 const idleSumo = { active: false, countdown: 0, start: 0, out: [], result: null, time: 0 }
+// next: geçilecek sıradaki kapı (0 = başlamadı; ilk kapıdan geçince 1)
+const idleSlalom = { next: 0, start: 0 }
 
 export const useStore = create((set, get) => ({
   view: '3d', // '3d' | 'classic'
@@ -154,6 +160,9 @@ export const useStore = create((set, get) => ({
   rings: idleRings,
   sumoBest: saved.sumoBest ?? 0, // en hızlı sumo zaferi (ms, 0 = yok)
   sumo: idleSumo,
+  slalomBest: saved.slalomBest ?? 0, // en hızlı jet-ski slalomu (ms, 0 = yok)
+  slalom: idleSlalom,
+  wheelRide: null, // { cabin, start }: dönme dolapta tur
   drift: { combo: 0, active: false },
   soccerSession: 0, // bu ziyaretteki goller
   cinematic: 0, // > performance.now() ise sinematik kamera
@@ -184,7 +193,7 @@ export const useStore = create((set, get) => ({
 
   persist: () => {
     const s = get()
-    writeJSON(STORAGE_KEY, { unlocked: s.unlocked, progress: s.progress, times: s.times, driftBest: s.driftBest, stuntBest: s.stuntBest, golfBest: s.golfBest, taxiBest: s.taxiBest, ringsBest: s.ringsBest, sumoBest: s.sumoBest, wallet: s.wallet, owned: s.owned })
+    writeJSON(STORAGE_KEY, { unlocked: s.unlocked, progress: s.progress, times: s.times, driftBest: s.driftBest, stuntBest: s.stuntBest, golfBest: s.golfBest, taxiBest: s.taxiBest, ringsBest: s.ringsBest, sumoBest: s.sumoBest, slalomBest: s.slalomBest, wallet: s.wallet, owned: s.owned })
     writeJSON(SETTINGS_KEY, { quality: s.quality, muted: s.muted, music: s.music, fpsCap: s.fpsCap, carId: s.carId, carColor: s.carColor, equipped: s.equipped })
   },
 
@@ -345,6 +354,10 @@ export const useStore = create((set, get) => ({
     } else if (spot.id === 'taxi') {
       if (get().taxi.active) get().endTaxi()
       else get().startTaxi()
+    } else if (spot.id === 'jetski') {
+      get().startJetski()
+    } else if (spot.id === 'wheel') {
+      get().startWheel()
     } else if (spot.id === 'helipad') {
       get().startRings()
     } else if (spot.id === 'sumo') {
@@ -356,7 +369,7 @@ export const useStore = create((set, get) => ({
 
   // area: son girilen bölge (harita, keşif); zone: şu an içinde olunan bölge (oyun göstergeleri)
   zone: null,
-  mode: 'car', // 'car' | 'heli' | 'landing'
+  mode: 'car', // 'car' | 'heli' | 'landing' | 'jetski' | 'wheel'
   enterArea: (id) => {
     set({ area: id, zone: id })
     get().addToSet('explorer', id)
@@ -377,6 +390,9 @@ export const useStore = create((set, get) => ({
   toggleHeli: () => {
     const { mode, started, race, sumo, taxi } = get()
     if (!started || race.active || race.countdown || sumo.active) return
+    // Jet-ski ve dönme dolaptan V ile de inilir
+    if (mode === 'jetski') return get().endJetski()
+    if (mode === 'wheel') return get().endWheel()
     if (mode === 'car') {
       if (taxi.active) get().endTaxi()
       set({ mode: 'heli' })
@@ -493,6 +509,47 @@ export const useStore = create((set, get) => ({
     return ms
   },
   cancelRings: () => set({ rings: idleRings }),
+
+  // ---------- Jet-ski ve slalom ----------
+  startJetski: () => {
+    const { started, race, mode, ferryRide } = get()
+    if (!started || race.active || race.countdown || mode !== 'car' || ferryRide) return
+    if (get().taxi.active) get().endTaxi()
+    set({ mode: 'jetski', slalom: idleSlalom, rings: idleRings, sumo: idleSumo, navTarget: null })
+    get().unlock('jetski')
+  },
+  // Kıyıya dön: jet-ski kulübeye bırakılır, araba iskelede bekliyor
+  endJetski: () => set({ mode: 'car', slalom: idleSlalom }),
+  // İlk kapıdan geçiş (yarış sürerken yeniden geçilirse baştan başlar)
+  startSlalom: () => set({ slalom: { next: 1, start: performance.now() } }),
+  passGate: (index) => {
+    if (index < SLALOM.length - 1) {
+      set((s) => ({ slalom: { ...s.slalom, next: index + 1 } }))
+      return
+    }
+    const ms = performance.now() - get().slalom.start
+    const { slalomBest, lang } = get()
+    const record = !slalomBest || ms < slalomBest
+    get().earn(REWARDS.slalomFinish + (record ? REWARDS.slalomRecord : 0))
+    set({ slalom: idleSlalom, slalomBest: record ? ms : slalomBest })
+    const time = (ms / 1000).toFixed(2)
+    get().toast(lang === 'en' ? 'Slalom finished 🌊' : 'Slalom bitti 🌊', record ? (lang === 'en' ? `New record: ${time} s` : `Yeni rekor: ${time} sn`) : `${time} ${lang === 'en' ? 's' : 'sn'}`)
+    if (!get().muted) playChime()
+    get().unlock('slalom')
+    get().persist()
+  },
+  cancelSlalom: () => set({ slalom: idleSlalom }),
+
+  // ---------- Dönme dolap ----------
+  startWheel: () => {
+    const { started, race, mode, ferryRide } = get()
+    if (!started || race.active || race.countdown || mode !== 'car' || ferryRide) return
+    if (get().taxi.active) get().endTaxi()
+    const t = performance.now() / 1000
+    set({ mode: 'wheel', wheelRide: { cabin: bottomCabin(t), start: t }, rings: idleRings, sumo: idleSumo })
+    get().unlock('wheel')
+  },
+  endWheel: () => set({ mode: 'car', wheelRide: null }),
 
   // ---------- Sumo ----------
   startSumo: () => {

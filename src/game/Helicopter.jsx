@@ -131,7 +131,7 @@ export default function Helicopter() {
   useEffect(
     () =>
       useStore.subscribe((st, prev) => {
-        if (st.mode === 'heli' && prev.mode === 'car') {
+        if (st.mode === 'heli' && prev.mode !== 'heli' && prev.mode !== 'landing') {
           const h = s.current
           const p = vehicleState.position
           h.pos.set(p.x, Math.max(p.y, heightAt(p.x, p.z)) + 0.6, p.z)
@@ -151,7 +151,7 @@ export default function Helicopter() {
     const store = useStore.getState()
     const h = s.current
     const g = group.current
-    if (store.mode === 'car') {
+    if (store.mode !== 'heli' && store.mode !== 'landing') {
       if (g) g.visible = false
       if (shadow.current) shadow.current.visible = false
       if (h.active) {

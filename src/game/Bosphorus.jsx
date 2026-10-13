@@ -8,7 +8,7 @@ import { heightAt } from './terrain.js'
 import { world } from './time.js'
 import { fontBlack, fontBold } from './fonts.js'
 import { Ferry } from './Istanbul.jsx'
-import { DECK_HEIGHT, FERRY_LENGTH, ferryLive, ferryPose } from './ferry.js'
+import { DECK_HEIGHT, FERRY_LENGTH, ferryLive, ferryPose, passengerLive } from './ferry.js'
 import { vehicleState } from './input.js'
 import { useStore } from '../store.js'
 import { translate } from '../i18n.js'
@@ -643,7 +643,7 @@ export default function Bosphorus() {
       <Sea />
       <Bridge />
       {FERRY_ROUTES.map((f, i) => (
-        <Ferry key={i} windows={windows} route={f.route} scale={f.scale} level={STRAIT.seaLevel} />
+        <Ferry key={i} windows={windows} route={f.route} scale={f.scale} level={STRAIT.seaLevel} live={passengerLive[i]} />
       ))}
       <Pier from={PIERS.europe.from} to={PIERS.europe.to} />
       <Pier from={PIERS.asia.from} to={PIERS.asia.to} />

@@ -4,7 +4,7 @@ import { CuboidCollider, RigidBody, useBeforePhysicsStep, useRapier } from '@rea
 import { Text, useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 import { input, pollGamepad, vehicleState } from './input.js'
-import { AREAS, BRIDGE, LAKE, SPAWN, STRAIT, WORLD } from './layout.js'
+import { AREAS, BRIDGE, LAMPS, LAKE, PIERS, PROMENADE, SPAWN, SPOTS, STRAIT, WORLD } from './layout.js'
 import { world as worldTime } from './time.js'
 import { heightAt, seaMask } from './terrain.js'
 import { bakedGeometry } from './geometry.js'
@@ -52,6 +52,33 @@ const BRAKE_FORCE = 0.6
 const MAX_STEER = 0.48
 // Görsel direksiyon açısı fiziğin %65'i: geniş lastikler çamurluktan taşmaz
 const VISUAL_STEER = 0.65
+
+// Boğaz'a düşünce dönülecek kıyı noktaları: iki kumsal boyunca, engellerden (köprü rampası, lamba, ağaç,
+// tezgâh, etkileşim noktası) uzak. Araç kıyıya paralel durur ve köprüye doğru bakar.
+const SHORE_POINTS = (() => {
+  const list = []
+  const clear = (x, z) =>
+    Math.abs(z - BRIDGE.z) > 8 &&
+    Math.abs(z - PIERS.z) > 5 &&
+    !SPOTS.some((s) => Math.hypot(x - s.position[0], z - s.position[2]) < 4.5) &&
+    !LAMPS.some(([lx, , lz]) => Math.hypot(x - lx, z - lz) < 3.5)
+  // Avrupa kumsalı eğimli: suya en yakın kuru, en düz şerit
+  for (let z = -116; z <= 116; z += 8) if (clear(STRAIT.beachWest + 0.5, z)) list.push([STRAIT.beachWest + 0.5, z])
+  // Asya: bulvar ağaçlarıyla (12 m arayla) tramvay yolu arasında, iki ağacın ortasında
+  for (let z = -108; z <= 108; z += 12) {
+    const x = PROMENADE.treeX + 2.6
+    if (!clear(x, z) || PROMENADE.lampZ.some((lz) => Math.abs(lz - z) < 4)) continue
+    if (PROMENADE.keepOut.some((k) => Math.hypot(x - k.x, z - k.z) < k.r + 2)) continue
+    list.push([x, z])
+  }
+  return list.map(([x, z]) => ({ x, z, yaw: z > BRIDGE.z ? Math.PI / 2 : -Math.PI / 2 }))
+})()
+
+function nearestShore(x, z) {
+  let best = SHORE_POINTS[0]
+  for (const p of SHORE_POINTS) if (Math.hypot(p.x - x, p.z - z) < Math.hypot(best.x - x, best.z - z)) best = p
+  return best
+}
 
 const _quat = new THREE.Quaternion()
 const _euler = new THREE.Euler()
@@ -541,7 +568,9 @@ export default function Vehicle() {
 
     // Helikopter modunda araba park hâlinde: kamera, ses ve canlı durum helikopterde
     if (store.mode !== 'car') {
-      updateEngine(0, 0)
+      // Jet-ski motoru araba motor sesini kullanır (daha tiz)
+      if (store.mode === 'jetski') updateEngine(Math.abs(vehicleState.speed) * 1.25, vehicleState.jetThrottle ?? 0, 0, true)
+      else updateEngine(0, 0)
       updateAmbience(worldTime.night, worldTime.wet ?? 0, Math.abs(vehicleState.speed) * 0.6)
       return
     }
@@ -608,14 +637,17 @@ export default function Vehicle() {
     // Göle düşerse: sıçrama, başarım ve kıyıya geri dönüş
     const s = stats.current
     const inLake = Math.hypot(t.x - LAKE.x, t.z - LAKE.z) < LAKE.radius + 1 && t.y < LAKE.waterLevel + 0.15
-    // Boğaz'a düşerse köprü başına (Avrupa yakası) döner
+    // Boğaz'a düşerse en yakın kıyıya döner
     const inSea = seaMask(t.x) > 0.3 && t.y < STRAIT.seaLevel + 0.15
     if (inLake || inSea) {
       if (s.splash === 0 && !store.muted) playSplash()
       s.splash += dt
       if (s.splash > 1.1) {
         const lake = AREAS.find((a) => a.id === 'lake')
-        if (inSea) respawn([BRIDGE.startX - 8, 1.2, BRIDGE.z], 0)
+        if (inSea) {
+          const shore = nearestShore(t.x, t.z)
+          respawn([shore.x, 1.2, shore.z], shore.yaw)
+        }
         else respawn(lake.spawn, lake.yaw)
         store.unlock('swim')
         s.splash = 0

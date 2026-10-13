@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import * as THREE from 'three'
-import { AREAS, BRIDGE, CLEARINGS, PIER_ROAD_ANGLE, LAKE, LAMPS, PATHS, RING_RADIUS, RING_WIDTH, SPOTS, STRAIT, WORLD, WORLD_HALF } from './layout.js'
+import { AREAS, BRIDGE, CLEARINGS, PIER_ROAD_ANGLE, PROMENADE, LAKE, LAMPS, PATHS, RING_RADIUS, RING_WIDTH, SPOTS, STRAIT, WORLD, WORLD_HALF } from './layout.js'
 import { heightAt } from './terrain.js'
 
 // Bitki örtüsü, çit, duvar ve lamba yerleşimleri (bileşen değil, saf veri)
@@ -152,11 +152,26 @@ export function useScatter(density = 1) {
 
     const lamps = lampPlacements()
 
-    // Asya Yakası: ayrı alanda ağaç, kaya ve çalı (eski yerleşimlerin sırası değişmesin diye en sonda)
-    const east = { x0: STRAIT.beachEast + 6, x1: WORLD.maxX - 3 }
-    const eastTrees = place(Math.round(45 * density), 1.5, 5.5, trees, () => ({ kind: ['tree', 'maple', 'oak'][Math.floor(rand() * 3)] }), east)
-    const eastRocks = place(Math.round(14 * density), 0.5, 3, [...trees, ...eastTrees], () => ({ scale: 0.5 + rand() * 1.1 }), east)
-    const eastBushes = place(Math.round(30 * density), 0, 2.2, [...eastTrees, ...eastRocks], () => ({}), east)
+    // Asya Yakası: rastgele dağılım yok; şehir gibi düzenli ağaç sıraları (eski yerleşimlerin sırası değişmesin diye en sonda)
+    const eastTrees = []
+    const plant = (x, z, kind, keep = 0) => {
+      if (CLEARINGS.some((c) => Math.hypot(x - c.x, z - c.z) < c.r + 0.5)) return
+      if (PATHS.some((p) => distanceToSegment(x, z, p.from, p.to) < (p.bridge ? 8 : 4.6))) return
+      if (SPOTS.some((s) => Math.hypot(x - s.position[0], z - s.position[2]) < 4.5)) return
+      if (PROMENADE.keepOut.some((k) => Math.hypot(x - k.x, z - k.z) < k.r)) return
+      if (Math.abs(z) > WORLD.maxZ - 20 + keep) return
+      eastTrees.push({ x, z, y: heightAt(x, z), rot: rand() * Math.PI * 2, scale: 0.85 + rand() * 0.2, kind })
+    }
+    // Sahil bulvarı: kumsal tarafında, lambaların arasında eşit aralıklı çınarlar
+    for (let z = -114; z <= 114; z += 12) if (!PROMENADE.lampZ.some((lz) => Math.abs(lz - z) < 3.5)) plant(PROMENADE.treeX, z, 'maple')
+    // İki bina sırasının arka bahçeleri boyunca ağaç şeridi
+    for (let z = -110; z <= 70; z += 13) plant(265, z, 'tree')
+    // Doğu sırasının arkasında, dağ eteğinde iki sıra koru
+    for (let z = -112; z <= 112; z += 11) {
+      plant(304, z, 'oak', 6)
+      plant(310, z + 5.5, 'tree', 6)
+    }
+    if (density < 1) for (let i = eastTrees.length - 1; i >= 0; i -= 2) eastTrees.splice(i, 1)
 
     // Köprü yolunun geçtiği yerde çevre duvarı açık kalır (sıra bozulmasın diye sonradan süzülür)
     const bridgeGap = Math.atan2(BRIDGE.z, Math.sqrt((RING_RADIUS + RING_WIDTH / 2) ** 2 - BRIDGE.z ** 2))
@@ -164,8 +179,8 @@ export function useScatter(density = 1) {
 
     return {
       trees: [...trees, ...eastTrees],
-      rocks: [...rocks, ...eastRocks],
-      bushes: [...bushes, ...eastBushes],
+      rocks,
+      bushes,
       decor,
       fences,
       walls: openWalls,

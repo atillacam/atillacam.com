@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { CuboidCollider, CylinderCollider, RigidBody } from '@react-three/rapier'
 import { Text } from '@react-three/drei'
 import * as THREE from 'three'
-import { ASIA_BUILDINGS, ASIA_MOSQUE, ASIA_STREETS, DONDURMA, ROUNDABOUTS, TEA_GARDEN, TRAM_LINE } from './layout.js'
+import { ASIA_BUILDINGS, ASIA_MOSQUE, ASIA_STREETS, MOSQUE_YARD, DONDURMA, ROUNDABOUTS, TEA_GARDEN, TRAM_LINE } from './layout.js'
 import { vehicleState } from './input.js'
 import { useStore } from '../store.js'
 import { playHonk } from '../audio.js'
@@ -13,6 +13,8 @@ import { fontBlack } from './fonts.js'
 import { Flag } from './Istanbul.jsx'
 import StaticMerge from './StaticMerge.jsx'
 import Halo from './Halo.jsx'
+import { FerrisWheel } from './Lunapark.jsx'
+import { JetskiDock, SlalomCourse } from './Jetski.jsx'
 
 // Asya Yakası: sokaklı bir mahalle. Binalar zemin katta dükkân ve tente, katlarda balkon, kiremit ya da
 // korkuluklu düz çatı; gece pencerelerin bir kısmı ve dükkânlar yanar. Meydanda dilek çeşmesi, sahilde
@@ -167,7 +169,7 @@ function Buildings() {
         const base = Math.min(...[-1, 1].flatMap((sx) => [-1, 1].map((sz) => heightAt(b.x + (sx * b.w) / 2, b.z + (sz * b.d) / 2)))) - 0.8
         const top = heightAt(b.x, b.z) + b.h
         const floors = Math.max(2, Math.round((top - base) / FLOOR))
-        return { ...b, i, base, top, floors, floorH: (top - base) / floors, gable: i % 5 < 3 }
+        return { ...b, i, base, top, floors, floorH: (top - base) / floors, gable: b.floors <= 3 || i % 3 === 1 }
       }),
     [],
   )
@@ -181,12 +183,10 @@ function Buildings() {
     for (const b of placed) {
       if (b.gable) gable.push(b)
       else flat.push(b)
-      for (const side of [-1, 1]) {
-        // Zemin kat tentesi (doğu ve batı cephesi)
-        awning.push({ x: b.x + side * (b.w / 2 + 0.55), y: b.base + b.floorH * 0.95, z: b.z, side, len: b.d * 0.7, color: AWNINGS[(b.i + (side > 0 ? 2 : 0)) % AWNINGS.length] })
-        // Balkonlar: her iki binadan birinde, 1. kattan itibaren
-        if (b.i % 2 === 0) for (let f = 1; f < b.floors; f++) slab.push({ x: b.x + side * (b.w / 2 + 0.45), y: b.base + f * b.floorH, z: b.z, side, len: b.d * 0.55 })
-      }
+      // Sokağa bakan cephe: zemin katta dükkân tentesi, katlarda balkon sırası
+      const side = b.face
+      awning.push({ x: b.x + side * (b.w / 2 + 0.55), y: b.base + b.floorH * 0.95, z: b.z, side, len: b.d * 0.75, color: AWNINGS[b.i % AWNINGS.length] })
+      if (b.floors >= 4 || b.i % 2 === 0) for (let f = 1; f < b.floors; f++) slab.push({ x: b.x + side * (b.w / 2 + 0.45), y: b.base + f * b.floorH, z: b.z, side, len: b.d * 0.6 })
     }
     return { gable, flat, slab, awning }
   }, [placed])
@@ -492,6 +492,109 @@ function TeaGarden() {
 }
 
 // Tepedeki cami: kare gövde, ana kubbe, yarım kubbeler, iki ince minare
+// Cami avlusu: taş döşeme, sokaklara açılan kapılı alçak duvar, şadırvan ve servi ağaçları
+const YARD_GATE = 8 // batı (sahil yolu) ve doğu (cadde) kapılarının genişliği
+function MosqueYard() {
+  const { x, z, w, d } = MOSQUE_YARD
+  const y = heightAt(x, z)
+  // Duvar parçaları: [merkez x, merkez z, uzunluk x, uzunluk z] (avlu merkezine göre)
+  const walls = useMemo(() => {
+    const t = 0.45
+    const side = (d - YARD_GATE) / 2
+    return [
+      [0, -d / 2, w, t],
+      [0, d / 2, w, t],
+      ...[-1, 1].flatMap((sx) => [-1, 1].map((sz) => [(sx * w) / 2, sz * (YARD_GATE / 2 + side / 2), t, side])),
+    ]
+  }, [w, d])
+  const cypress = [
+    [-w / 2 + 2.2, -d / 2 + 2.2],
+    [w / 2 - 2.2, d / 2 - 2.2],
+    [-w / 2 + 2.2, d / 2 - 2.2],
+    [w / 2 - 2.2, -d / 2 + 2.2],
+  ]
+  return (
+    <group position={[x, y, z]}>
+      <RigidBody type="fixed" colliders={false}>
+        {walls.map(([wx, wz, lx, lz], i) => (
+          <CuboidCollider key={i} args={[lx / 2, 0.35, lz / 2]} position={[wx, 0.35, wz]} />
+        ))}
+        <CylinderCollider args={[0.7, 1.9]} position={[0, 0.7, 12.5]} />
+        {cypress.map(([cx, cz]) => (
+          <CylinderCollider key={cx + ',' + cz} args={[2, 0.35]} position={[cx, 2, cz]} />
+        ))}
+      </RigidBody>
+      <StaticMerge>
+        <mesh position={[0, 0.04, 0]} receiveShadow>
+          <boxGeometry args={[w, 0.08, d]} />
+          <meshStandardMaterial color="#d9d2c3" roughness={0.95} />
+        </mesh>
+        {/* Döşeme çizgileri: kapıdan kapıya uzanan koyu taş yol */}
+        <mesh position={[0, 0.09, 0]} receiveShadow>
+          <boxGeometry args={[w, 0.02, 3.2]} />
+          <meshStandardMaterial color="#b9ae99" roughness={0.95} />
+        </mesh>
+        {walls.map(([wx, wz, lx, lz], i) => (
+          <mesh key={i} position={[wx, 0.35, wz]} castShadow receiveShadow>
+            <boxGeometry args={[lx, 0.7, lz]} />
+            <meshStandardMaterial color="#e8e2d4" roughness={0.85} />
+          </mesh>
+        ))}
+        {/* Kapı direkleri */}
+        {[-1, 1].flatMap((sx) =>
+          [-1, 1].map((sz) => (
+            <mesh key={sx + ',' + sz} position={[(sx * w) / 2, 0.8, (sz * YARD_GATE) / 2]} castShadow>
+              <boxGeometry args={[0.8, 1.6, 0.8]} />
+              <meshStandardMaterial color="#e8e2d4" roughness={0.85} />
+            </mesh>
+          )),
+        )}
+        {/* Şadırvan: sekizgen havuz, ince sütunlar, kurşun kubbe */}
+        <group position={[0, 0, 12.5]}>
+          <mesh position={[0, 0.35, 0]} castShadow receiveShadow>
+            <cylinderGeometry args={[1.9, 2, 0.7, 8]} />
+            <meshStandardMaterial color="#e8e2d4" roughness={0.85} />
+          </mesh>
+          <mesh position={[0, 0.72, 0]}>
+            <cylinderGeometry args={[1.6, 1.6, 0.04, 8]} />
+            <meshStandardMaterial color="#5fa8c9" roughness={0.15} metalness={0.2} />
+          </mesh>
+          {Array.from({ length: 8 }, (_, i) => {
+            const a = (i / 8) * Math.PI * 2 + Math.PI / 8
+            return (
+              <mesh key={i} position={[Math.cos(a) * 1.75, 1.75, Math.sin(a) * 1.75]} castShadow>
+                <cylinderGeometry args={[0.09, 0.09, 2.1, 6]} />
+                <meshStandardMaterial color="#e8e2d4" roughness={0.85} />
+              </mesh>
+            )
+          })}
+          <mesh position={[0, 2.85, 0]} castShadow>
+            <cylinderGeometry args={[2.2, 2.2, 0.2, 8]} />
+            <meshStandardMaterial color="#e8e2d4" roughness={0.85} />
+          </mesh>
+          <mesh position={[0, 2.95, 0]} castShadow>
+            <sphereGeometry args={[1.9, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            <meshStandardMaterial color="#7d8a96" roughness={0.5} metalness={0.3} />
+          </mesh>
+        </group>
+        {/* Servi ağaçları */}
+        {cypress.map(([cx, cz]) => (
+          <group key={cx + ',' + cz} position={[cx, 0, cz]}>
+            <mesh position={[0, 0.6, 0]} castShadow>
+              <cylinderGeometry args={[0.18, 0.22, 1.2, 6]} />
+              <meshStandardMaterial color="#5b4636" roughness={0.9} />
+            </mesh>
+            <mesh position={[0, 4.6, 0]} castShadow>
+              <coneGeometry args={[1.05, 7.6, 10]} />
+              <meshStandardMaterial color="#2f5a3a" roughness={0.9} />
+            </mesh>
+          </group>
+        ))}
+      </StaticMerge>
+    </group>
+  )
+}
+
 function Mosque() {
   const { x, z } = ASIA_MOSQUE
   const y = heightAt(x, z) - 0.5
@@ -721,6 +824,10 @@ export default function AsiaShore() {
       <Tram />
       <EuropeRoundabout />
       <Mosque />
+      <MosqueYard />
+      <FerrisWheel />
+      <JetskiDock />
+      <SlalomCourse />
     </>
   )
 }

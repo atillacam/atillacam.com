@@ -2645,6 +2645,24 @@ kbd {
 .game-hud.rings strong {
   color: #7ad7ff;
 }
+.game-hud.jetski-hud strong {
+  color: #2ee6d0;
+}
+.jetski-arrow {
+  display: inline-block;
+  font-size: 0.9em;
+  transition: transform 0.12s linear;
+}
+.game-hud .jetski-hint {
+  max-width: 260px;
+  opacity: 0.75;
+  font-size: 0.72rem;
+}
+@media (hover: none) {
+  .game-hud .jetski-hint {
+    display: none;
+  }
+}
 .game-hud.sumo.active {
   border-color: rgba(232, 74, 95, 0.6);
 }

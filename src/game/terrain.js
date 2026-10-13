@@ -1,4 +1,4 @@
-import { AREAS, LAKE, PATHS, RING_RADIUS, RING_WIDTH, ROUNDABOUTS, STRAIT, WORLD } from './layout.js'
+import { AREAS, LAKE, MOSQUE_YARD, PATHS, RING_RADIUS, RING_WIDTH, ROUNDABOUTS, STRAIT, WORLD } from './layout.js'
 
 // Arazi yüksekliği tek bir fonksiyondan gelir: görsel mesh, fizik çarpışması ve
 // ağaç/lamba yerleşimi aynı değeri kullanır, böylece hiçbir şey havada kalmaz.
@@ -57,6 +57,8 @@ export function flatMask(x, z) {
   }
   // Köprü yolu da düzleştirir: rampaların altı düz kara olur; deniz tabanı sonradan uygulandığından etkilenmez
   for (const p of PATHS) d = Math.min(d, distanceToSegment(x, z, p.from, p.to) - 5)
+  // Cami avlusu düz (dikdörtgen)
+  d = Math.min(d, Math.max(Math.abs(x - MOSQUE_YARD.x) - MOSQUE_YARD.w / 2, Math.abs(z - MOSQUE_YARD.z) - MOSQUE_YARD.d / 2) - 1)
   // Göbek kavşaklar düz
   for (const r of Object.values(ROUNDABOUTS)) d = Math.min(d, Math.hypot(x - r.x, z - r.z) - r.lane - 3.5)
   const r = Math.hypot(x, z)
@@ -71,14 +73,15 @@ export function heightAt(x, z) {
   const r = Math.hypot(x, z)
   const mask = flatMask(x, z)
 
+  // Asya Yakası şehri: tepeler ve tümsekler alçak (sokaklar düzenli, binalar düz zemine oturur)
+  const city = smoothstep(STRAIT.beachEast + 2, STRAIT.beachEast + 12, x) * (1 - smoothstep(WORLD.maxX - 18, WORLD.maxX - 8, x))
+
   // Hafif tümsekler (yollar ve meydanlarda sıfır)
-  let h = (fbm(x * 0.045 + 10, z * 0.045 - 4, 3) - 0.45) * 2.2 * mask
+  let h = (fbm(x * 0.045 + 10, z * 0.045 - 4, 3) - 0.45) * 2.2 * mask * (1 - 0.75 * city)
 
   // Çevre yolun ötesinde yuvarlak tepeler; yollar bu tepeleri yararak geçer
   const band = smoothstep(RING_RADIUS + RING_WIDTH / 2 + 3, 84, r)
-  // Asya Yakası şehri: tepeler alçak (yokuşlar sürülebilir kalsın)
-  const city = smoothstep(STRAIT.beachEast + 2, STRAIT.beachEast + 12, x) * (1 - smoothstep(WORLD.maxX - 18, WORLD.maxX - 8, x))
-  h += band * (2.5 + fbm(x * 0.035, z * 0.035, 4) * 7) * mask * (1 - 0.8 * city)
+  h += band * (2.5 + fbm(x * 0.035, z * 0.035, 4) * 7) * mask * (1 - 0.94 * city)
 
   // Dünyanın kenarında yüksek dağlar (görünmez duvarların arkası): sınıra 18 m kala yükselmeye başlar
   const edge = Math.min(x - WORLD.minX, WORLD.maxX - x, z - WORLD.minZ, WORLD.maxZ - z)
