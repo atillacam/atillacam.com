@@ -199,7 +199,8 @@ function Leaves() {
 }
 
 // Martılar: Kız Kulesi'nin çevresinde alçaktan, tek tek süzülerek döner
-function Gulls({ center = [LAKE.x, LAKE.z], level = LAKE.waterLevel, count = 7, spread = 1, seed = 57 }) {
+// follow: { x, z } canlı nesne verilirse sürü onu izler (ör. vapur)
+export function Gulls({ center = [LAKE.x, LAKE.z], follow = null, level = LAKE.waterLevel, count = 7, spread = 1, seed = 57 }) {
   const gulls = useMemo(() => {
     const rand = seeded(seed)
     return Array.from({ length: count }, () => ({
@@ -224,7 +225,9 @@ function Gulls({ center = [LAKE.x, LAKE.z], level = LAKE.waterLevel, count = 7, 
       const r = g.r + Math.sin(t * 0.4 + g.wobble) * 1.5
       const dir = Math.sign(g.speed)
       _q.setFromAxisAngle(_up, Math.atan2(-Math.sin(a) * dir, Math.cos(a) * dir))
-      _p.set(center[0] + Math.cos(a) * r, level + g.y + Math.sin(t * 0.9 + g.wobble) * 0.6, center[1] + Math.sin(a) * r)
+      const cx = follow ? follow.x : center[0]
+      const cz = follow ? follow.z : center[1]
+      _p.set(cx + Math.cos(a) * r, level + g.y + Math.sin(t * 0.9 + g.wobble) * 0.6, cz + Math.sin(a) * r)
       _m.compose(_p, _q, _s)
       mesh.current.setMatrixAt(i, _m)
     })

@@ -92,7 +92,7 @@ function NpcCar({ spec, s, cars, lights }) {
   useFrame((_, delta) => {
     const rb = body.current
     if (!rb) return
-    const dt = Math.min(delta, 0.05)
+    const dt = THREE.MathUtils.clamp(delta, 0, 0.05) // negatif süre (zaman geri akarsa) hızları bozmasın
     const { race } = useStore.getState()
     const p = vehicleState.position
     // Yarışta yol yarışçıya kalır; dönüşte oyuncunun üstünde belirmesin diye yol açılmasını bekler
@@ -249,7 +249,7 @@ function BridgeCar({ s, cars, lights }) {
   useFrame((_, delta) => {
     const rb = body.current
     if (!rb) return
-    const dt = Math.min(delta, 0.05)
+    const dt = THREE.MathUtils.clamp(delta, 0, 0.05) // negatif süre (zaman geri akarsa) hızları bozmasın
     loopAt(s.d, here)
     // Önde engel varsa yavaşla: oyuncu (yön ve şerit genişliğine göre) ve döngüde öndeki araç
     let target = BRIDGE_CRUISE

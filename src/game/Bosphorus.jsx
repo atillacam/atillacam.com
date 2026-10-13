@@ -3,11 +3,17 @@ import { useFrame } from '@react-three/fiber'
 import { CuboidCollider, CylinderCollider, RigidBody } from '@react-three/rapier'
 import { Text } from '@react-three/drei'
 import * as THREE from 'three'
-import { BRIDGE, STRAIT, WORLD } from './layout.js'
+import { BRIDGE, PIERS, STRAIT, WORLD } from './layout.js'
 import { heightAt } from './terrain.js'
 import { world } from './time.js'
 import { fontBlack, fontBold } from './fonts.js'
 import { Ferry } from './Istanbul.jsx'
+import { DECK_HEIGHT, FERRY_LENGTH, ferryLive, ferryPose } from './ferry.js'
+import { vehicleState } from './input.js'
+import { useStore } from '../store.js'
+import { translate } from '../i18n.js'
+import { playChime, playFerryHorn } from '../audio.js'
+import { Gulls } from './Life.jsx'
 import StaticMerge from './StaticMerge.jsx'
 import AsiaShore from './AsiaShore.jsx'
 import { BridgeTraffic } from './Traffic.jsx'
@@ -456,10 +462,10 @@ const ellipse = (cx, cz, rx, rz, speed, start) => ({
   start,
   at: (a) => ({ x: cx + Math.cos(a) * rx, z: cz + Math.sin(a) * rz, dx: -Math.sin(a) * rx, dz: Math.cos(a) * rz }),
 })
+// Yolcu vapurları köprünün altından kanal boyunca döner; iskele hattının (z = -70) kuzeyinde kalır
 const FERRY_ROUTES = [
-  { route: ellipse(STRAIT.centerX, 16, 9, 96, 0.065, 0), scale: 2.2 },
-  { route: ellipse(STRAIT.centerX, 16, 9, 96, 0.065, Math.PI), scale: 2.2 },
-  { route: ellipse(STRAIT.centerX, -104, 28, 5, 0.09, 1), scale: 1.7 },
+  { route: ellipse(STRAIT.centerX, 34, 9, 78, 0.075, 0), scale: 2.2 },
+  { route: ellipse(STRAIT.centerX, 34, 9, 78, 0.075, Math.PI), scale: 2.2 },
 ]
 
 function useFerryWindows() {
@@ -468,6 +474,166 @@ function useFerryWindows() {
     material.emissiveIntensity = world.night * 1.6
   })
   return material
+}
+
+// ---------- İskeleler ----------
+function Pier({ from, to }) {
+  const dir = Math.sign(to - from) // denize doğru
+  const length = Math.abs(to - from)
+  const cx = (from + to) / 2
+  const top = PIERS.deckY
+  const z = PIERS.z
+  const piles = useMemo(() => {
+    const list = []
+    for (let d = 4; d <= length; d += 4) for (const side of [-1, 1]) list.push([from + dir * d, z + side * (PIERS.width / 2 - 0.3)])
+    return list
+  }, [from, dir, length, z])
+  const rampTilt = dir * Math.atan2(top, 3)
+  return (
+    <group>
+      <RigidBody type="fixed" colliders={false} friction={1}>
+        <CuboidCollider args={[length / 2, 0.3, PIERS.width / 2]} position={[cx, top - 0.3, z]} />
+        {/* Karadan iskeleye küçük rampa */}
+        <CuboidCollider args={[1.6, 0.1, PIERS.width / 2]} position={[from - dir * 1.5, top / 2 - 0.1, z]} rotation={[0, 0, rampTilt]} />
+        {/* Yan korkuluklar (deniz tarafı) */}
+        {[-1, 1].map((side) => (
+          <CuboidCollider key={side} args={[length / 2 - 2, 0.5, 0.08]} position={[cx + dir * 2, top + 0.5, z + side * (PIERS.width / 2 - 0.1)]} />
+        ))}
+      </RigidBody>
+      <StaticMerge>
+        <mesh position={[cx, top - 0.3, z]} castShadow receiveShadow>
+          <boxGeometry args={[length, 0.6, PIERS.width]} />
+          <meshStandardMaterial color="#b9b2a4" roughness={0.9} />
+        </mesh>
+        <mesh position={[from - dir * 1.5, top / 2 - 0.1, z]} rotation={[0, 0, rampTilt]} receiveShadow>
+          <boxGeometry args={[3.2, 0.2, PIERS.width]} />
+          <meshStandardMaterial color="#b9b2a4" roughness={0.9} />
+        </mesh>
+        {piles.map(([px, pz], i) => (
+          <mesh key={i} position={[px, STRAIT.seaLevel - 1.5, pz]} castShadow>
+            <cylinderGeometry args={[0.22, 0.22, 4, 8]} />
+            <meshStandardMaterial color="#6d5a45" roughness={0.9} />
+          </mesh>
+        ))}
+        {[-1, 1].map((side) => (
+          <mesh key={side} position={[cx + dir * 2, top + 0.5, z + side * (PIERS.width / 2 - 0.1)]}>
+            <boxGeometry args={[length - 4, 0.08, 0.08]} />
+            <meshStandardMaterial color="#e9e4da" roughness={0.6} />
+          </mesh>
+        ))}
+        {/* Babalar (halat bağlama) */}
+        {[-1, 1].map((side) => (
+          <mesh key={'b' + side} position={[to - dir * 0.6, top + 0.25, z + side * 1.6]} castShadow>
+            <cylinderGeometry args={[0.18, 0.22, 0.5, 10]} />
+            <meshStandardMaterial color="#2a2c31" roughness={0.6} metalness={0.4} />
+          </mesh>
+        ))}
+      </StaticMerge>
+    </group>
+  )
+}
+
+// ---------- Araba vapuru ----------
+// Çift başlı, açık güverteli; bir yanda kaptan köşkü ve baca. Konum sefer saatine bağlı (ferry.js).
+function CarFerry({ id, windows }) {
+  const body = useRef()
+  const pose = useMemo(() => ({}), [])
+  const horn = useRef({ side: null })
+  const half = FERRY_LENGTH / 2
+  useFrame(() => {
+    const rb = body.current
+    if (!rb) return
+    ferryPose(id, performance.now() / 1000, pose)
+    const live = ferryLive[id]
+    live.x = pose.x
+    live.z = pose.z
+    live.y = pose.y + DECK_HEIGHT
+    rb.setNextKinematicTranslation({ x: pose.x, y: pose.y, z: pose.z })
+    // Kalkışta düdük (yakındaysa)
+    const side = pose.phase.side
+    if (horn.current.side && !side) {
+      const p = vehicleState.position
+      const d = Math.hypot(p.x - pose.x, p.z - pose.z)
+      const { muted, started } = useStore.getState()
+      if (!muted && started && d < 70) playFerryHorn(Math.max(0.3, 1 - d / 70))
+    }
+    horn.current.side = side
+  })
+  return (
+    <RigidBody ref={body} type="kinematicPosition" colliders={false} position={[ferryLive[id].x, STRAIT.seaLevel, PIERS.z]}>
+      <CuboidCollider args={[half, 0.75, 2.1]} position={[0, DECK_HEIGHT - 0.75, 0]} />
+      <CuboidCollider args={[half * 0.4, 1.4, 0.7]} position={[0, DECK_HEIGHT + 1.4, 1.55]} />
+      <StaticMerge>
+        {/* Gövde: koyu lacivert alt, beyaz bant */}
+        <mesh position={[0, -0.2, 0]} castShadow>
+          <boxGeometry args={[FERRY_LENGTH, 1.1, 4.2]} />
+          <meshStandardMaterial color="#1f2a3a" roughness={0.7} />
+        </mesh>
+        <mesh position={[0, 0.55, 0]} castShadow>
+          <boxGeometry args={[FERRY_LENGTH + 0.05, 0.45, 4.25]} />
+          <meshStandardMaterial color="#f3f1ea" roughness={0.75} />
+        </mesh>
+        {/* Güverte */}
+        <mesh position={[0, DECK_HEIGHT - 0.05, 0]} receiveShadow>
+          <boxGeometry args={[FERRY_LENGTH - 0.3, 0.1, 3.9]} />
+          <meshStandardMaterial color="#8d939c" roughness={0.9} />
+        </mesh>
+        {/* Yan küpeşteler (uçlar açık: araba iner/biner) */}
+        {[-1, 1].map((side) => (
+          <mesh key={side} position={[0, DECK_HEIGHT + 0.35, side * 2.02]} castShadow>
+            <boxGeometry args={[FERRY_LENGTH - 2.5, 0.7, 0.16]} />
+            <meshStandardMaterial color="#f3f1ea" roughness={0.75} />
+          </mesh>
+        ))}
+        {/* Kaptan köşkü ve baca */}
+        <mesh position={[0, DECK_HEIGHT + 1.3, 1.55]} castShadow>
+          <boxGeometry args={[half * 0.8, 2.6, 1.3]} />
+          <meshStandardMaterial color="#f7f5ef" roughness={0.75} />
+        </mesh>
+        <mesh position={[0, DECK_HEIGHT + 1.9, 1.55]} material={windows}>
+          <boxGeometry args={[half * 0.82, 0.55, 1.32]} />
+        </mesh>
+        <mesh position={[0, DECK_HEIGHT + 3.2, 1.55]} castShadow>
+          <cylinderGeometry args={[0.32, 0.36, 1.3, 14]} />
+          <meshStandardMaterial color="#f2c230" roughness={0.6} />
+        </mesh>
+        <mesh position={[0, DECK_HEIGHT + 3.9, 1.55]}>
+          <cylinderGeometry args={[0.33, 0.33, 0.18, 14]} />
+          <meshStandardMaterial color="#16181d" roughness={0.6} />
+        </mesh>
+      </StaticMerge>
+    </RigidBody>
+  )
+}
+
+// Yolculuk: araç vapurun güvertesinde taşınır; vapur karşı iskeleye yanaşınca araç iskeleye iner
+function FerryRide() {
+  const departed = useRef(false)
+  useFrame(() => {
+    const store = useStore.getState()
+    const ride = store.ferryRide
+    if (!ride) {
+      if (vehicleState.carry) vehicleState.carry = null
+      departed.current = false
+      return
+    }
+    const pose = ferryPose(ride.ferry, performance.now() / 1000)
+    // Yola çıktıktan sonra varış iskelesine yanaşınca indir
+    if (!pose.phase.side) departed.current = true
+    if (departed.current && pose.phase.side === ride.dest) {
+      vehicleState.carry = null
+      const asia = ride.dest === 'asia'
+      vehicleState.teleport = { position: [asia ? PIERS.asia.to + 2.5 : PIERS.europe.to - 2.5, PIERS.deckY + 1.2, PIERS.z], yaw: asia ? 0 : Math.PI }
+      useStore.setState({ ferryRide: null })
+      store.unlock('ferry')
+      store.toast(translate(asia ? 'areaAsia' : 'areaEurope', store.lang), store.lang === 'en' ? 'Welcome ashore!' : 'İyi yolculuklar!')
+      if (!store.muted) playChime()
+      return
+    }
+    // Güvertenin ortası, araç gidiş yönüne bakar
+    vehicleState.carry = { x: pose.x, y: pose.y + DECK_HEIGHT + 0.65, z: pose.z, yaw: ride.dest === 'asia' ? 0 : Math.PI }
+  })
+  return null
 }
 
 export default function Bosphorus() {
@@ -479,6 +645,16 @@ export default function Bosphorus() {
       {FERRY_ROUTES.map((f, i) => (
         <Ferry key={i} windows={windows} route={f.route} scale={f.scale} level={STRAIT.seaLevel} />
       ))}
+      <Pier from={PIERS.europe.from} to={PIERS.europe.to} />
+      <Pier from={PIERS.asia.from} to={PIERS.asia.to} />
+      {[0, 1].map((id) => (
+        <CarFerry key={id} id={id} windows={windows} />
+      ))}
+      {/* Araba vapurlarının peşinde martılar */}
+      {[0, 1].map((id) => (
+        <Gulls key={'g' + id} follow={ferryLive[id]} level={STRAIT.seaLevel} count={6} spread={0.8} seed={130 + id} />
+      ))}
+      <FerryRide />
       <BridgeTraffic />
       <AsiaShore />
       <Lighthouse />

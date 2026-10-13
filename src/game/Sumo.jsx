@@ -91,7 +91,7 @@ function Bot({ index, onOut }) {
   useFrame((_, delta) => {
     const rb = body.current
     if (!rb || gone.current) return
-    const dt = Math.min(delta, 0.05)
+    const dt = THREE.MathUtils.clamp(delta, 0, 0.05) // negatif süre (zaman geri akarsa) hızları bozmasın
     const { sumo } = useStore.getState()
     const p = rb.translation()
     const r = Math.hypot(p.x - SUMO.x, p.z - SUMO.z)

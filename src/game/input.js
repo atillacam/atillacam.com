@@ -37,6 +37,7 @@ export const vehicleState = {
   altitude: 0, // helikopterde yerden yükseklik (m)
   heliTeleport: null, // helikopterdeyken haritadan ışınlanma hedefi
   teleport: null, // { position, yaw }
+  carry: null, // { x, y, z, yaw }: vapurda taşınırken aracın yeri
 }
 
 export function trigger(event) {

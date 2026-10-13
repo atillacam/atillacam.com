@@ -512,6 +512,56 @@ function ShopPanel() {
   )
 }
 
+// Balık tutma: bekleme, "vurdu" anı (kısa süre Enter beklenir) ve kaçırma
+function FishingHud() {
+  const { t } = useT()
+  const state = useStore((s) => s.fishing.state)
+  useEffect(() => {
+    if (state === 'idle') return
+    let frame
+    const loop = () => {
+      const store = useStore.getState()
+      const { fishing, spot } = store
+      const now = performance.now()
+      const tr = store.lang !== 'en'
+      if (spot?.id !== 'fish') {
+        // Rıhtımdan ayrıldı: olta toplanır
+        useStore.setState({ fishing: { state: 'idle', biteAt: 0, until: 0 } })
+        return
+      }
+      if (fishing.state === 'wait' && now >= fishing.biteAt) {
+        useStore.setState({ fishing: { ...fishing, state: 'bite', until: now + 1100 } })
+        if (!store.muted) playHonk('horn-tram')
+      } else if (fishing.state === 'bite' && now > fishing.until) {
+        useStore.setState({ fishing: { state: 'idle', biteAt: 0, until: 0 } })
+        store.toast('🎣', tr ? 'Geç kaldın, balık kaçtı!' : 'Too slow, it got away!')
+        return
+      }
+      frame = requestAnimationFrame(loop)
+    }
+    frame = requestAnimationFrame(loop)
+    return () => cancelAnimationFrame(frame)
+  }, [state])
+  if (state === 'idle') return null
+  return (
+    <div className={state === 'bite' ? 'fishing-hud bite' : 'fishing-hud'} role="status">
+      🎣 {state === 'bite' ? t('fishBite') : t('fishWait')}
+    </div>
+  )
+}
+
+// Vapurdayken bilgi şeridi
+function FerryHud() {
+  const { t } = useT()
+  const riding = useStore((s) => !!s.ferryRide)
+  if (!riding) return null
+  return (
+    <div className="fishing-hud" role="status">
+      ⛴️ {t('ferryRiding')} · {t('ferryArrive')}
+    </div>
+  )
+}
+
 // Simit gücü göstergesi (kalan saniye)
 function SimitChip() {
   const { t } = useT()
@@ -576,6 +626,8 @@ function GameHud() {
     <>
       <HeliHud />
       <SimitChip />
+      <FishingHud />
+      <FerryHud />
       <TaxiHud />
       <RingsHud />
       <SumoHud />

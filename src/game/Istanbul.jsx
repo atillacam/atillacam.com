@@ -240,7 +240,7 @@ export function Ferry({ windows, route = LAKE_ROUTE, scale = 1, level = LAKE.wat
 
   useFrame((frame, delta) => {
     const s = state.current
-    const dt = Math.min(delta, 0.05)
+    const dt = THREE.MathUtils.clamp(delta, 0, 0.05) // negatif süre (zaman geri akarsa) hızları bozmasın
     s.angle += dt * route.speed
     const { x, z, dx, dz } = route.at(s.angle)
     const t = frame.clock.elapsedTime

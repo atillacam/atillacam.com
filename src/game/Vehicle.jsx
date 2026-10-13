@@ -393,7 +393,8 @@ export default function Vehicle() {
     const rb = body.current
     if (!vehicle || !rb) return
     const store = useStore.getState()
-    const active = store.started && !store.modal && !store.race.countdown && store.mode === 'car'
+    // carry: vapurda taşınırken sürüş kapalı
+    const active = store.started && !store.modal && !store.race.countdown && store.mode === 'car' && !vehicleState.carry
 
     // Klavye + dokunmatik + gamepad birleşimi
     const pad = pollGamepad()
@@ -500,6 +501,14 @@ export default function Vehicle() {
       if (store.mode === 'heli') vehicleState.heliTeleport = vehicleState.teleport
       else respawn(vehicleState.teleport.position, vehicleState.teleport.yaw)
       vehicleState.teleport = null
+    }
+    // Vapurda: araç her adımda güvertedeki yerine sabitlenir (vapurla birlikte hareket eder)
+    const carry = vehicleState.carry
+    if (carry) {
+      rb.setTranslation({ x: carry.x, y: carry.y, z: carry.z }, true)
+      rb.setRotation(yawQuaternion(carry.yaw), true)
+      rb.setLinvel({ x: 0, y: 0, z: 0 }, true)
+      rb.setAngvel({ x: 0, y: 0, z: 0 }, true)
     }
   })
 

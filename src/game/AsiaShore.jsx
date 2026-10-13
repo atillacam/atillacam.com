@@ -3,7 +3,10 @@ import { useFrame } from '@react-three/fiber'
 import { CuboidCollider, CylinderCollider, RigidBody } from '@react-three/rapier'
 import { Text } from '@react-three/drei'
 import * as THREE from 'three'
-import { ASIA_BUILDINGS, ASIA_MOSQUE, ASIA_STREETS, ROUNDABOUTS, TEA_GARDEN } from './layout.js'
+import { ASIA_BUILDINGS, ASIA_MOSQUE, ASIA_STREETS, DONDURMA, ROUNDABOUTS, TEA_GARDEN, TRAM_LINE } from './layout.js'
+import { vehicleState } from './input.js'
+import { useStore } from '../store.js'
+import { playHonk } from '../audio.js'
 import { heightAt } from './terrain.js'
 import { world } from './time.js'
 import { fontBlack } from './fonts.js'
@@ -101,6 +104,7 @@ const _q = new THREE.Quaternion()
 const _e = new THREE.Euler()
 const _p = new THREE.Vector3()
 const _s = new THREE.Vector3()
+const _up = new THREE.Vector3(0, 1, 0)
 
 function Buildings() {
   const walls = useRef()
@@ -550,6 +554,161 @@ function Mosque() {
   )
 }
 
+// Maraş dondurmacısı: çizgili tenteli araba, üstünde dev külah
+function DondurmaCart() {
+  const { x, z } = DONDURMA
+  const y = heightAt(x, z)
+  return (
+    <group position={[x, y, z]} rotation={[0, Math.PI / 2, 0]}>
+      <RigidBody type="fixed" colliders={false}>
+        <CuboidCollider args={[1, 0.9, 0.6]} position={[0, 0.9, 0]} />
+      </RigidBody>
+      <StaticMerge>
+        <mesh position={[0, 0.85, 0]} castShadow>
+          <boxGeometry args={[1.9, 0.9, 1.1]} />
+          <meshStandardMaterial color="#f4f1ea" roughness={0.7} />
+        </mesh>
+        <mesh position={[0, 0.6, 0.56]}>
+          <boxGeometry args={[1.9, 0.18, 0.02]} />
+          <meshStandardMaterial color="#c8302c" roughness={0.7} />
+        </mesh>
+        {[-0.7, 0.7].map((wx) => (
+          <mesh key={wx} position={[wx, 0.28, 0.58]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+            <cylinderGeometry args={[0.28, 0.28, 0.08, 14]} />
+            <meshStandardMaterial color="#2a2c31" roughness={0.8} />
+          </mesh>
+        ))}
+        {/* Tente direkleri ve çizgili tente */}
+        {[-0.85, 0.85].map((px) => (
+          <mesh key={px} position={[px, 1.75, -0.4]}>
+            <cylinderGeometry args={[0.03, 0.03, 1.8, 6]} />
+            <meshStandardMaterial color="#d9d9d9" metalness={0.5} roughness={0.4} />
+          </mesh>
+        ))}
+        {[0, 1, 2, 3, 4].map((i) => (
+          <mesh key={'s' + i} position={[-0.8 + i * 0.4, 2.62, 0]} rotation={[0.2, 0, 0]} castShadow>
+            <boxGeometry args={[0.4, 0.06, 1.5]} />
+            <meshStandardMaterial color={i % 2 ? '#f4f1ea' : '#c8302c'} roughness={0.8} />
+          </mesh>
+        ))}
+        {/* Dev külah tabela */}
+        <mesh position={[0.65, 3.1, 0]} rotation={[Math.PI, 0, 0]} castShadow>
+          <coneGeometry args={[0.32, 0.9, 12]} />
+          <meshStandardMaterial color="#d9a35b" roughness={0.8} />
+        </mesh>
+        <mesh position={[0.65, 3.62, 0]} castShadow>
+          <sphereGeometry args={[0.36, 14, 10]} />
+          <meshStandardMaterial color="#fff4e0" roughness={0.6} />
+        </mesh>
+        <mesh position={[0.65, 3.98, 0]} castShadow>
+          <sphereGeometry args={[0.26, 14, 10]} />
+          <meshStandardMaterial color="#e8a0b4" roughness={0.6} />
+        </mesh>
+      </StaticMerge>
+      <Text font={fontBlack} fontSize={0.26} color="#c8302c" position={[0, 0.98, 0.56]} anchorX="center" anchorY="middle">
+        MARAŞ DONDURMASI
+      </Text>
+    </group>
+  )
+}
+
+// Nostaljik tramvay: sahil yolunda iki uç arasında gider gelir, uçlarda bekler; önüne çıkılırsa zil çalıp durur
+const TRAM_SPEED = 6
+const TRAM_DWELL = 5
+function Tram() {
+  const body = useRef()
+  const state = useRef({ z: TRAM_LINE.from, dir: 1, speed: 0, wait: 2, bellAt: 0 })
+  const q = useMemo(() => new THREE.Quaternion(), [])
+  useFrame((_, delta) => {
+    const rb = body.current
+    if (!rb) return
+    const s = state.current
+    const dt = THREE.MathUtils.clamp(delta, 0, 0.05) // negatif süre (zaman geri akarsa) hızları bozmasın
+    if (s.wait > 0) {
+      s.wait -= dt
+      s.speed = 0
+    } else {
+      // Önde oyuncu varsa yavaşla ve zil çal
+      const p = vehicleState.position
+      const along = (p.z - s.z) * s.dir
+      let target = TRAM_SPEED
+      if (along > 0 && along < 14 && Math.abs(p.x - TRAM_LINE.x) < 3) {
+        target = Math.max(0, (along - 7) * 1.2)
+        const now = performance.now()
+        const { muted, started } = useStore.getState()
+        if (now - s.bellAt > 4000 && !muted && started) {
+          s.bellAt = now
+          playHonk('horn-tram')
+        }
+      }
+      // Durağa yaklaşınca yavaşla
+      const end = s.dir > 0 ? TRAM_LINE.to : TRAM_LINE.from
+      target = Math.min(target, Math.max(1.2, Math.abs(end - s.z) * 0.8))
+      s.speed += THREE.MathUtils.clamp(target - s.speed, -6 * dt, 2 * dt)
+      s.z += s.dir * s.speed * dt
+      if ((s.dir > 0 && s.z >= TRAM_LINE.to) || (s.dir < 0 && s.z <= TRAM_LINE.from)) {
+        s.z = s.dir > 0 ? TRAM_LINE.to : TRAM_LINE.from
+        s.dir *= -1
+        s.wait = TRAM_DWELL
+      }
+    }
+    q.setFromAxisAngle(_up, 0)
+    rb.setNextKinematicTranslation({ x: TRAM_LINE.x, y: heightAt(TRAM_LINE.x, s.z), z: s.z })
+    rb.setNextKinematicRotation(q)
+  })
+  return (
+    <RigidBody ref={body} name="npc" type="kinematicPosition" colliders={false} position={[TRAM_LINE.x, 0, TRAM_LINE.from]}>
+      <CuboidCollider args={[1.25, 1.5, 4.6]} position={[0, 1.6, 0]} />
+      <StaticMerge>
+        {/* Kırmızı alt gövde, krem üst gövde, pencere şeridi, çatı */}
+        <mesh position={[0, 0.85, 0]} castShadow>
+          <boxGeometry args={[2.4, 1.1, 9]} />
+          <meshStandardMaterial color="#b8282b" roughness={0.6} />
+        </mesh>
+        <mesh position={[0, 2.0, 0]} castShadow>
+          <boxGeometry args={[2.4, 1.2, 9]} />
+          <meshStandardMaterial color="#f1e6cc" roughness={0.6} />
+        </mesh>
+        <mesh position={[0, 2.05, 0]}>
+          <boxGeometry args={[2.42, 0.7, 8.4]} />
+          <meshStandardMaterial color="#2c3644" roughness={0.2} metalness={0.3} />
+        </mesh>
+        <mesh position={[0, 2.72, 0]} castShadow>
+          <boxGeometry args={[2.2, 0.24, 8.6]} />
+          <meshStandardMaterial color="#b8282b" roughness={0.6} />
+        </mesh>
+        {/* Pantograf */}
+        <mesh position={[0, 3.25, 0]} rotation={[0.5, 0, 0]}>
+          <boxGeometry args={[0.06, 0.06, 1.4]} />
+          <meshStandardMaterial color="#2a2c31" metalness={0.6} roughness={0.4} />
+        </mesh>
+        {[-1, 1].map((side) => (
+          <mesh key={side} position={[0, 0.28, side * 3]} rotation={[0, 0, Math.PI / 2]}>
+            <cylinderGeometry args={[0.32, 0.32, 2.2, 12]} />
+            <meshStandardMaterial color="#2a2c31" roughness={0.6} />
+          </mesh>
+        ))}
+      </StaticMerge>
+    </RigidBody>
+  )
+}
+
+// Tramvay rayları: hat boyunca iki ince ray
+function TramTracks() {
+  const length = TRAM_LINE.to - TRAM_LINE.from + 8
+  const z = (TRAM_LINE.from + TRAM_LINE.to) / 2
+  return (
+    <StaticMerge>
+      {[-0.72, 0.72].map((dx) => (
+        <mesh key={dx} position={[TRAM_LINE.x + dx, heightAt(TRAM_LINE.x, z) + 0.07, z]}>
+          <boxGeometry args={[0.1, 0.05, length]} />
+          <meshStandardMaterial color="#8d939c" metalness={0.7} roughness={0.35} />
+        </mesh>
+      ))}
+    </StaticMerge>
+  )
+}
+
 export default function AsiaShore() {
   return (
     <>
@@ -557,6 +716,9 @@ export default function AsiaShore() {
       <StreetLamps />
       <Fountain />
       <TeaGarden />
+      <DondurmaCart />
+      <TramTracks />
+      <Tram />
       <EuropeRoundabout />
       <Mosque />
     </>

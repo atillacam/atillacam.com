@@ -3,6 +3,7 @@ import { profile, projects } from './content.js'
 import { playChime, playSecret } from './audio.js'
 import { AREAS, COLLECTIBLES, GOLF_PAR, HIDDEN_LOGOS } from './game/layout.js'
 import { DEFAULT_EQUIPPED, REWARDS, SIMIT, findItem, isFree } from './game/shop.js'
+import { boarding } from './game/ferry.js'
 
 const COLLECTIBLE_COUNT = COLLECTIBLES.length
 const AREA_COUNT = AREAS.length
@@ -46,6 +47,9 @@ export const ACHIEVEMENTS = [
   { id: 'ringMaster', title: { tr: 'Halka ustası', en: 'Ring master' }, text: { tr: 'Helikopter halka parkurunu bitir.', en: 'Finish the helicopter ring course.' } },
   { id: 'sumo', title: { tr: 'Yokozuna', en: 'Yokozuna' }, text: { tr: 'Sumo arenasında üç rakibi de dışarı it.', en: 'Push all three rivals out of the sumo ring.' } },
   { id: 'continents', title: { tr: 'Kıtalar arası', en: 'Intercontinental' }, text: { tr: "Köprüden geçip Asya Yakası'na ulaş.", en: 'Cross the bridge to the Asian shore.' } },
+  { id: 'ferry', title: { tr: 'Vapur sefası', en: 'Ferry ride' }, text: { tr: 'Araba vapuruyla karşıya geç.', en: 'Cross the strait on the car ferry.' } },
+  { id: 'fisher', title: { tr: 'Balıkçı', en: 'Angler' }, text: { tr: 'Rıhtımda bir balık tut.', en: 'Catch a fish at the pier.' } },
+  { id: 'maras', title: { tr: 'Maraş usulü', en: 'Maraş style' }, text: { tr: 'Dondurmacıdan dondurmanı al.', en: 'Finally get your ice cream from the vendor.' } },
   { id: 'shopper', title: { tr: 'İlk alışveriş', en: 'First purchase' }, text: { tr: 'Garaj dükkânından bir şey satın al.', en: 'Buy something from the garage shop.' } },
   { id: 'tycoon', title: { tr: 'Patron', en: 'Tycoon' }, text: { tr: 'Toplam ₺10.000 kazan.', en: 'Earn ₺10,000 in total.' }, goal: 10000 },
   { id: 'road', title: { tr: 'Uzun yol', en: 'Road trip' }, text: { tr: '2 km yol yap.', en: 'Drive 2 km.' }, goal: 2000 },
@@ -174,6 +178,9 @@ export const useStore = create((set, get) => ({
   whispers: [], // ziyaretçi fısıltıları { id, name, message, x, z }
   race: idleRace,
   celebrate: 0, // havai fişek başlangıcı (performance.now)
+  ferryRide: null, // { ferry, dest }: araba vapurunda karşıya geçiş
+  fishing: { state: 'idle', biteAt: 0, until: 0 }, // idle | wait | bite
+  dondurmaStep: 0, // Maraş dondurmacısı: kaçıncı deneme
 
   persist: () => {
     const s = get()
@@ -239,6 +246,66 @@ export const useStore = create((set, get) => ({
       set({ bowlingReset: Date.now() })
     } else if (spot.id === 'lookout') {
       get().startCinematic()
+    } else if (spot.id === 'pier-europe' || spot.id === 'pier-asia') {
+      // Araba vapuru: iskelede bekleyen vapura bin, karşıya geç
+      const side = spot.id === 'pier-europe' ? 'europe' : 'asia'
+      const tr = get().lang !== 'en'
+      if (get().ferryRide || race.active || race.countdown) return
+      const b = boarding(side, performance.now() / 1000)
+      if (b.ferry === null) get().toast('⛴️', tr ? `Vapur ${b.wait} sn sonra iskelede.` : `The ferry docks in ${b.wait} s.`)
+      else {
+        set({ ferryRide: { ferry: b.ferry, dest: side === 'europe' ? 'asia' : 'europe' } })
+        get().toast(tr ? 'Vapura bindin ⛴️' : 'All aboard ⛴️', tr ? 'Martılara selam söyle, karşıya geçiyoruz.' : 'Say hi to the gulls, crossing over.')
+        if (!get().muted) playChime()
+      }
+    } else if (spot.id === 'fish') {
+      // Balık tutma: oltayı at, vurunca hemen çek
+      const tr = get().lang !== 'en'
+      const { fishing } = get()
+      const now = performance.now()
+      if (fishing.state === 'idle') {
+        set({ fishing: { state: 'wait', biteAt: now + 2000 + Math.random() * 3500, until: 0 } })
+        get().toast('🎣', tr ? 'Olta atıldı… vurunca Enter!' : 'Line cast… press Enter on a bite!')
+      } else if (fishing.state === 'wait') {
+        set({ fishing: { state: 'idle', biteAt: 0, until: 0 } })
+        get().toast('🎣', tr ? 'Erken çektin, balık kaçtı!' : 'Too early, the fish got away!')
+      } else if (fishing.state === 'bite') {
+        const r = Math.random()
+        const catches = [
+          [0.03, { tr: 'Altın balık', en: 'Goldfish' }, 100],
+          [0.17, { tr: 'Lüfer', en: 'Bluefish' }, 25],
+          [0.37, { tr: 'Palamut', en: 'Bonito' }, 15],
+          [0.65, { tr: 'İstavrit', en: 'Horse mackerel' }, 8],
+          [1, { tr: 'Hamsi', en: 'Anchovy' }, 5],
+        ]
+        const [, name, price] = catches.find(([p]) => r < p)
+        set({ fishing: { state: 'idle', biteAt: 0, until: 0 } })
+        get().earn(price)
+        get().unlock('fisher')
+        get().toast(`🐟 ${tr ? name.tr : name.en}!`, tr ? `Balıkçıya sattın: +₺${price}` : `Sold at the market: +₺${price}`)
+        if (!get().muted) playChime()
+      }
+    } else if (spot.id === 'dondurma') {
+      // Maraş dondurmacısı: iki kez külahı çeker, üçüncüde verir
+      const tr = get().lang !== 'en'
+      const { dondurmaStep, wallet } = get()
+      if (dondurmaStep === 0) {
+        if (wallet < 5) {
+          get().toast('🍦', tr ? 'Dondurma ₺5. Önce biraz para kazan.' : 'Ice cream is ₺5. Earn some money first.')
+          return
+        }
+        set({ wallet: wallet - 5, dondurmaStep: 1 })
+        get().toast('🍦', tr ? 'Dondurmacı külahı uzattı… ve geri çekti! Tekrar dene.' : 'The vendor offers the cone… and snatches it back! Try again.')
+      } else if (dondurmaStep === 1) {
+        set({ dondurmaStep: 2 })
+        get().toast('🍦', tr ? 'Külahı ters çevirdi, dondurma düşmedi! Bir kez daha…' : 'Flipped the cone upside down, it stuck! One more time…')
+      } else {
+        set({ dondurmaStep: 0 })
+        get().unlock('maras')
+        get().toast(tr ? 'Afiyet olsun! 🍦' : 'Enjoy! 🍦', tr ? 'Maraş dondurmanı sonunda aldın.' : 'You finally got your Maraş ice cream.')
+      }
+      if (!get().muted) playChime()
+      get().persist()
     } else if (spot.id === 'wish') {
       // Dilek çeşmesi: ₺5 at, dilek tut; şanslıysan ikramiye
       const { lang, wallet } = get()

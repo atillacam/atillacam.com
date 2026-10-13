@@ -10,6 +10,7 @@ import { translate } from '../i18n.js'
 // Pencere açıkken (oyun duraklatılmış) 24 FPS yeterli; sekme gizliyken rAF zaten durur.
 export function FrameDriver() {
   const advance = useThree((s) => s.advance)
+  const get = useThree((s) => s.get)
   const cap = useStore((s) => s.fpsCap)
   const paused = useStore((s) => !!s.modal)
   useEffect(() => {
@@ -26,12 +27,14 @@ export function FrameDriver() {
         // Fazlayı taşı ki ortalama hız hedefte kalsın (144 Hz'de 60 FPS gibi)
         last = now - (elapsed % interval)
       }
-      // "never" modunda r3f zamanı saniye cinsinden bekler (delta = timestamp - elapsedTime)
+      // "never" modunda r3f zamanı saniye cinsinden bekler (delta = timestamp - elapsedTime).
+      // Zaman geriye gidecekse kareyi atla: negatif süre sönümleri büyütür, hızları tersine çevirir
+      if (now / 1000 <= get().clock.elapsedTime) return
       advance(now / 1000)
     }
     id = requestAnimationFrame(loop)
     return () => cancelAnimationFrame(id)
-  }, [cap, paused, advance])
+  }, [cap, paused, advance, get])
   return null
 }
 

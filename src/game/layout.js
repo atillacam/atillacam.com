@@ -31,6 +31,20 @@ export const ROUNDABOUTS = {
   asia: { x: 282, z: 30, island: 4.5, lane: 11 }, // ortada dilek çeşmesi
 }
 export const TEA_GARDEN = { x: 238.5, z: 62 }
+// Araba vapuru iskeleleri (z = -70 ekseninde): kumsaldan denize uzanan rıhtım, ucunda vapur yanaşır.
+// Sefer: iki vapur aynı anda karşılıklı iskelelerde bekler, sonra birbirinin yanından geçerek karşıya gider.
+export const PIERS = {
+  z: -70,
+  width: 5,
+  deckY: 0.35,
+  europe: { from: 134, to: 150 }, // x: kara ucu → deniz ucu
+  asia: { from: 238, to: 222 },
+}
+export const FERRY_SCHEDULE = { dock: 12, cross: 20 } // saniye
+export const PIER_ROAD_ANGLE = -0.4 // Avrupa iskele yolunun çevre yoluna bağlandığı açı
+export const DONDURMA = { x: 241.5, z: 44 }
+// Nostaljik tramvay: Asya sahil yolunda (x = 247), köprü rampasının güneyinde gidip gelir
+export const TRAM_LINE = { x: 247, from: -104, to: 14 }
 
 export const OUTER = 78 // dış bölgelerin çapraz uzaklığı (x ve z)
 export const RING_RADIUS = 66 // çevre yarış yolu
@@ -130,6 +144,10 @@ export const SPOTS = [
   { id: 'lookout', label: 'areaLookout', action: 'spotLookoutAction', position: [78, 0, -78], color: COLORS.violet },
   { id: 'credits', label: 'spotCredits', action: 'spotCreditsAction', position: [-21, 0, 18], color: '#c9b6ff' },
   { id: 'simit', label: 'placeSimit', action: 'spotSimitAction', position: [13.6, 0, -7.6], color: '#c8302c' },
+  { id: 'pier-europe', label: 'spotPier', action: 'spotPierAction', position: [140.5, PIERS.deckY, -70], color: '#2f78b0' },
+  { id: 'pier-asia', label: 'spotPier', action: 'spotPierAction', position: [231.5, PIERS.deckY, -70], color: '#2f78b0' },
+  { id: 'fish', label: 'spotFish', action: 'spotFishAction', position: [226, PIERS.deckY, -70], color: '#4fd99a' },
+  { id: 'dondurma', label: 'spotDondurma', action: 'spotDondurmaAction', position: [DONDURMA.x + 2.6, 0, DONDURMA.z], color: '#ffb547' },
   { id: 'wish', label: 'spotWish', action: 'spotWishAction', position: [282, 0, 37.5], color: '#7ad7ff' },
   { id: 'tea', label: 'spotTea', action: 'spotTeaAction', position: [TEA_GARDEN.x + 5.2, 0, TEA_GARDEN.z], color: '#c8302c' },
   { id: 'taxi', label: 'spotTaxi', action: 'spotTaxiAction', position: [6, 0, 5], color: '#f2c230' },
@@ -173,6 +191,9 @@ export const PATHS = [
   { from: [110, 30], to: [262, 30], outer: true, bridge: true },
   { from: [262, 30], to: [266.5, 30], outer: true },
   ...ASIA_STREETS.map(([from, to]) => ({ from, to, outer: true, street: true })),
+  // İskelelere yollar: Avrupa'da çevre yolundan sahile (bowling ve gözlem tepesinin arasından), Asya'da sahil yolundan rıhtıma
+  { from: ringPoint(PIER_ROAD_ANGLE, RING_RADIUS + RING_WIDTH / 2), to: [130, -70], outer: true },
+  { from: [247, -70], to: [240, -70], outer: true, street: true },
   // Çevre yoldan dış bölgelere: tepeleri yararak geçen yollar
   ...[
     [1, 1, 20],

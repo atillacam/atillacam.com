@@ -26,10 +26,10 @@ Atilla Çam'ın kişisel web sitesi. Ziyaretçiler fizik tabanlı bir arabayla a
 - **Performans koruması:** FPS sınırı (30/60/sınırsız), takılınca otomatik kalite düşürme, pencere açıkken 24 FPS
 - **Patlayan TNT kasaları:** zincirleme patlama, alev topu ve duman
 - **Kendini düzeltme:** yan yatan, ters dönen ya da takılan araç kendiliğinden doğrulur
-- **Oyun:** kontrol noktalı zamanlı yarış, yerel + dünya skor tablosu, 14 veri çekirdeği, 40 başarım, bowling, rampa
+- **Oyun:** kontrol noktalı zamanlı yarış, yerel + dünya skor tablosu, 14 veri çekirdeği, 44 başarım, bowling, rampa
 - **Gizli AÇ logoları:** haritaya saklanmış 10 logo; hepsini bulan metalik altın boyayı ve havai fişek gösterisini açar
 - **İstanbul dokunuşları:** Galata Kulesi, gölde Kız Kulesi ve etrafında dönen düdüklü şehir hatları vapuru, itilip devrilebilen simitçi tezgâhı
-- **Boğaz ve Asya Yakası:** dünya doğuya genişler; dalgalı deniz, asma köprü (kuleler, kablolar, gece renk değiştiren LED), köprüde iki göbek kavşak arasında kesintisiz gidiş-geliş trafiği, Asya Yakası'nda sahil yolu ve asfalt sokaklar, dilek çeşmesi (₺5) ve çay bahçesi (₺10, Boğaz manzarası), Boğaz'da üç vapur ve martılar, deniz feneri, Asya Yakası'nda pastel binalar (gece yanan pencereler), ana cadde ve tepede cami; köprüyü geçince "Kıtalar arası" başarımı
+- **Boğaz ve Asya Yakası:** dünya doğuya genişler; dalgalı deniz, asma köprü (kuleler, kablolar, gece renk değiştiren LED), köprüde iki göbek kavşak arasında kesintisiz gidiş-geliş trafiği, Asya Yakası'nda sahil yolu ve asfalt sokaklar, dilek çeşmesi (₺5) ve çay bahçesi (₺10, Boğaz manzarası), iki yakada iskele ve karşılıklı sefer yapan araba vapurları (arabanla karşıya geç), rıhtımda balık tutma, Maraş dondurmacısı, sahil yolunda nostaljik tramvay, Boğaz'da üç vapur ve martılar, deniz feneri, Asya Yakası'nda pastel binalar (gece yanan pencereler), ana cadde ve tepede cami; köprüyü geçince "Kıtalar arası" başarımı
 - **Trafik:** çevre yolunda sağdan akan araçlar (sarı taksi dahil); önüne çıkınca durur, yarışta yoldan çekilir
 - **Taksi modu:** duraktan 2 dakikalık vardiya; yolcuyu al, GPS ile götür, hızlı varırsan bahşiş
 - **Helikopter halka parkuru:** pistten kalk, haritanın üzerindeki 10 halkadan sırayla geç (kılavuz ok, rekor süresi)

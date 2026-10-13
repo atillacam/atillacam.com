@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import * as THREE from 'three'
-import { AREAS, BRIDGE, CLEARINGS, LAKE, LAMPS, PATHS, RING_RADIUS, RING_WIDTH, SPOTS, STRAIT, WORLD, WORLD_HALF } from './layout.js'
+import { AREAS, BRIDGE, CLEARINGS, PIER_ROAD_ANGLE, LAKE, LAMPS, PATHS, RING_RADIUS, RING_WIDTH, SPOTS, STRAIT, WORLD, WORLD_HALF } from './layout.js'
 import { heightAt } from './terrain.js'
 
 // Bitki örtüsü, çit, duvar ve lamba yerleşimleri (bileşen değil, saf veri)
@@ -160,7 +160,7 @@ export function useScatter(density = 1) {
 
     // Köprü yolunun geçtiği yerde çevre duvarı açık kalır (sıra bozulmasın diye sonradan süzülür)
     const bridgeGap = Math.atan2(BRIDGE.z, Math.sqrt((RING_RADIUS + RING_WIDTH / 2) ** 2 - BRIDGE.z ** 2))
-    const openWalls = walls.filter((w) => Math.abs(Math.atan2(w.z, w.x) - bridgeGap) > 0.12)
+    const openWalls = walls.filter((w) => [bridgeGap, PIER_ROAD_ANGLE].every((gap) => Math.abs(Math.atan2(w.z, w.x) - gap) > 0.12))
 
     return {
       trees: [...trees, ...eastTrees],

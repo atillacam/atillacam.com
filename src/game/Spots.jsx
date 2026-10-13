@@ -89,7 +89,7 @@ function Spot({ spot }) {
   })
 
   return (
-    <group position={[spot.position[0], heightAt(spot.position[0], spot.position[2]), spot.position[2]]}>
+    <group position={[spot.position[0], spot.position[1] || heightAt(spot.position[0], spot.position[2]), spot.position[2]]}>
       <RigidBody type="fixed" colliders={false}>
         <CuboidCollider
           sensor
