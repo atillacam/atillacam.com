@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { career, profile, projects, skills } from '../content.js'
 import { useStore } from '../store.js'
+import { coverUrl, fontsReady } from '../projectArt.js'
 import { useT } from '../i18n.js'
 import { CreditsContent, RepoMeta } from './Sections.jsx'
 import { highlights } from '../stats.js'
@@ -182,12 +183,29 @@ function Hero({ webgl }) {
   )
 }
 
+// Proje kapağı: gerçek ekran görüntüsü (project.image) yoksa kodla çizilen akış şeması
+function ProjectCover({ project, title }) {
+  const [src, setSrc] = useState(project.image ?? null)
+  useEffect(() => {
+    if (project.image) return
+    let alive = true
+    fontsReady().then(() => {
+      if (alive) setSrc(coverUrl(project))
+    })
+    return () => {
+      alive = false
+    }
+  }, [project])
+  return <div className="project-cover">{src && <img src={src} alt={title} width="800" height="400" loading="lazy" decoding="async" />}</div>
+}
+
 function ProjectCard({ project, index }) {
   const { t, L } = useT()
   const [open, setOpen] = useState(false)
   const id = `project-${project.id}`
   return (
     <article className="project-card reveal" style={{ '--project': project.color, '--delay': `${index * 70}ms` }}>
+      <ProjectCover project={project} title={L(project.title)} />
       <div className="project-head">
         <span className="project-index">{String(index + 1).padStart(2, '0')}</span>
         <span className="project-year">{project.year}</span>

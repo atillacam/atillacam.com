@@ -2994,3 +2994,19 @@ kbd {
     transform: translateX(-50%) scale(1.08);
   }
 }
+
+/* Proje kapağı (klasik görünüm) */
+.project-cover {
+  aspect-ratio: 2 / 1;
+  margin: -6px -6px 16px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #121829;
+  border: 1px solid var(--border);
+}
+.project-cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

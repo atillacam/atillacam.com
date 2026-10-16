@@ -1,12 +1,10 @@
 import { useLayoutEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { CuboidCollider, CylinderCollider, RigidBody } from '@react-three/rapier'
-import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 import { BRIDGE, PIERS, STRAIT, WORLD } from './layout.js'
 import { heightAt } from './terrain.js'
 import { world } from './time.js'
-import { fontBlack, fontBold } from './fonts.js'
 import { Ferry } from './Istanbul.jsx'
 import { DECK_HEIGHT, FERRY_LENGTH, ferryLive, ferryPose } from './ferry.js'
 import { vehicleState } from './input.js'
@@ -18,6 +16,7 @@ import StaticMerge from './StaticMerge.jsx'
 import AsiaShore from './AsiaShore.jsx'
 import { BridgeTraffic } from './Traffic.jsx'
 import Halo from './Halo.jsx'
+import Signboard from './Signboard.jsx'
 
 // Boğaz: Avrupa ile Asya yakası arasında deniz, üzerinde asma köprü, altından geçen vapur,
 // karşı kıyıda deniz feneri. Köprü kuleleri ve kabloları gece renk değiştiren LED'lerle aydınlanır.
@@ -439,36 +438,7 @@ function Lighthouse() {
 function WelcomeSign() {
   const x = BRIDGE.endX + 2
   const z = Z - HALF - 3
-  const y = heightAt(x, z)
-  return (
-    <group position={[x, y, z]} rotation={[0, -Math.PI / 2, 0]}>
-      <RigidBody type="fixed" colliders={false}>
-        <CuboidCollider args={[0.15, 1.6, 2.2]} position={[0, 1.6, 0]} />
-      </RigidBody>
-      <StaticMerge>
-        {[-1.9, 1.9].map((zz) => (
-          <mesh key={zz} position={[0, 1.2, zz]} castShadow>
-            <cylinderGeometry args={[0.08, 0.08, 2.4, 8]} />
-            <meshStandardMaterial color="#8d96a5" metalness={0.6} roughness={0.4} />
-          </mesh>
-        ))}
-        <mesh position={[0, 2.4, 0]} castShadow>
-          <boxGeometry args={[0.16, 1.5, 4.4]} />
-          <meshStandardMaterial color="#1f5f8f" roughness={0.6} />
-        </mesh>
-      </StaticMerge>
-      {[1, -1].map((side) => (
-        <group key={side} position={[side * 0.09, 2.4, 0]} rotation={[0, side > 0 ? Math.PI / 2 : -Math.PI / 2, 0]}>
-          <Text font={fontBlack} fontSize={0.48} color="#ffffff" position={[0, 0.25, 0]} anchorX="center" anchorY="middle">
-            ASYA · ASIA
-          </Text>
-          <Text font={fontBold} fontSize={0.24} color="#bfe0ff" position={[0, -0.3, 0]} anchorX="center" anchorY="middle">
-            Hoş geldiniz · Welcome
-          </Text>
-        </group>
-      ))}
-    </group>
-  )
+  return <Signboard position={[x, heightAt(x, z), z]} rotation={-Math.PI / 2} title="ASYA YAKASI" subtitle="Hoş geldiniz · Welcome" accent="#2ec4b6" size={1.1} postHeight={1.8} dual />
 }
 
 // Boğaz vapurları. Rotalar kesişmez: iki vapur kanal boyunca aynı uzun elipste yarım tur arayla

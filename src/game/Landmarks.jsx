@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { CuboidCollider, CylinderCollider, RigidBody } from '@react-three/rapier'
 import { RoundedBox, Text } from '@react-three/drei'
@@ -10,6 +10,8 @@ import { profile, skillCubes } from '../content.js'
 import { AREAS, COLORS, MAILBOX, PROJECT_BOARDS, SOCIAL_PEDESTALS } from './layout.js'
 import { fontBlack, fontBold, fontRegular } from './fonts.js'
 import { useT } from '../i18n.js'
+import { drawBoard, fontsReady } from '../projectArt.js'
+import Signboard from './Signboard.jsx'
 import { sanitizeNormals } from './geometry.js'
 
 // LinkedIn logosu simple-icons'tan kaldırıldığı için yolu burada tutuyoruz (24×24)
@@ -25,6 +27,28 @@ const ICON_PATHS = {
 // ---------- Projeler ----------
 function ProjectBoard({ project, position }) {
   const { L } = useT()
+  const texture = useMemo(() => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 2048
+    canvas.height = 1180
+    const t = new THREE.CanvasTexture(canvas)
+    t.colorSpace = THREE.SRGBColorSpace
+    t.anisotropy = 8
+    return t
+  }, [])
+  const title = L(project.title)
+  const summary = L(project.summary)
+  useEffect(() => {
+    let alive = true
+    fontsReady().then(() => {
+      if (!alive) return
+      drawBoard(texture.image, project, { title, summary, linkLabel: project.link ? project.link.replace('https://', '') : 'GITHUB' })
+      texture.needsUpdate = true
+    })
+    return () => {
+      alive = false
+    }
+  }, [texture, project, title, summary])
   return (
     <group position={position}>
       <RigidBody type="fixed" colliders={false}>
@@ -41,25 +65,11 @@ function ProjectBoard({ project, position }) {
       <RoundedBox args={[8.8, 5.2, 0.4]} radius={0.16} smoothness={3} position={[0, 3.7, 0]} castShadow receiveShadow>
         <meshStandardMaterial color={COLORS.ink} roughness={0.55} />
       </RoundedBox>
-      {/* Renkli üst şerit */}
-      <mesh position={[0, 6.18, 0.21]}>
-        <planeGeometry args={[8.4, 0.12]} />
-        <meshStandardMaterial color={project.color} emissive={project.color} emissiveIntensity={0.8} toneMapped={false} />
+      {/* Yüz: kapak, başlık, özet ve rozetler tek dokuda (tek çizim çağrısı, dile göre yeniden çizilir) */}
+      <mesh position={[0, 3.7, 0.205]}>
+        <planeGeometry args={[8.5, 4.9]} />
+        <meshStandardMaterial map={texture} emissiveMap={texture} emissive="#ffffff" emissiveIntensity={0.35} roughness={0.6} />
       </mesh>
-      <group position={[-3.9, 5.75, 0.22]}>
-        <Text font={fontBold} fontSize={0.28} color={project.color} anchorX="left" anchorY="top" letterSpacing={0.12}>
-          {`${project.year}  ·  GITHUB`}
-        </Text>
-        <Text font={fontBlack} fontSize={0.56} lineHeight={1.05} color={COLORS.cream} anchorX="left" anchorY="top" position={[0, -0.45, 0]} maxWidth={7.8}>
-          {L(project.title)}
-        </Text>
-        <Text font={fontRegular} fontSize={0.28} lineHeight={1.4} color="#c3c9da" anchorX="left" anchorY="top" position={[0, -1.85, 0]} maxWidth={7.8}>
-          {L(project.summary)}
-        </Text>
-        <Text font={fontBold} fontSize={0.25} color={project.color} anchorX="left" anchorY="top" position={[0, -3.55, 0]}>
-          {project.tags.join('   ·   ')}
-        </Text>
-      </group>
     </group>
   )
 }
@@ -274,32 +284,61 @@ function SocialPedestal({ social, position, index }) {
 }
 
 // ---------- Merkez tabela ----------
+// Ok uçlu yön levhası şekli (x: 0 → length, uç sağda)
+function arrowShape(length, height) {
+  const s = new THREE.Shape()
+  s.moveTo(0, -height / 2)
+  s.lineTo(length - height * 0.45, -height / 2)
+  s.lineTo(length, 0)
+  s.lineTo(length - height * 0.45, height / 2)
+  s.lineTo(0, height / 2)
+  s.lineTo(0, -height / 2)
+  return s
+}
+
 function Signpost({ position }) {
   const { t } = useT()
   const signs = [
-    { label: t('areaProjects'), rotation: Math.PI / 2, color: COLORS.amber, y: 2.6 },
-    { label: t('areaAbout'), rotation: 0, color: COLORS.teal, y: 2.1 },
-    { label: t('areaContact'), rotation: Math.PI, color: COLORS.violet, y: 1.6 },
+    { label: t('areaProjects'), rotation: Math.PI / 2, color: COLORS.amber, y: 2.75 },
+    { label: t('areaAbout'), rotation: 0, color: COLORS.teal, y: 2.2 },
+    { label: t('areaContact'), rotation: Math.PI, color: COLORS.violet, y: 1.65 },
     { label: t('areaPlayground'), rotation: -Math.PI / 2, color: COLORS.coral, y: 1.1 },
   ]
+  const geometry = useMemo(() => {
+    const g = new THREE.ExtrudeGeometry(arrowShape(2.3, 0.44), { depth: 0.08, bevelEnabled: false })
+    g.translate(0.18, 0, -0.04)
+    return g
+  }, [])
   return (
     <group position={position}>
       <RigidBody type="fixed" colliders={false}>
-        <CylinderCollider args={[1.5, 0.15]} position={[0, 1.5, 0]} />
+        <CylinderCollider args={[1.6, 0.15]} position={[0, 1.6, 0]} />
       </RigidBody>
-      <mesh position={[0, 1.5, 0]} castShadow>
-        <cylinderGeometry args={[0.09, 0.11, 3, 8]} />
-        <meshStandardMaterial color={COLORS.ink} metalness={0.4} roughness={0.5} />
+      <mesh position={[0, 1.6, 0]} castShadow>
+        <cylinderGeometry args={[0.08, 0.1, 3.2, 12]} />
+        <meshStandardMaterial color="#5d6573" metalness={0.7} roughness={0.35} />
+      </mesh>
+      <mesh position={[0, 3.24, 0]}>
+        <sphereGeometry args={[0.12, 12, 8]} />
+        <meshStandardMaterial color="#c9ced6" metalness={0.8} roughness={0.3} />
+      </mesh>
+      <mesh position={[0, 0.1, 0]}>
+        <cylinderGeometry args={[0.25, 0.3, 0.2, 12]} />
+        <meshStandardMaterial color="#9aa1ad" roughness={0.8} />
       </mesh>
       {signs.map((s) => (
         <group key={s.rotation} position={[0, s.y, 0]} rotation={[0, s.rotation, 0]}>
-          <mesh position={[1.05, 0, 0]} castShadow>
-            <boxGeometry args={[1.9, 0.4, 0.08]} />
-            <meshStandardMaterial color={s.color} />
+          <mesh geometry={geometry} castShadow>
+            <meshStandardMaterial color="#121829" roughness={0.55} metalness={0.2} />
           </mesh>
-          {[0.05, -0.05].map((z, i) => (
-            <Text key={z} font={fontBold} fontSize={0.2} color={COLORS.ink} position={[1.05, 0, z]} rotation={[0, i ? Math.PI : 0, 0]} anchorX="center" anchorY="middle">
-              {s.label}
+          {/* Renkli kenar şeridi (levhanın kök tarafında) */}
+          <mesh position={[0.27, 0, 0]}>
+            <boxGeometry args={[0.1, 0.44, 0.1]} />
+            <meshStandardMaterial color={s.color} emissive={s.color} emissiveIntensity={0.8} toneMapped={false} />
+          </mesh>
+          {[0.045, -0.045].map((z, i) => (
+            <Text key={z} font={fontBlack} fontSize={0.19} color="#ffffff" position={[1.3, 0, z]} rotation={[0, i ? Math.PI : 0, 0]} anchorX="center" anchorY="middle" letterSpacing={0.03}>
+              {s.label.toLocaleUpperCase()}
             </Text>
           ))}
         </group>
@@ -312,28 +351,7 @@ function Signpost({ position }) {
 function CreditsSign() {
   const { t } = useT()
   // Göl yolunun kenarında (yolu kapatmadan)
-  return (
-    <group position={[-21, 0, 14]}>
-      <RigidBody type="fixed" colliders={false}>
-        <CuboidCollider args={[1.3, 0.9, 0.15]} position={[0, 1.4, 0]} />
-      </RigidBody>
-      <RoundedBox args={[2.6, 1.5, 0.16]} radius={0.06} smoothness={2} position={[0, 1.55, 0]} castShadow>
-        <meshStandardMaterial color="#6b4a33" roughness={0.9} />
-      </RoundedBox>
-      {[-0.9, 0.9].map((x) => (
-        <mesh key={x} position={[x, 0.5, 0]} castShadow>
-          <boxGeometry args={[0.12, 1, 0.12]} />
-          <meshStandardMaterial color="#5a3d2a" />
-        </mesh>
-      ))}
-      <Text font={fontBlack} fontSize={0.24} color={COLORS.cream} position={[0, 1.62, 0.09]} anchorX="center" anchorY="middle" maxWidth={2.3} textAlign="center">
-        {t('credits')}
-      </Text>
-      <Text font={fontRegular} fontSize={0.14} color="#e8dccb" position={[0, 1.3, 0.09]} anchorX="center" anchorY="middle">
-        CC BY 4.0
-      </Text>
-    </group>
-  )
+  return <Signboard position={[-21, 0, 14]} title={t('credits')} subtitle="CC BY 4.0" accent="#9b7bff" size={0.55} postHeight={0.9} />
 }
 
 export default function Landmarks() {
