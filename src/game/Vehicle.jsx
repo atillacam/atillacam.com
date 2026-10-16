@@ -530,10 +530,18 @@ export default function Vehicle() {
       vehicleState.teleport = null
     }
     // Vapurda: araç her adımda güvertedeki yerine sabitlenir (vapurla birlikte hareket eder)
+    // Yolculuk boyunca gövde kinematik: süspansiyon ve temaslar aracı itip titretmez, hareket pürüzsüz enterpole edilir
     const carry = vehicleState.carry
     if (carry) {
-      rb.setTranslation({ x: carry.x, y: carry.y, z: carry.z }, true)
-      rb.setRotation(yawQuaternion(carry.yaw), true)
+      if (!rb.isKinematic()) {
+        rb.setBodyType(rapier.RigidBodyType.KinematicPositionBased, true)
+        rb.setTranslation({ x: carry.x, y: carry.y, z: carry.z }, true)
+        rb.setRotation(yawQuaternion(carry.yaw), true)
+      }
+      rb.setNextKinematicTranslation({ x: carry.x, y: carry.y, z: carry.z })
+      rb.setNextKinematicRotation(yawQuaternion(carry.yaw))
+    } else if (rb.isKinematic()) {
+      rb.setBodyType(rapier.RigidBodyType.Dynamic, true)
       rb.setLinvel({ x: 0, y: 0, z: 0 }, true)
       rb.setAngvel({ x: 0, y: 0, z: 0 }, true)
     }

@@ -168,8 +168,10 @@ export default function DayNight({ shadows = true }) {
       scene.fog.color.copy(_horizon).lerp(_top, 0.25)
       // Kamera uzaklaştıkça (giriş, sinematik) sis de geri çekilir
       const camFar = Math.max(camera.position.distanceTo(_carPos.set(vehicleState.position.x, vehicleState.position.y, vehicleState.position.z)) - 22, 0)
-      scene.fog.near = THREE.MathUtils.lerp(70, 25, overcast) + camFar
-      scene.fog.far = THREE.MathUtils.lerp(230, 120, overcast) + camFar * 1.6
+      // Düşük kalitede görüş mesafesi kısa: uzak şehir hiç çizilmez (zayıf bilgisayarlar için)
+      const reach = shadows ? 1 : 0.72
+      scene.fog.near = THREE.MathUtils.lerp(70, 25, overcast) * reach + camFar
+      scene.fog.far = THREE.MathUtils.lerp(230, 120, overcast) * reach + camFar * 1.6
       // Sisin tamamen kapattığı yerin ötesi çizilmez (görüntü aynı, çizim çağrısı ve üçgen sayısı düşer)
       const far = Math.min(600, scene.fog.far + 20)
       if (Math.abs(camera.far - far) > 4) {

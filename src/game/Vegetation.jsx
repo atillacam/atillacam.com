@@ -18,7 +18,7 @@ const LAMP_FIX = { 'Material.001': { color: '#3b404c', roughness: 0.6, metalness
 // ışığı görmediği hücreleri hiç çizmesin (frustum culling). Ölçüldü: 60 m çağrıyı yalnızca %2 azaltıp
 // çizilen üçgeni %50 artırıyor; 30 m daha dengeli.
 const CELL = 30
-function Instances({ url, items, castShadow = true, receiveShadow = true, wind = 0, overrides, maxDistance = 135 }) {
+function Instances({ url, items, castShadow = true, receiveShadow = true, wind = 0, overrides, maxDistance = 135, reach = 1 }) {
   const { scene } = useGLTF(url)
   const parts = useMemo(() => {
     const list = []
@@ -143,7 +143,7 @@ function Instances({ url, items, castShadow = true, receiveShadow = true, wind =
     if (tick.current++ % 4) return
     const { x, z } = camera.position
     chunks.forEach((c, ci) => {
-      const on = Math.hypot(c.cx - x, c.cz - z) - c.r < maxDistance
+      const on = Math.hypot(c.cx - x, c.cz - z) - c.r < maxDistance * reach
       const g = groups.current[ci]
       if (g && g.visible !== on) g.visible = on
     })
@@ -216,20 +216,21 @@ function LampBulbs({ lamps }) {
 
 export default function Vegetation({ quality = 'high' }) {
   const density = quality === 'high' ? 1 : 0.55
+  const reach = quality === 'high' ? 1 : 0.7
   const { trees, rocks, bushes, decor, walls, lamps } = useScatter(density)
   const byKind = (list, kind) => list.filter((t) => t.kind === kind)
 
   return (
     <>
-      <Instances url={MODEL_URLS.tree} items={byKind(trees, 'tree')} wind={0.006} />
-      <Instances url={MODEL_URLS.maple} items={byKind(trees, 'maple')} wind={0.005} overrides={MAPLE_FIX} />
-      <Instances url={MODEL_URLS.oak} items={byKind(trees, 'oak')} wind={0.006} />
-      <Instances url={MODEL_URLS.bush} items={bushes} wind={0.05} maxDistance={80} />
-      <Instances url={MODEL_URLS.rock} items={rocks} maxDistance={80} />
-      <Instances url={MODEL_URLS.grass} items={byKind(decor, 'grass')} castShadow={false} wind={0.35} maxDistance={55} />
-      <Instances url={MODEL_URLS.flower} items={byKind(decor, 'flower')} castShadow={false} wind={0.6} maxDistance={55} />
-      <Instances url={MODEL_URLS.wall} items={walls} maxDistance={100} />
-      <Instances url={MODEL_URLS.lamp} items={lamps} overrides={LAMP_FIX} />
+      <Instances reach={reach} url={MODEL_URLS.tree} items={byKind(trees, 'tree')} wind={0.006} />
+      <Instances reach={reach} url={MODEL_URLS.maple} items={byKind(trees, 'maple')} wind={0.005} overrides={MAPLE_FIX} />
+      <Instances reach={reach} url={MODEL_URLS.oak} items={byKind(trees, 'oak')} wind={0.006} />
+      <Instances reach={reach} url={MODEL_URLS.bush} items={bushes} wind={0.05} maxDistance={80} />
+      <Instances reach={reach} url={MODEL_URLS.rock} items={rocks} maxDistance={80} />
+      <Instances reach={reach} url={MODEL_URLS.grass} items={byKind(decor, 'grass')} castShadow={false} wind={0.35} maxDistance={55} />
+      <Instances reach={reach} url={MODEL_URLS.flower} items={byKind(decor, 'flower')} castShadow={false} wind={0.6} maxDistance={55} />
+      <Instances reach={reach} url={MODEL_URLS.wall} items={walls} maxDistance={100} />
+      <Instances reach={reach} url={MODEL_URLS.lamp} items={lamps} overrides={LAMP_FIX} />
       <LampBulbs lamps={lamps} />
 
       {/* Çarpışmalar: tek sabit gövde, çok sayıda collider */}
