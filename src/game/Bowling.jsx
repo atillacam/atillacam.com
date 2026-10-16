@@ -1,14 +1,13 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { BallCollider, CuboidCollider, CylinderCollider, RigidBody } from '@react-three/rapier'
-import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 import { AREAS } from './layout.js'
 import { heightAt } from './terrain.js'
-import { fontBlack } from './fonts.js'
 import { useStore } from '../store.js'
 import { translate, useT } from '../i18n.js'
 import { playChime, playThud } from '../audio.js'
+import Signboard from './Signboard.jsx'
 
 // Bowling salonu: araç doğudan (−x) gelir, pist +x yönünde uzanır
 const A = AREAS.find((a) => a.id === 'bowling')
@@ -220,9 +219,7 @@ export default function Bowling() {
         <boxGeometry args={[0.04, 0.12, railZ * 2 + 0.6]} />
         <meshStandardMaterial color="#ff8a3d" emissive="#ff8a3d" emissiveIntensity={2.5} toneMapped={false} />
       </mesh>
-      <Text font={fontBlack} fontSize={1.1} color="#ffe2c8" outlineWidth={0.05} outlineColor="#ff5d1f" position={[PIN_X - 2.25, y + 5.9, z0]} rotation={[0, -Math.PI / 2, 0]} anchorX="center">
-        {t('areaBowling').toLocaleUpperCase()}
-      </Text>
+      <Signboard mount="wall" position={[PIN_X - 2.25, y + 5.9, z0]} rotation={-Math.PI / 2} title={t('areaBowling').toLocaleUpperCase()} subtitle={t('signBowling')} accent="#ff8a3d" size={1.5} />
       {pins.map((p, i) => (
         <Pin key={i} index={i} base={p} y={y} register={register} />
       ))}

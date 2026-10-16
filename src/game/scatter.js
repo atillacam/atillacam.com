@@ -38,7 +38,7 @@ function isFree(x, z, margin) {
   // Boğaz ve kumsalları
   if (x > STRAIT.beachWest - 8 && x < STRAIT.beachEast + 6) return false
   if (CLEARINGS.some((c) => Math.hypot(x - c.x, z - c.z) < c.r + margin)) return false
-  if (PATHS.some((p) => distanceToSegment(x, z, p.from, p.to) < 4 + margin)) return false
+  if (PATHS.some((p) => distanceToSegment(x, z, p.from, p.to) < Math.max(4, (p.width ?? 0) / 2 + 1.5) + margin)) return false
   if (Math.abs(Math.hypot(x, z) - RING_RADIUS) < RING_WIDTH / 2 + 2.5 + margin) return false
   if (Math.hypot(x - LAKE.x, z - LAKE.z) < LAKE.radius + 2.5 + margin) return false
   if (SPOTS.some((s) => Math.hypot(x - s.position[0], z - s.position[2]) < 4 + margin)) return false
@@ -120,7 +120,7 @@ export function useScatter(density = 1) {
         const x = cx + Math.cos(a) * r
         const z = cz + Math.sin(a) * r
         if (!isFree(x, z, -2.5) && kind !== 'flower') continue
-        if (PATHS.some((p) => distanceToSegment(x, z, p.from, p.to) < 3.6)) continue
+        if (PATHS.some((p) => distanceToSegment(x, z, p.from, p.to) < Math.max(3.6, (p.width ?? 0) / 2 + 1))) continue
         if (Math.abs(Math.hypot(x, z) - RING_RADIUS) < RING_WIDTH / 2 + 1.5) continue
         if (SPOTS.some((s) => Math.hypot(x - s.position[0], z - s.position[2]) < 2.6)) continue
         decor.push({ kind, x, z, y: heightAt(x, z), rot: rand() * Math.PI * 2, scale: 0.7 + rand() * 0.6 })

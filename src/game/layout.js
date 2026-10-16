@@ -8,7 +8,7 @@ export const WORLD = { minX: -WORLD_HALF, maxX: 320, minZ: -WORLD_HALF, maxZ: WO
 export const STRAIT = { beachWest: 134, west: 162, east: 210, beachEast: 238, seaLevel: -0.75, depth: -7, centerX: 186 }
 // Asma köprü (z = 30 boyunca): rampalar karada, tabliye denizin üstünde, iki kule.
 // Rampalar 40 m (~11°): daha dik rampada araç inişte burnunu yere gömüyordu
-export const BRIDGE = { z: 30, startX: 110, deckStart: 150, deckEnd: 222, endX: 262, deckY: 8, width: 8, towers: [162, 210], towerTop: 36 }
+export const BRIDGE = { z: 30, startX: 110, deckStart: 150, deckEnd: 222, endX: 262, deckY: 8, width: 13, towers: [162, 210], towerTop: 36 }
 
 // Asya Yakası sokakları (asfalt): sahil yolu, meydandan geçen ana cadde ve iki ara sokak.
 // Kesişimler aynı noktalarda biter (GPS grafı birbirine bağlar). street: asfalt olarak çizilir.
@@ -202,9 +202,10 @@ export const PATHS = [
   // Stunt parkı: güneydeki START/BİTİŞ kapısının direklerinden kaçınmak için çaprazdan bağlanır
   { from: ringPoint(Math.PI / 2 + 0.32, RING_RADIUS + RING_WIDTH / 2), to: [-9.2, 90.3], outer: true },
   // Köprü yolu: çevre yolundan köprü başına, köprü (bridge: arazide çizilmez, yalnızca GPS için) ve Asya Yakası
-  { from: [Math.sqrt((RING_RADIUS + RING_WIDTH / 2) ** 2 - 30 ** 2), 30], to: [110, 30], outer: true },
+  // Köprü bağlantı yolları köprüyle aynı genişlikte asfalt (width: m)
+  { from: [Math.sqrt((RING_RADIUS + RING_WIDTH / 2) ** 2 - 30 ** 2), 30], to: [110, 30], outer: true, street: true, width: BRIDGE.width },
   { from: [110, 30], to: [262, 30], outer: true, bridge: true },
-  { from: [262, 30], to: [266.5, 30], outer: true },
+  { from: [262, 30], to: [266.5, 30], outer: true, street: true, width: BRIDGE.width },
   ...ASIA_STREETS.map(([from, to]) => ({ from, to, outer: true, street: true })),
   // İskelelere yollar: Avrupa'da çevre yolundan sahile (bowling ve gözlem tepesinin arasından), Asya'da sahil yolundan rıhtıma
   { from: ringPoint(PIER_ROAD_ANGLE, RING_RADIUS + RING_WIDTH / 2), to: [130, -70], outer: true },

@@ -209,7 +209,7 @@ export default function Terrain() {
         const dz = to[1] - from[1]
         const p = { length: Math.hypot(dx, dz), angle: Math.atan2(dx, dz), center: [(from[0] + to[0]) / 2, (from[1] + to[1]) / 2] }
         // Asfalt sokaklar daha geniş ve iki yanında kaldırım var
-        return path.street ? { ...p, road: roadGeometry(p, 6, 0.045), edge: roadGeometry(p, 9, 0.03) } : { ...p, road: roadGeometry(p, 5, 0.04), edge: roadGeometry(p, 5.6, 0.03) }
+        return path.street ? { ...p, road: roadGeometry(p, path.width ?? 6, 0.045), edge: roadGeometry(p, (path.width ?? 6) + 3, 0.03) } : { ...p, road: roadGeometry(p, 5, 0.04), edge: roadGeometry(p, 5.6, 0.03) }
       }),
     [],
   )

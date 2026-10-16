@@ -10,6 +10,7 @@ import { vehicleState } from './input.js'
 import { useStore } from '../store.js'
 import { translate, useT } from '../i18n.js'
 import { playCheckpoint, playChime } from '../audio.js'
+import Signboard from './Signboard.jsx'
 
 const area = (id) => AREAS.find((a) => a.id === id)
 const isBall = (p) => p.other.rigidBodyObject?.name === 'football'
@@ -398,9 +399,7 @@ function Offroad() {
           </mesh>
         </RigidBody>
       ))}
-      <Text font={fontBlack} fontSize={0.8} color="#fff6e6" outlineWidth={0.05} outlineColor="#6b4a33" position={[cx + 12, heightAt(cx + 12, cz + 12) + 2.2, cz + 12]} rotation={[0, Math.PI / 4, 0]}>
-        {t('areaOffroad').toLocaleUpperCase()}
-      </Text>
+      <Signboard position={[cx + 12, heightAt(cx + 12, cz + 12), cz + 12]} rotation={Math.PI / 4} title={t('areaOffroad').toLocaleUpperCase()} subtitle={t('signOffroad')} accent="#c58b4a" size={1.1} postHeight={1.4} />
     </group>
   )
 }

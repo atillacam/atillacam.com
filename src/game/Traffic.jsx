@@ -165,11 +165,11 @@ export default function Traffic() {
 // köprü (batıya, -z şeridi) → Avrupa kavşağı. Araçlar hiç kaybolmaz; göbek kavşaklarda U dönüşü yapar.
 // Sağdan akış: göbek her zaman sürücünün solunda kalır.
 const BRIDGE_CRUISE = 9.5
-const LANE = 1.8
+const LANE = 4.8 // dış şeritler (iç şeritler oyuncuya boş kalır)
 
 function bridgeProfile(x, z) {
   const { startX, deckStart, deckEnd, endX, deckY } = BRIDGE
-  if (Math.abs(z - BRIDGE.z) > 3 || x <= startX || x >= endX) return heightAt(x, z)
+  if (Math.abs(z - BRIDGE.z) > BRIDGE.width / 2 || x <= startX || x >= endX) return heightAt(x, z)
   if (x < deckStart) return ((x - startX) / (deckStart - startX)) * deckY
   if (x > deckEnd) return ((endX - x) / (endX - deckEnd)) * deckY
   return deckY

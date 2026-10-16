@@ -1,13 +1,13 @@
 import { useLayoutEffect, useMemo, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { CuboidCollider, CylinderCollider, RigidBody } from '@react-three/rapier'
-import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 import { WHEEL } from './layout.js'
 import { heightAt } from './terrain.js'
 import { vehicleState } from './input.js'
 import { world } from './time.js'
-import { fontBlack } from './fonts.js'
+import { translate } from '../i18n.js'
+import Signboard from './Signboard.jsx'
 import { useStore } from '../store.js'
 import { cabinAngle, wheelAngle } from './wheel.js'
 import StaticMerge from './StaticMerge.jsx'
@@ -66,6 +66,7 @@ function Cabin({ color }) {
 }
 
 export function FerrisWheel() {
+  const lang = useStore((s) => s.lang)
   const rotor = useRef()
   const cabins = useRef([])
   const bulbs = useRef()
@@ -126,17 +127,6 @@ export function FerrisWheel() {
           <meshStandardMaterial color="#c8302c" roughness={0.9} />
         </mesh>
         {[-2.6, 2.6].flatMap((x) => [-8, 8].map((z) => <Leg key={x + ',' + z} x={x} z={z} hub={hub} />))}
-        {/* Tabela */}
-        <mesh position={[-3.3, 2.4, 0]} castShadow>
-          <boxGeometry args={[0.12, 1.5, 7.6]} />
-          <meshStandardMaterial color="#ffffff" roughness={0.6} />
-        </mesh>
-        {[-3.6, 3.6].map((z) => (
-          <mesh key={z} position={[-3.3, 1.2, z]}>
-            <cylinderGeometry args={[0.07, 0.07, 2.4, 6]} />
-            <meshStandardMaterial color="#8d939c" metalness={0.6} roughness={0.4} />
-          </mesh>
-        ))}
         {/* Aks */}
         <mesh position={[0, hub, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
           <cylinderGeometry args={[0.35, 0.35, 6, 14]} />
@@ -204,9 +194,7 @@ export function FerrisWheel() {
           </mesh>
         </StaticMerge>
       </group>
-      <Text font={fontBlack} fontSize={0.95} color="#ff6fae" outlineWidth={0.05} outlineColor="#ffffff" position={[-3.38, 2.4, 0]} rotation={[0, -Math.PI / 2, 0]} anchorX="center" anchorY="middle">
-        DÖNME DOLAP
-      </Text>
+      <Signboard position={[-4.8, 0, 0]} rotation={-Math.PI / 2} title={translate('spotWheel', lang).toLocaleUpperCase()} subtitle={translate('signWheel', lang)} accent="#ff6fae" postHeight={1.6} />
     </group>
   )
 }

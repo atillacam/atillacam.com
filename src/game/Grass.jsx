@@ -37,7 +37,7 @@ function allowed(x, z) {
   if (x > STRAIT.beachWest - 6 && x < STRAIT.beachEast + 4) return false
   // Göbek kavşakların asfaltı
   if (Object.values(ROUNDABOUTS).some((r) => Math.hypot(x - r.x, z - r.z) < r.lane + 3)) return false
-  if (PATHS.some((p) => distanceToSegment(x, z, p.from, p.to) < 3.2)) return false
+  if (PATHS.some((p) => distanceToSegment(x, z, p.from, p.to) < (p.width ? p.width / 2 + 1.2 : 3.2))) return false
   if (Math.hypot(x, z) < 6.5) return false
   if (Math.abs(Math.hypot(x, z) - RING_RADIUS) < RING_WIDTH / 2 + 0.9) return false
   if (Math.hypot(x - LAKE.x, z - LAKE.z) < LAKE.radius + 1.5) return false

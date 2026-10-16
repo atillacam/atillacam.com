@@ -239,11 +239,27 @@ function DeckSection({ length }) {
           <meshStandardMaterial color="#c9ced6" roughness={0.6} />
         </mesh>
       ))}
-      {/* Şerit çizgisi */}
-      <mesh position={[0, 0.012, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[length - 1, 0.14]} />
-        <meshStandardMaterial color="#f2c230" roughness={0.8} />
-      </mesh>
+      {/* Çizgiler: ortada çift sarı, kenarda düz beyaz, şerit aralarında kesikli beyaz */}
+      {[-0.16, 0.16].map((z) => (
+        <mesh key={'y' + z} position={[0, 0.012, z]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[length - 1, 0.12]} />
+          <meshStandardMaterial color="#f2c230" roughness={0.8} />
+        </mesh>
+      ))}
+      {[-1, 1].map((side) => (
+        <mesh key={'e' + side} position={[0, 0.012, side * (HALF - 0.75)]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[length - 1, 0.14]} />
+          <meshStandardMaterial color="#eef0f2" roughness={0.8} />
+        </mesh>
+      ))}
+      {[-1, 1].flatMap((side) =>
+        Array.from({ length: Math.floor((length - 2) / 6) }, (_, i) => (
+          <mesh key={'d' + side + i} position={[-length / 2 + 2.5 + i * 6, 0.012, side * HALF * 0.5]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[3, 0.14]} />
+            <meshStandardMaterial color="#eef0f2" roughness={0.8} />
+          </mesh>
+        )),
+      )}
       {/* Bariyer: alçak beton + üst korkuluk */}
       {[-1, 1].map((side) => (
         <group key={`b${side}`}>

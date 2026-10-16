@@ -11,6 +11,7 @@ import { vehicleState } from './input.js'
 import { useStore } from '../store.js'
 import { useT } from '../i18n.js'
 import { playCrumble } from '../audio.js'
+import Signboard from './Signboard.jsx'
 
 const area = (id) => AREAS.find((a) => a.id === id)
 
@@ -229,9 +230,7 @@ function Lab() {
       {labExperiments.map((e, i) => (
         <Pedestal key={e.id} experiment={e} position={[spots[i][0], y, spots[i][1]]} />
       ))}
-      <Text font={fontBlack} fontSize={1.5} color="#e6fffb" outlineWidth={0.05} outlineColor="#0f6e66" position={[cx, y + 6.5, cz - 13]} anchorX="center">
-        {t('areaLab').toLocaleUpperCase()}
-      </Text>
+      <Signboard position={[cx, y, cz - 13]} title={t('areaLab').toLocaleUpperCase()} subtitle={t('signLab')} accent="#2ec4b6" size={1.6} postHeight={4.6} />
     </group>
   )
 }
@@ -300,9 +299,7 @@ function Career() {
           </group>
         )
       })}
-      <Text font={fontBlack} fontSize={1.4} color={COLORS.cream} outlineWidth={0.05} outlineColor="#7a5418" position={[start + 6, heightAt(start + 6, cz) + 4.5, cz - 9]} rotation={[0, Math.PI / 2, 0]} anchorX="center">
-        {t('areaCareer').toLocaleUpperCase()}
-      </Text>
+      <Signboard position={[start + 6, heightAt(start + 6, cz), cz - 9]} rotation={Math.PI / 2} title={t('areaCareer').toLocaleUpperCase()} subtitle={t('signCareer')} accent="#ffb547" size={1.4} postHeight={3.2} />
     </group>
   )
 }

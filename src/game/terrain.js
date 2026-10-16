@@ -56,7 +56,7 @@ export function flatMask(x, z) {
     d = Math.min(d, Math.hypot(x - a.center[0], z - a.center[2]) - a.radius - 2)
   }
   // Köprü yolu da düzleştirir: rampaların altı düz kara olur; deniz tabanı sonradan uygulandığından etkilenmez
-  for (const p of PATHS) d = Math.min(d, distanceToSegment(x, z, p.from, p.to) - 5)
+  for (const p of PATHS) d = Math.min(d, distanceToSegment(x, z, p.from, p.to) - Math.max(5, (p.width ?? 0) / 2 + 2))
   // Cami avlusu düz (dikdörtgen)
   d = Math.min(d, Math.max(Math.abs(x - MOSQUE_YARD.x) - MOSQUE_YARD.w / 2, Math.abs(z - MOSQUE_YARD.z) - MOSQUE_YARD.d / 2) - 1)
   // Göbek kavşaklar düz

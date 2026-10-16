@@ -13,6 +13,7 @@ import { fontBlack } from './fonts.js'
 import { Flag } from './Istanbul.jsx'
 import StaticMerge from './StaticMerge.jsx'
 import Halo from './Halo.jsx'
+import Signboard from './Signboard.jsx'
 import { FerrisWheel } from './Lunapark.jsx'
 
 // Asya Yakası: sokaklı bir mahalle. Binalar zemin katta dükkân ve tente, katlarda balkon, kiremit ya da
@@ -414,83 +415,217 @@ function EuropeRoundabout() {
   )
 }
 
-// Sahildeki çay bahçesi: büfe, şemsiyeli masalar
+// Sahildeki çay bahçesi: ahşap deck, sarmaşıklı pergola ve ampul dizileri, kare masalar ve hasır tabureler,
+// semaverli ocak ve tabela, saksı çiçekleri, deniz tarafında korkuluk. Parçalar birleştirilir, ampuller tek çağrı.
+const TEA = { deckW: 10, deckD: 15, deckX: -1, top: 0.22 }
+const TEA_TABLES = [-3.2, 0.9].flatMap((tx) => [-2.4, 1.0, 4.4].map((tz) => [tx, tz]))
+const TEA_POSTS = [-4.6, 2.6].flatMap((px) => [-3.6, 0.2, 3.8, 7].map((pz) => [px, pz]))
+
 function TeaGarden() {
   const { x, z } = TEA_GARDEN
+  const lang = useStore((s) => s.lang)
   const y = heightAt(x, z)
-  const tables = [
-    [-2.5, -4],
-    [-2.5, 0],
-    [-2.5, 4],
-    [1, -2],
-    [1, 2],
-  ]
+  const bulbs = useRef()
+  const bulbMat = useMemo(() => new THREE.MeshStandardMaterial({ color: '#fff3d6', emissive: '#ffc46b', emissiveIntensity: 0 }), [])
+  // Pergola kirişleri boyunca sarkan ampuller
+  const lights = useMemo(() => {
+    const list = []
+    for (const px of [-4.6, 2.6]) for (let pz = -3.4; pz <= 7; pz += 0.8) list.push([px, 2.5 - Math.sin(((pz + 3.6) / 3.8) * Math.PI) * 0.18, pz])
+    for (let px = -4.2; px <= 2.4; px += 0.8) list.push([px, 2.48, 0.2])
+    return list
+  }, [])
+  useInstances(bulbs, lights, (l, m) => m.makeTranslation(l[0], l[1], l[2]))
+  useFrame(() => {
+    bulbMat.emissiveIntensity = 0.2 + world.night * 3.5
+  })
+  const wood = <meshStandardMaterial color="#9b6a43" roughness={0.85} />
+  const darkWood = <meshStandardMaterial color="#6e4a2f" roughness={0.85} />
   return (
     <group position={[x, y, z]}>
       <RigidBody type="fixed" colliders={false}>
-        <CuboidCollider args={[1.4, 1.3, 2]} position={[-5.4, 1.3, 0]} />
-        {tables.map(([tx, tz]) => (
-          <CylinderCollider key={`${tx}${tz}`} args={[0.4, 0.5]} position={[tx, 0.4, tz]} />
+        <CuboidCollider args={[2.3, 1.5, 1.6]} position={[-3.2, 1.5, -5.6]} />
+        {TEA_TABLES.map(([tx, tz]) => (
+          <CylinderCollider key={tx + ',' + tz} args={[0.45, 0.6]} position={[tx, TEA.top + 0.45, tz]} />
         ))}
+        {TEA_POSTS.map(([px, pz]) => (
+          <CylinderCollider key={'p' + px + pz} args={[1.3, 0.12]} position={[px, 1.3, pz]} />
+        ))}
+        {/* Deniz tarafı korkuluk */}
+        <CuboidCollider args={[0.08, 0.5, TEA.deckD / 2]} position={[TEA.deckX - TEA.deckW / 2, 0.5, 0]} />
       </RigidBody>
       <StaticMerge>
-        {/* Büfe */}
-        <mesh position={[-5.4, 1.2, 0]} castShadow receiveShadow>
-          <boxGeometry args={[2.8, 2.4, 4]} />
-          <meshStandardMaterial color="#f4f1ea" roughness={0.8} />
+        {/* Ahşap deck ve kenar */}
+        <mesh position={[TEA.deckX, TEA.top / 2, 0]} receiveShadow>
+          <boxGeometry args={[TEA.deckW, TEA.top, TEA.deckD]} />
+          <meshStandardMaterial color="#b98a5e" roughness={0.9} />
         </mesh>
-        <mesh position={[-5.4, 2.55, 0]} castShadow>
-          <boxGeometry args={[3.3, 0.3, 4.5]} />
-          <meshStandardMaterial color="#c8302c" roughness={0.7} />
+        {Array.from({ length: 14 }, (_, i) => (
+          <mesh key={'pl' + i} position={[TEA.deckX, TEA.top + 0.005, -TEA.deckD / 2 + 0.55 + i * 1.07]} receiveShadow>
+            <boxGeometry args={[TEA.deckW, 0.01, 0.04]} />
+            <meshStandardMaterial color="#8a5f3d" roughness={0.9} />
+          </mesh>
+        ))}
+        {/* Deniz tarafı korkuluk: dikmeler ve küpeşte */}
+        {Array.from({ length: 9 }, (_, i) => (
+          <mesh key={'rp' + i} position={[TEA.deckX - TEA.deckW / 2, 0.55, -TEA.deckD / 2 + i * (TEA.deckD / 8)]} castShadow>
+            <boxGeometry args={[0.1, 0.7, 0.1]} />
+            {darkWood}
+          </mesh>
+        ))}
+        <mesh position={[TEA.deckX - TEA.deckW / 2, 0.92, 0]} castShadow>
+          <boxGeometry args={[0.14, 0.08, TEA.deckD]} />
+          {darkWood}
         </mesh>
-        <mesh position={[-3.98, 1.35, 0]}>
-          <boxGeometry args={[0.05, 1, 2.6]} />
-          <meshStandardMaterial color="#2c3644" roughness={0.2} metalness={0.3} />
+        {/* Ocak: beyaz badanalı, mavi çini bant, kiremit çatı, tezgâh */}
+        <mesh position={[-3.2, 1.45, -5.6]} castShadow receiveShadow>
+          <boxGeometry args={[4.4, 2.5, 3]} />
+          <meshStandardMaterial color="#f6f1e6" roughness={0.85} />
         </mesh>
-        {tables.map(([tx, tz], i) => (
-          <group key={i} position={[tx, 0, tz]}>
-            <mesh position={[0, 0.72, 0]} castShadow>
-              <cylinderGeometry args={[0.55, 0.55, 0.06, 18]} />
-              <meshStandardMaterial color="#f4f1ea" roughness={0.6} />
+        <mesh position={[-3.2, 0.55, -5.6]}>
+          <boxGeometry args={[4.44, 0.35, 3.04]} />
+          <meshStandardMaterial color="#2f6fb0" roughness={0.5} />
+        </mesh>
+        <mesh position={[-3.2, 3.15, -5.6]} rotation={[0, Math.PI / 4, 0]} castShadow>
+          <coneGeometry args={[3.5, 1.2, 4]} />
+          <meshStandardMaterial color="#b4553a" roughness={0.75} />
+        </mesh>
+        <mesh position={[-3.2, 1.55, -4.08]}>
+          <boxGeometry args={[3, 1.1, 0.06]} />
+          <meshStandardMaterial color="#3a2a1f" roughness={0.6} />
+        </mesh>
+        <mesh position={[-3.2, 1.0, -3.85]} castShadow>
+          <boxGeometry args={[3.4, 0.12, 0.5]} />
+          {wood}
+        </mesh>
+        {/* Semaver ve çay bardakları */}
+        <group position={[-4.2, 1.06, -3.9]}>
+          <mesh position={[0, 0.32, 0]} castShadow>
+            <cylinderGeometry args={[0.2, 0.24, 0.6, 14]} />
+            <meshStandardMaterial color="#d9dde3" metalness={0.9} roughness={0.2} />
+          </mesh>
+          <mesh position={[0, 0.66, 0]}>
+            <sphereGeometry args={[0.2, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            <meshStandardMaterial color="#d9dde3" metalness={0.9} roughness={0.2} />
+          </mesh>
+          <mesh position={[0, 0.82, 0]}>
+            <cylinderGeometry args={[0.07, 0.09, 0.14, 10]} />
+            <meshStandardMaterial color="#c8302c" roughness={0.5} />
+          </mesh>
+        </group>
+        {[-3.4, -3.1, -2.8, -2.5].map((gx) => (
+          <mesh key={gx} position={[gx, 1.13, -3.8]}>
+            <cylinderGeometry args={[0.045, 0.035, 0.13, 8]} />
+            <meshStandardMaterial color="#b3451c" roughness={0.2} transparent opacity={0.85} />
+          </mesh>
+        ))}
+        {/* Pergola: dikmeler, uzun kirişler, aşıklar ve sarmaşık */}
+        {TEA_POSTS.map(([px, pz]) => (
+          <mesh key={'po' + px + pz} position={[px, 1.35, pz]} castShadow>
+            <boxGeometry args={[0.18, 2.7, 0.18]} />
+            {darkWood}
+          </mesh>
+        ))}
+        {[-4.6, 2.6].map((px) => (
+          <mesh key={'b' + px} position={[px, 2.75, 1.7]} castShadow>
+            <boxGeometry args={[0.2, 0.22, 11.4]} />
+            {darkWood}
+          </mesh>
+        ))}
+        {Array.from({ length: 10 }, (_, i) => (
+          <mesh key={'s' + i} position={[-1, 2.9, -3.6 + i * 1.18]} castShadow>
+            <boxGeometry args={[7.8, 0.1, 0.12]} />
+            {wood}
+          </mesh>
+        ))}
+        {[
+          [-3.8, -2.5, 2.2],
+          [-1.6, 0.6, 2.8],
+          [1.4, 2.4, 2.4],
+          [-3.2, 4.8, 2.6],
+          [0.6, 6.2, 2],
+          [-0.6, -1.8, 1.6],
+        ].map(([vx, vz, s], i) => (
+          <mesh key={'v' + i} position={[vx, 3.02, vz]} scale={[s, 0.35, s * 0.8]} castShadow>
+            <sphereGeometry args={[0.7, 10, 6]} />
+            <meshStandardMaterial color={i % 2 ? '#3f7a3a' : '#4f8f45'} roughness={0.9} />
+          </mesh>
+        ))}
+        {/* Kare masalar (ekose örtü) ve hasır tabureler */}
+        {TEA_TABLES.map(([tx, tz], i) => (
+          <group key={'t' + i} position={[tx, TEA.top, tz]}>
+            <mesh position={[0, 0.68, 0]} castShadow>
+              <boxGeometry args={[0.85, 0.05, 0.85]} />
+              <meshStandardMaterial color={i % 2 ? '#c8302c' : '#2f6fb0'} roughness={0.8} />
             </mesh>
-            <mesh position={[0, 0.36, 0]}>
-              <cylinderGeometry args={[0.05, 0.05, 0.72, 6]} />
-              <meshStandardMaterial color="#3a3f48" metalness={0.5} roughness={0.5} />
+            <mesh position={[0, 0.69, 0]}>
+              <boxGeometry args={[0.6, 0.05, 0.6]} />
+              <meshStandardMaterial color="#f6f1e6" roughness={0.8} />
             </mesh>
-            {[0, 1, 2].map((c) => {
-              const a = (c / 3) * Math.PI * 2 + i
+            <mesh position={[0, 0.33, 0]}>
+              <boxGeometry args={[0.08, 0.66, 0.08]} />
+              {darkWood}
+            </mesh>
+            {[0, 1, 2, 3].map((c) => {
+              const a = (c * Math.PI) / 2
               return (
-                <mesh key={c} position={[Math.cos(a) * 0.95, 0.24, Math.sin(a) * 0.95]} castShadow>
-                  <boxGeometry args={[0.42, 0.48, 0.42]} />
-                  <meshStandardMaterial color={c % 2 ? '#8a5a3b' : '#a86a42'} roughness={0.8} />
-                </mesh>
+                <group key={c} position={[Math.cos(a) * 0.75, 0, Math.sin(a) * 0.75]}>
+                  <mesh position={[0, 0.36, 0]} castShadow>
+                    <boxGeometry args={[0.36, 0.06, 0.36]} />
+                    <meshStandardMaterial color="#d9b77a" roughness={0.95} />
+                  </mesh>
+                  <mesh position={[0, 0.17, 0]}>
+                    <boxGeometry args={[0.3, 0.34, 0.3]} />
+                    {wood}
+                  </mesh>
+                </group>
               )
             })}
-            {/* Şemsiye */}
-            <mesh position={[0, 1.4, 0]}>
-              <cylinderGeometry args={[0.03, 0.03, 1.4, 6]} />
-              <meshStandardMaterial color="#d9d9d9" roughness={0.5} />
-            </mesh>
-            <mesh position={[0, 2.15, 0]} castShadow>
-              <coneGeometry args={[1.3, 0.55, 10, 1, true]} />
-              <meshStandardMaterial color={i % 2 ? '#c8302c' : '#f4f1ea'} roughness={0.8} side={THREE.DoubleSide} />
+            {/* İnce belli çay bardağı */}
+            <mesh position={[0.15, 0.76, 0.1]}>
+              <cylinderGeometry args={[0.04, 0.03, 0.11, 8]} />
+              <meshStandardMaterial color="#b3451c" roughness={0.2} transparent opacity={0.85} />
             </mesh>
           </group>
         ))}
+        {/* Köşelerde saksı çiçekleri */}
+        {[
+          [3.6, -7],
+          [3.6, 7],
+          [-5.6, 7],
+        ].map(([fx, fz]) => (
+          <group key={'f' + fx + fz} position={[fx, TEA.top, fz]}>
+            <mesh position={[0, 0.3, 0]} castShadow>
+              <cylinderGeometry args={[0.38, 0.3, 0.6, 12]} />
+              <meshStandardMaterial color="#b4553a" roughness={0.8} />
+            </mesh>
+            <mesh position={[0, 0.75, 0]} castShadow>
+              <sphereGeometry args={[0.45, 10, 8]} />
+              <meshStandardMaterial color="#3f7a3a" roughness={0.9} />
+            </mesh>
+            {[0, 1, 2, 3, 4].map((k) => (
+              <mesh key={k} position={[Math.cos(k * 1.3) * 0.3, 0.95 + (k % 2) * 0.08, Math.sin(k * 1.3) * 0.3]}>
+                <sphereGeometry args={[0.1, 6, 5]} />
+                <meshStandardMaterial color="#d6244a" roughness={0.7} />
+              </mesh>
+            ))}
+          </group>
+        ))}
       </StaticMerge>
-      {[1, -1].map((side) => (
-        <Text key={side} font={fontBlack} fontSize={0.55} color="#ffffff" position={[-5.4, 2.55, side * 2.27]} rotation={[0, side > 0 ? 0 : Math.PI, 0]} anchorX="center" anchorY="middle">
-          ÇAY
-        </Text>
+      <instancedMesh ref={bulbs} args={[undefined, bulbMat, lights.length]}>
+        <sphereGeometry args={[0.07, 8, 6]} />
+      </instancedMesh>
+      {[
+        [-4.6, 2.4, 0.2],
+        [2.6, 2.4, 3.8],
+        [-1, 2.4, 0.2],
+      ].map((p, i) => (
+        <Halo key={i} position={p} scale={3.2} />
       ))}
-      <Text font={fontBlack} fontSize={0.55} color="#ffffff" position={[-3.73, 2.55, 0]} rotation={[0, Math.PI / 2, 0]} anchorX="center" anchorY="middle">
-        ÇAY BAHÇESİ
-      </Text>
+      <Signboard mount="wall" position={[-0.95, 2.05, -5.6]} rotation={Math.PI / 2} title="ÇAY BAHÇESİ" subtitle={lang === 'en' ? 'Freshly brewed Turkish tea' : 'Taze demlenmiş çay'} accent="#c8302c" size={0.55} />
     </group>
   )
 }
 
-// Tepedeki cami: kare gövde, ana kubbe, yarım kubbeler, iki ince minare
 // Cami avlusu: taş döşeme, sokaklara açılan kapılı alçak duvar, şadırvan ve servi ağaçları
 const YARD_GATE = 8 // batı (sahil yolu) ve doğu (cadde) kapılarının genişliği
 function MosqueYard() {
@@ -805,59 +940,171 @@ function Mosque() {
   )
 }
 
-// Maraş dondurmacısı: çizgili tenteli araba, üstünde dev külah
+// Maraş dondurmacısı: telli tekerlekli el arabası, bakır dondurma kazanları, çizgili fırfırlı tente,
+// fesli ve yelekli dondurmacı (uzun kepçesini sallar), tentede tabela ve tepede dev külah.
 function DondurmaCart() {
   const { x, z } = DONDURMA
   const y = heightAt(x, z)
+  const arm = useRef()
+  useFrame(() => {
+    // Kepçe hafifçe sallanır (dondurmacı şov yapıyor)
+    if (arm.current) arm.current.rotation.z = -0.5 + Math.sin(performance.now() / 260) * 0.25
+  })
+  const red = '#c8302c'
+  const cream = '#f6f1e6'
+  const copper = <meshStandardMaterial color="#c47a45" metalness={0.85} roughness={0.28} />
   return (
     <group position={[x, y, z]} rotation={[0, Math.PI / 2, 0]}>
       <RigidBody type="fixed" colliders={false}>
-        <CuboidCollider args={[1, 0.9, 0.6]} position={[0, 0.9, 0]} />
+        <CuboidCollider args={[1.15, 0.9, 0.7]} position={[0, 0.9, 0]} />
       </RigidBody>
       <StaticMerge>
-        <mesh position={[0, 0.85, 0]} castShadow>
-          <boxGeometry args={[1.9, 0.9, 1.1]} />
-          <meshStandardMaterial color="#f4f1ea" roughness={0.7} />
+        {/* Gövde: kırmızı alt panel, krem şerit, ahşap tezgâh */}
+        <mesh position={[0, 0.78, 0]} castShadow>
+          <boxGeometry args={[2.2, 0.8, 1.2]} />
+          <meshStandardMaterial color={red} roughness={0.55} />
         </mesh>
-        <mesh position={[0, 0.6, 0.56]}>
-          <boxGeometry args={[1.9, 0.18, 0.02]} />
-          <meshStandardMaterial color="#c8302c" roughness={0.7} />
+        <mesh position={[0, 1.08, 0.61]}>
+          <boxGeometry args={[2.2, 0.12, 0.02]} />
+          <meshStandardMaterial color={cream} roughness={0.6} />
         </mesh>
-        {[-0.7, 0.7].map((wx) => (
-          <mesh key={wx} position={[wx, 0.28, 0.58]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-            <cylinderGeometry args={[0.28, 0.28, 0.08, 14]} />
-            <meshStandardMaterial color="#2a2c31" roughness={0.8} />
+        <mesh position={[0, 1.22, 0]} castShadow>
+          <boxGeometry args={[2.3, 0.07, 1.3]} />
+          <meshStandardMaterial color="#9b6a43" roughness={0.7} />
+        </mesh>
+        {/* Bakır kazanlar ve kapakları */}
+        {[-0.65, 0, 0.65].map((kx) => (
+          <group key={kx} position={[kx, 1.26, 0.25]}>
+            <mesh position={[0, 0.14, 0]} castShadow>
+              <cylinderGeometry args={[0.22, 0.2, 0.22, 16]} />
+              {copper}
+            </mesh>
+            <mesh position={[0, 0.24, 0]}>
+              <sphereGeometry args={[0.22, 16, 6, 0, Math.PI * 2, 0, Math.PI / 2]} />
+              {copper}
+            </mesh>
+            <mesh position={[0, 0.47, 0]}>
+              <sphereGeometry args={[0.05, 8, 6]} />
+              <meshStandardMaterial color="#e2b55a" metalness={0.9} roughness={0.2} />
+            </mesh>
+          </group>
+        ))}
+        {/* Telli tekerlekler */}
+        {[-0.8, 0.8].map((wx) => (
+          <group key={wx} position={[wx, 0.36, 0.64]}>
+            <mesh rotation={[0, 0, 0]}>
+              <torusGeometry args={[0.32, 0.04, 6, 20]} />
+              <meshStandardMaterial color="#2a2c31" roughness={0.6} />
+            </mesh>
+            {[0, 1, 2, 3, 4, 5].map((k) => (
+              <mesh key={k} rotation={[0, 0, (k * Math.PI) / 6]}>
+                <boxGeometry args={[0.62, 0.025, 0.025]} />
+                <meshStandardMaterial color="#e2b55a" metalness={0.8} roughness={0.3} />
+              </mesh>
+            ))}
+          </group>
+        ))}
+        {/* Tente direkleri, çizgili tente ve fırfır */}
+        {[-1.05, 1.05].map((px) => (
+          <mesh key={px} position={[px, 1.9, -0.5]}>
+            <cylinderGeometry args={[0.035, 0.035, 1.4, 8]} />
+            <meshStandardMaterial color="#e2b55a" metalness={0.8} roughness={0.3} />
           </mesh>
         ))}
-        {/* Tente direkleri ve çizgili tente */}
-        {[-0.85, 0.85].map((px) => (
-          <mesh key={px} position={[px, 1.75, -0.4]}>
-            <cylinderGeometry args={[0.03, 0.03, 1.8, 6]} />
-            <meshStandardMaterial color="#d9d9d9" metalness={0.5} roughness={0.4} />
+        {Array.from({ length: 6 }, (_, i) => (
+          <mesh key={'s' + i} position={[-1.1 + 0.44 * i + 0.22, 2.68, 0.05]} rotation={[0.22, 0, 0]} castShadow>
+            <boxGeometry args={[0.44, 0.05, 1.5]} />
+            <meshStandardMaterial color={i % 2 ? cream : red} roughness={0.8} />
           </mesh>
         ))}
-        {[0, 1, 2, 3, 4].map((i) => (
-          <mesh key={'s' + i} position={[-0.8 + i * 0.4, 2.62, 0]} rotation={[0.2, 0, 0]} castShadow>
-            <boxGeometry args={[0.4, 0.06, 1.5]} />
-            <meshStandardMaterial color={i % 2 ? '#f4f1ea' : '#c8302c'} roughness={0.8} />
+        {Array.from({ length: 11 }, (_, i) => (
+          <mesh key={'r' + i} position={[-1.1 + i * 0.22, 2.42, 0.82]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.11, 0.11, 0.04, 10, 1, false, 0, Math.PI]} />
+            <meshStandardMaterial color={i % 2 ? red : cream} roughness={0.8} side={THREE.DoubleSide} />
           </mesh>
         ))}
-        {/* Dev külah tabela */}
-        <mesh position={[0.65, 3.1, 0]} rotation={[Math.PI, 0, 0]} castShadow>
-          <coneGeometry args={[0.32, 0.9, 12]} />
+        {/* Tabela panosu (tentenin önünde) */}
+        <mesh position={[0, 2.3, 0.86]}>
+          <boxGeometry args={[2.1, 0.32, 0.04]} />
+          <meshStandardMaterial color={cream} roughness={0.6} />
+        </mesh>
+        {/* Dev külah tepe tabelası */}
+        <mesh position={[0, 3.2, -0.1]} rotation={[Math.PI, 0, 0]} castShadow>
+          <coneGeometry args={[0.3, 0.85, 14]} />
           <meshStandardMaterial color="#d9a35b" roughness={0.8} />
         </mesh>
-        <mesh position={[0.65, 3.62, 0]} castShadow>
-          <sphereGeometry args={[0.36, 14, 10]} />
+        <mesh position={[0, 3.68, -0.1]} castShadow>
+          <sphereGeometry args={[0.34, 14, 10]} />
           <meshStandardMaterial color="#fff4e0" roughness={0.6} />
         </mesh>
-        <mesh position={[0.65, 3.98, 0]} castShadow>
-          <sphereGeometry args={[0.26, 14, 10]} />
+        <mesh position={[0, 4.02, -0.1]} castShadow>
+          <sphereGeometry args={[0.25, 14, 10]} />
           <meshStandardMaterial color="#e8a0b4" roughness={0.6} />
         </mesh>
+        <mesh position={[0, 4.28, -0.1]}>
+          <sphereGeometry args={[0.07, 8, 6]} />
+          <meshStandardMaterial color={red} roughness={0.5} />
+        </mesh>
+        {/* Dondurmacı: beyaz gömlek, kırmızı işlemeli yelek, fes */}
+        <group position={[0, 0, -0.95]} scale={1.22}>
+          <mesh position={[-0.12, 0.42, 0]}>
+            <boxGeometry args={[0.16, 0.84, 0.18]} />
+            <meshStandardMaterial color="#26324a" roughness={0.8} />
+          </mesh>
+          <mesh position={[0.12, 0.42, 0]}>
+            <boxGeometry args={[0.16, 0.84, 0.18]} />
+            <meshStandardMaterial color="#26324a" roughness={0.8} />
+          </mesh>
+          <mesh position={[0, 1.18, 0]} castShadow>
+            <capsuleGeometry args={[0.22, 0.45, 4, 10]} />
+            <meshStandardMaterial color={cream} roughness={0.7} />
+          </mesh>
+          <mesh position={[0, 1.2, 0.03]} castShadow>
+            <capsuleGeometry args={[0.235, 0.3, 4, 10]} />
+            <meshStandardMaterial color="#8e1f1f" roughness={0.6} />
+          </mesh>
+          <mesh position={[0, 1.66, 0]}>
+            <sphereGeometry args={[0.17, 14, 10]} />
+            <meshStandardMaterial color="#d9a07a" roughness={0.8} />
+          </mesh>
+          <mesh position={[0, 1.6, 0.13]}>
+            <boxGeometry args={[0.16, 0.04, 0.05]} />
+            <meshStandardMaterial color="#2a1d14" roughness={0.8} />
+          </mesh>
+          <mesh position={[0, 1.86, 0]}>
+            <cylinderGeometry args={[0.11, 0.14, 0.2, 14]} />
+            <meshStandardMaterial color={red} roughness={0.6} />
+          </mesh>
+          <mesh position={[0.09, 1.86, 0.06]}>
+            <cylinderGeometry args={[0.012, 0.012, 0.16, 4]} />
+            <meshStandardMaterial color="#111" roughness={0.6} />
+          </mesh>
+          <mesh position={[-0.28, 1.15, 0.05]} rotation={[0, 0, 0.3]}>
+            <cylinderGeometry args={[0.06, 0.055, 0.5, 6]} />
+            <meshStandardMaterial color={cream} roughness={0.7} />
+          </mesh>
+        </group>
       </StaticMerge>
-      <Text font={fontBlack} fontSize={0.26} color="#c8302c" position={[0, 0.98, 0.56]} anchorX="center" anchorY="middle">
+      {/* Kepçeli kol (sallanır) */}
+      <group ref={arm} position={[0.29, 1.68, -0.92]} rotation={[0, 0, -0.5]} scale={1.22}>
+        <mesh position={[0.18, 0, 0]}>
+          <cylinderGeometry args={[0.055, 0.05, 0.42, 6]} />
+          <meshStandardMaterial color={cream} roughness={0.7} />
+        </mesh>
+        <mesh position={[0.32, 0.55, 0.05]} rotation={[0, 0, -0.1]}>
+          <cylinderGeometry args={[0.02, 0.02, 1.5, 6]} />
+          <meshStandardMaterial color="#d9dde3" metalness={0.8} roughness={0.25} />
+        </mesh>
+        <mesh position={[0.4, 1.28, 0.05]}>
+          <sphereGeometry args={[0.09, 8, 6]} />
+          <meshStandardMaterial color="#fff4e0" roughness={0.6} />
+        </mesh>
+      </group>
+      <Text font={fontBlack} fontSize={0.2} color={red} position={[0, 2.3, 0.89]} anchorX="center" anchorY="middle" letterSpacing={0.04}>
         MARAŞ DONDURMASI
+      </Text>
+      <Text font={fontBlack} fontSize={0.16} color={cream} position={[0, 0.8, 0.615]} anchorX="center" anchorY="middle" letterSpacing={0.06}>
+        SAKIZLI · KESME
       </Text>
     </group>
   )
