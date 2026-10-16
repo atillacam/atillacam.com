@@ -85,7 +85,8 @@ export function heightAt(x, z) {
 
   // Dünyanın kenarında yüksek dağlar (görünmez duvarların arkası): sınıra 18 m kala yükselmeye başlar
   const edge = Math.min(x - WORLD.minX, WORLD.maxX - x, z - WORLD.minZ, WORLD.maxZ - z)
-  h += smoothstep(18, -10, edge) * (10 + fbm(x * 0.02, z * 0.02, 3) * 16)
+  // Bölge meydanları ve yollar (flatMask) dağın altında kalmasın
+  h += smoothstep(18, -10, edge) * (10 + fbm(x * 0.02, z * 0.02, 3) * 16) * Math.max(mask, smoothstep(4, -6, edge))
 
   // Arazi parkuru: tekerlek zıplatan dalgalı zemin
   const od = Math.hypot(x - OFFROAD.center[0], z - OFFROAD.center[2])

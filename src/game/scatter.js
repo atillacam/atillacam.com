@@ -90,102 +90,107 @@ export function lampPlacements() {
   })
 }
 
-// Tüm yerleşimler tek seferde, tekrarlanabilir şekilde hesaplanır
-export function useScatter(density = 1) {
-  return useMemo(() => {
-    const rand = seeded(11)
-    // area: x aralığı (varsayılan: eski kare dünya); z her zaman dünya boyunca
-    const place = (count, margin, minGap, list, extra = () => ({}), area = { x0: -(WORLD_HALF - 3), x1: WORLD_HALF - 3 }) => {
-      let guard = 0
-      const out = []
-      while (out.length < count && guard++ < count * 60) {
-        const x = area.x0 + rand() * (area.x1 - area.x0)
-        const z = (rand() * 2 - 1) * (WORLD_HALF - 3)
-        if (!isFree(x, z, margin)) continue
-        if ([...list, ...out].some((t) => Math.hypot(t.x - x, t.z - z) < minGap)) continue
-        out.push({ x, z, y: heightAt(x, z), rot: rand() * Math.PI * 2, scale: 0.8 + rand() * 0.45, ...extra(x, z) })
-      }
-      return out
+// Tüm yerleşimler tek seferde, tekrarlanabilir şekilde hesaplanır (saf fonksiyon: testte de kullanılır)
+export function computeScatter(density = 1) {
+  const rand = seeded(11)
+  // area: x aralığı (varsayılan: eski kare dünya); z her zaman dünya boyunca
+  const place = (count, margin, minGap, list, extra = () => ({}), area = { x0: -(WORLD_HALF - 3), x1: WORLD_HALF - 3 }) => {
+    let guard = 0
+    const out = []
+    while (out.length < count && guard++ < count * 60) {
+      const x = area.x0 + rand() * (area.x1 - area.x0)
+      const z = (rand() * 2 - 1) * (WORLD_HALF - 3)
+      if (!isFree(x, z, margin)) continue
+      if ([...list, ...out].some((t) => Math.hypot(t.x - x, t.z - z) < minGap)) continue
+      out.push({ x, z, y: heightAt(x, z), rot: rand() * Math.PI * 2, scale: 0.8 + rand() * 0.45, ...extra(x, z) })
     }
-    const trees = place(Math.round(185 * density), 1.5, 5.5, [], () => ({ kind: ['tree', 'maple', 'oak'][Math.floor(rand() * 3)] }))
-    const rocks = place(Math.round(55 * density), 0.5, 3, trees, () => ({ scale: 0.5 + rand() * 1.1 }))
-    const bushes = place(Math.round(110 * density), 0, 2.2, [...trees, ...rocks])
+    return out
+  }
+  const trees = place(Math.round(185 * density), 1.5, 5.5, [], () => ({ kind: ['tree', 'maple', 'oak'][Math.floor(rand() * 3)] }))
+  const rocks = place(Math.round(55 * density), 0.5, 3, trees, () => ({ scale: 0.5 + rand() * 1.1 }))
+  const bushes = place(Math.round(110 * density), 0, 2.2, [...trees, ...rocks])
 
-    // Bölge kenarlarında ve göl kıyısında çimen öbekleri ve çiçekler
-    const decor = []
-    const ringAround = (cx, cz, radius, count, kind, jitter = 2) => {
-      for (let i = 0; i < count; i++) {
-        const a = rand() * Math.PI * 2
-        const r = radius + (rand() - 0.5) * jitter * 2
-        const x = cx + Math.cos(a) * r
-        const z = cz + Math.sin(a) * r
-        if (!isFree(x, z, -2.5) && kind !== 'flower') continue
-        if (PATHS.some((p) => distanceToSegment(x, z, p.from, p.to) < Math.max(3.6, (p.width ?? 0) / 2 + 1))) continue
-        if (Math.abs(Math.hypot(x, z) - RING_RADIUS) < RING_WIDTH / 2 + 1.5) continue
-        if (SPOTS.some((s) => Math.hypot(x - s.position[0], z - s.position[2]) < 2.6)) continue
-        decor.push({ kind, x, z, y: heightAt(x, z), rot: rand() * Math.PI * 2, scale: 0.7 + rand() * 0.6 })
-      }
+  // Bölge kenarlarında ve göl kıyısında çimen öbekleri ve çiçekler
+  const decor = []
+  const ringAround = (cx, cz, radius, count, kind, jitter = 2) => {
+    for (let i = 0; i < count; i++) {
+      const a = rand() * Math.PI * 2
+      const r = radius + (rand() - 0.5) * jitter * 2
+      const x = cx + Math.cos(a) * r
+      const z = cz + Math.sin(a) * r
+      if (!isFree(x, z, -2.5) && kind !== 'flower') continue
+      if (PATHS.some((p) => distanceToSegment(x, z, p.from, p.to) < Math.max(3.6, (p.width ?? 0) / 2 + 1))) continue
+      if (Math.abs(Math.hypot(x, z) - RING_RADIUS) < RING_WIDTH / 2 + 1.5) continue
+      if (SPOTS.some((s) => Math.hypot(x - s.position[0], z - s.position[2]) < 2.6)) continue
+      decor.push({ kind, x, z, y: heightAt(x, z), rot: rand() * Math.PI * 2, scale: 0.7 + rand() * 0.6 })
     }
-    for (const a of AREAS) {
-      if (a.id === 'race') continue
-      ringAround(a.center[0], a.center[2], a.radius + (a.id === 'lake' ? 2.5 : 1), Math.round(12 * density), 'grass')
-      ringAround(a.center[0], a.center[2], a.radius + (a.id === 'lake' ? 3.5 : 0.5), Math.round(22 * density), 'flower', 1.4)
-    }
+  }
+  for (const a of AREAS) {
+    if (a.id === 'race') continue
+    ringAround(a.center[0], a.center[2], a.radius + (a.id === 'lake' ? 2.5 : 1), Math.round(12 * density), 'grass')
+    ringAround(a.center[0], a.center[2], a.radius + (a.id === 'lake' ? 3.5 : 0.5), Math.round(22 * density), 'flower', 1.4)
+  }
 
-    // Oyun alanının çiti artık kırılabilir (Breakables.jsx, playgroundFenceRing)
-    const fences = []
+  // Oyun alanının çiti artık kırılabilir (Breakables.jsx, playgroundFenceRing)
+  const fences = []
 
-    // Tepelerin eteğinde doğal taş duvarlar
-    const walls = []
-    for (let i = 0; i < 36; i++) {
-      const a = (i / 36) * Math.PI * 2 + rand() * 0.08
-      // Dış bölgelere giden yolların geçtiği çaprazlarda boşluk bırak
-      const diag = Math.abs(((a - Math.PI / 4) % (Math.PI / 2) + Math.PI / 2) % (Math.PI / 2) - Math.PI / 4)
-      if (Math.PI / 4 - diag < 0.14) continue
-      // Doğu (bowling), batı (kariyer) ve kuzey (laboratuvar) yolları için boşluk
-      if ([0, Math.PI, -Math.PI / 2].some((g) => Math.abs(Math.atan2(Math.sin(a - g), Math.cos(a - g))) < 0.12)) continue
-      const r = RING_RADIUS + RING_WIDTH / 2 + 4.5 + rand() * 1.5
-      const x = Math.cos(a) * r
-      const z = Math.sin(a) * r
-      walls.push({ x, z, y: heightAt(x, z) - 0.15, rot: -a + Math.PI / 2, scale: 0.9 + rand() * 0.4 })
-    }
+  // Tepelerin eteğinde doğal taş duvarlar
+  const walls = []
+  for (let i = 0; i < 36; i++) {
+    const a = (i / 36) * Math.PI * 2 + rand() * 0.08
+    // Dış bölgelere giden yolların geçtiği çaprazlarda boşluk bırak
+    const diag = Math.abs(((a - Math.PI / 4) % (Math.PI / 2) + Math.PI / 2) % (Math.PI / 2) - Math.PI / 4)
+    if (Math.PI / 4 - diag < 0.14) continue
+    // Doğu (bowling), batı (kariyer) ve kuzey (laboratuvar) yolları için boşluk
+    if ([0, Math.PI, -Math.PI / 2].some((g) => Math.abs(Math.atan2(Math.sin(a - g), Math.cos(a - g))) < 0.12)) continue
+    const r = RING_RADIUS + RING_WIDTH / 2 + 4.5 + rand() * 1.5
+    const x = Math.cos(a) * r
+    const z = Math.sin(a) * r
+    walls.push({ x, z, y: heightAt(x, z) - 0.15, rot: -a + Math.PI / 2, scale: 0.9 + rand() * 0.4 })
+  }
 
-    const lamps = lampPlacements()
+  const lamps = lampPlacements()
 
-    // Asya Yakası: rastgele dağılım yok; şehir gibi düzenli ağaç sıraları (eski yerleşimlerin sırası değişmesin diye en sonda)
-    const eastTrees = []
-    const plant = (x, z, kind, keep = 0) => {
-      if (CLEARINGS.some((c) => Math.hypot(x - c.x, z - c.z) < c.r + 0.5)) return
-      if (PATHS.some((p) => distanceToSegment(x, z, p.from, p.to) < (p.bridge ? 8 : 4.6))) return
-      if (SPOTS.some((s) => Math.hypot(x - s.position[0], z - s.position[2]) < 4.5)) return
-      if (PROMENADE.keepOut.some((k) => Math.hypot(x - k.x, z - k.z) < k.r)) return
-      if (Math.abs(z) > WORLD.maxZ - 20 + keep) return
-      eastTrees.push({ x, z, y: heightAt(x, z), rot: rand() * Math.PI * 2, scale: 0.85 + rand() * 0.2, kind })
-    }
-    // Sahil bulvarı: kumsal tarafında, lambaların arasında eşit aralıklı çınarlar
-    for (let z = -114; z <= 114; z += 12) if (!PROMENADE.lampZ.some((lz) => Math.abs(lz - z) < 3.5)) plant(PROMENADE.treeX, z, 'maple')
-    // İki bina sırasının arka bahçeleri boyunca ağaç şeridi
-    for (let z = -110; z <= 70; z += 13) plant(265, z, 'tree')
-    // Doğu sırasının arkasında, dağ eteğinde iki sıra koru
-    for (let z = -112; z <= 112; z += 11) {
-      plant(304, z, 'oak', 6)
-      plant(310, z + 5.5, 'tree', 6)
-    }
-    if (density < 1) for (let i = eastTrees.length - 1; i >= 0; i -= 2) eastTrees.splice(i, 1)
+  // Asya Yakası: rastgele dağılım yok; şehir gibi düzenli ağaç sıraları (eski yerleşimlerin sırası değişmesin diye en sonda)
+  const eastTrees = []
+  const plant = (x, z, kind, keep = 0) => {
+    if (CLEARINGS.some((c) => Math.hypot(x - c.x, z - c.z) < c.r + 0.5)) return
+    if (PATHS.some((p) => distanceToSegment(x, z, p.from, p.to) < (p.bridge ? 8 : 4.6))) return
+    if (SPOTS.some((s) => Math.hypot(x - s.position[0], z - s.position[2]) < 4.5)) return
+    if (PROMENADE.keepOut.some((k) => Math.hypot(x - k.x, z - k.z) < k.r)) return
+    if (Math.abs(z) > WORLD.maxZ - 20 + keep) return
+    eastTrees.push({ x, z, y: heightAt(x, z), rot: rand() * Math.PI * 2, scale: 0.85 + rand() * 0.2, kind })
+  }
+  // Sahil bulvarı: kumsal tarafında, lambaların arasında eşit aralıklı çınarlar
+  for (let z = -114; z <= 114; z += 12) if (!PROMENADE.lampZ.some((lz) => Math.abs(lz - z) < 3.5)) plant(PROMENADE.treeX, z, 'maple')
+  // İki bina sırasının arka bahçeleri boyunca ağaç şeridi
+  for (let z = -110; z <= 70; z += 13) plant(265, z, 'tree')
+  // Doğu sırasının arkasında, dağ eteğinde iki sıra koru
+  for (let z = -112; z <= 112; z += 11) {
+    plant(304, z, 'oak', 6)
+    plant(310, z + 5.5, 'tree', 6)
+  }
+  if (density < 1) for (let i = eastTrees.length - 1; i >= 0; i -= 2) eastTrees.splice(i, 1)
 
-    // Köprü yolunun geçtiği yerde çevre duvarı açık kalır (sıra bozulmasın diye sonradan süzülür)
-    const bridgeGap = Math.atan2(BRIDGE.z, Math.sqrt((RING_RADIUS + RING_WIDTH / 2) ** 2 - BRIDGE.z ** 2))
-    const openWalls = walls.filter((w) => [bridgeGap, PIER_ROAD_ANGLE].every((gap) => Math.abs(Math.atan2(w.z, w.x) - gap) > 0.12))
+  // Köprü yolunun geçtiği yerde çevre duvarı açık kalır (sıra bozulmasın diye sonradan süzülür)
+  const bridgeGap = Math.atan2(BRIDGE.z, Math.sqrt((RING_RADIUS + RING_WIDTH / 2) ** 2 - BRIDGE.z ** 2))
+  const openWalls = walls.filter((w) => [bridgeGap, PIER_ROAD_ANGLE].every((gap) => Math.abs(Math.atan2(w.z, w.x) - gap) > 0.12))
 
-    return {
-      trees: [...trees, ...eastTrees],
-      rocks,
-      bushes,
-      decor,
-      fences,
-      walls: openWalls,
-      lamps,
-    }
-  }, [density])
+  // Yol kenarı ve çıkışlarında engel kalmasın: yolun yarı genişliği + nesnenin boyu + 1,5 m pay
+  // (yerleşimden sonra süzülür: diğer nesnelerin yeri değişmez)
+  const roadClear = (o, r) => PATHS.every((p) => p.bridge || distanceToSegment(o.x, o.z, p.from, p.to) > (p.width ? p.width / 2 + 1.5 : p.street ? 4.5 : 2.8) + r + 1.5)
+
+  return {
+    trees: [...trees, ...eastTrees],
+    rocks: rocks.filter((r) => roadClear(r, 1.25 * r.scale)),
+    bushes: bushes.filter((b) => roadClear(b, 0.8 * (b.scale ?? 1))),
+    decor,
+    fences,
+    walls: openWalls.filter((w) => roadClear(w, 1.6 * w.scale)),
+    lamps,
+  }
 }
 
+export function useScatter(density = 1) {
+  return useMemo(() => computeScatter(density), [density])
+}

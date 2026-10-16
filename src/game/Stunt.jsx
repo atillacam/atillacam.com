@@ -48,12 +48,14 @@ function Ramp({ x, z, rot = 0, length, height, width = 4.4, color = '#e9e4d8', s
       <mesh geometry={geometry} castShadow receiveShadow>
         <meshStandardMaterial color={color} roughness={0.75} />
       </mesh>
-      {/* Rampa yüzeyindeki ok şeritleri */}
-      {[-1.3, 1.3].map((pz) => (
-        <mesh key={pz} position={[0, height / 2 + 0.02, pz]} rotation={[-Math.PI / 2, 0, angle]}>
-          <planeGeometry args={[slope * 0.92, 0.32]} />
-          <meshStandardMaterial color={stripe} roughness={0.6} polygonOffset polygonOffsetFactor={-2} />
-        </mesh>
+      {/* Rampa yüzeyindeki şeritler: önce yere yatırılır, sonra rampa eğimine kaldırılır (eğim boyunca uzanır) */}
+      {[-1, 1].map((s) => (
+        <group key={s} position={[0, height / 2, s * (width / 2 - 0.55)]} rotation={[0, 0, angle]}>
+          <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[slope * 0.9, 0.3]} />
+            <meshStandardMaterial color={stripe} roughness={0.6} polygonOffset polygonOffsetFactor={-2} />
+          </mesh>
+        </group>
       ))}
     </group>
   )
@@ -251,13 +253,6 @@ function ParkFloor() {
         <ringGeometry args={[A.radius - 1.1, A.radius - 0.5, 96]} />
         <meshStandardMaterial color={A.color} roughness={0.8} polygonOffset polygonOffsetFactor={-3} />
       </mesh>
-      {/* Koşu yolu şeritleri */}
-      {[-1, 1].map((s) => (
-        <mesh key={s} rotation={[-Math.PI / 2, 0, 0]} position={[-14, 0.045, s * 2.6]}>
-          <planeGeometry args={[9, 0.22]} />
-          <meshStandardMaterial color="#f2efe6" roughness={0.8} polygonOffset polygonOffsetFactor={-3} />
-        </mesh>
-      ))}
       <Text font={fontBlack} fontSize={2.2} color="#ffffff" fillOpacity={0.9} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.06, 14]} anchorX="center" anchorY="middle">
         {t('areaStunt').toLocaleUpperCase()}
       </Text>
