@@ -222,7 +222,7 @@ const LAKE_ROUTE = {
 }
 
 // route: { speed (rad/sn), start, at(açı) → { x, z, dx, dz } (konum ve gidiş yönü) }, scale: boyut, level: su seviyesi
-export function Ferry({ windows, route = LAKE_ROUTE, scale = 1, level = LAKE.waterLevel, live }) {
+export function Ferry({ windows, route = LAKE_ROUTE, scale = 1, level = LAKE.waterLevel }) {
   const body = useRef()
   const model = useRef()
   const state = useRef({ angle: route.start, hornAt: 0, nearAt: 0 })
@@ -247,12 +247,6 @@ export function Ferry({ windows, route = LAKE_ROUTE, scale = 1, level = LAKE.wat
     const y = level - 0.28 * scale + Math.sin(t * 1.3) * 0.04
     // Gidiş yönünde ilerler (+x burnu): yaw = atan2(-dz, dx)
     const yaw = Math.atan2(-dz, dx)
-    // Canlı konum (jet-ski çarpışması için)
-    if (live) {
-      live.x = x
-      live.z = z
-      live.yaw = yaw
-    }
     _q.setFromAxisAngle(_up, yaw)
     body.current?.setNextKinematicTranslation({ x, y, z })
     body.current?.setNextKinematicRotation(_q)

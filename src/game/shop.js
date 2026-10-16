@@ -78,8 +78,6 @@ export const REWARDS = {
   ringsRecord: 80,
   sumoWin: 150,
   sumoRecord: 100,
-  slalomFinish: 120,
-  slalomRecord: 80,
   golfPar: 60,
   holeInOne: 150,
 }

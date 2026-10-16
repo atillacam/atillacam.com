@@ -34,7 +34,7 @@ Atilla Çam'ın kişisel web sitesi. Ziyaretçiler fizik tabanlı bir arabayla a
 - **Taksi modu:** duraktan 2 dakikalık vardiya; yolcuyu al, GPS ile götür, hızlı varırsan bahşiş
 - **Helikopter halka parkuru:** pistten kalk, haritanın üzerindeki 10 halkadan sırayla geç (kılavuz ok, rekor süresi)
 - **Sumo arenası:** eğimli platformda üç çarpışan arabayı dışarı it; son kalan kazanır
-- **Lunapark ve jet-ski:** Asya Yakası'nda gece renk renk yanan dev dönme dolap (kabinden bir tur boyunca Boğaz manzarası); kumsaldaki kulübeden jet-ski kirala, dalgalarda kay, zıpla, vapurlardan kaç ve Boğaz boyunca 10 kapılı şamandıra slalomunda rekor kır
+- **Lunapark:** Asya Yakası'nda gece renk renk yanan dev dönme dolap; kabinden bir tur boyunca Boğaz manzarası
 - **Cüzdan ve garaj dükkânı:** taksi, sumo, halka parkuru, yarış, golf ve başarımlardan ₺ kazan; boya (krom, mat, metalik), neon taban (polis, gün batımı, nabız, gökkuşağı), iz efektleri (alev, yıldız tozu, lale yaprakları), korna (tır, nostaljik tramvay, vapur), tavan (altın taç, Türk bayrağı, çakar) ve turbo alevi rengi satın al. Yalnızca görünüm satılır, yarışlar adil kalır
 - **Simitçi:** ₺15'e simit al, 15 saniye simit gücü (yarışta geçersiz)
 - **Navigasyon:** yol ağı üzerinde GPS rotası (yerde akan ok şeridi + yön oku), keşfedildikçe açılan harita sisi
@@ -108,7 +108,7 @@ Bütün modeller **CC BY 4.0** lisanslı. Yazar adları sitede "Emeği geçenler
 | `src/game/shop.js` · `Cosmetics.jsx` | Dükkân kataloğu ve ödüller; neon taban, tavan aksesuarları, iz efektleri |
 | `src/game/Taxi.jsx` · `SkyRings.jsx` · `Sumo.jsx` | Taksi modu, helikopter halka parkuru, sumo arenası |
 | `src/game/Bosphorus.jsx` · `AsiaShore.jsx` | Boğaz denizi, asma köprü, vapurlar, deniz feneri; Asya Yakası binaları ve cami avlusu |
-| `src/game/Lunapark.jsx` · `Jetski.jsx` · `wheel.js` | Dönme dolap ve kabin turu; jet-ski sürüşü, kiralama iskelesi ve slalom kapıları |
+| `src/game/Lunapark.jsx` · `wheel.js` | Dönme dolap ve kabin turu |
 | `src/game/Istanbul.jsx` · `Traffic.jsx` | Galata, Kız Kulesi, vapur, simitçi; çevre yolu trafiği |
 | `src/game/Effects.jsx` | MSAA, vinyet, ACES ton eşleme |
 | `src/game/Skids.jsx` · `Dust.jsx` | Lastik izleri ve toz parçacıkları |

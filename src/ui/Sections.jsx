@@ -381,7 +381,6 @@ function PersonalRecords() {
   const taxi = useStore((s) => s.taxiBest)
   const rings = useStore((s) => s.ringsBest)
   const sumo = useStore((s) => s.sumoBest)
-  const slalom = useStore((s) => s.slalomBest)
   const records = [
     ['driftLabel', drift, String(drift)],
     ['stuntLabel', stunt, String(stunt)],
@@ -389,7 +388,6 @@ function PersonalRecords() {
     ['taxi', taxi, `₺${taxi}`],
     ['rings', rings, formatTime(rings)],
     ['areaSumo', sumo, formatTime(sumo)],
-    ['slalom', slalom, formatTime(slalom)],
   ]
   const played = records.filter(([, value]) => value)
   if (!played.length) return null

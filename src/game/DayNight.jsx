@@ -46,7 +46,8 @@ function SkyDome() {
           varying vec3 vDir;
           void main() {
             vDir = normalize(position);
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            // Kubbe her zaman en uzak düzlemde: kamera çizim mesafesi kısalınca kırpılmaz
+            gl_Position = (projectionMatrix * modelViewMatrix * vec4(position, 1.0)).xyww;
           }
         `}
         fragmentShader={/* glsl */ `
@@ -169,6 +170,12 @@ export default function DayNight({ shadows = true }) {
       const camFar = Math.max(camera.position.distanceTo(_carPos.set(vehicleState.position.x, vehicleState.position.y, vehicleState.position.z)) - 22, 0)
       scene.fog.near = THREE.MathUtils.lerp(70, 25, overcast) + camFar
       scene.fog.far = THREE.MathUtils.lerp(230, 120, overcast) + camFar * 1.6
+      // Sisin tamamen kapattığı yerin ötesi çizilmez (görüntü aynı, çizim çağrısı ve üçgen sayısı düşer)
+      const far = Math.min(600, scene.fog.far + 20)
+      if (Math.abs(camera.far - far) > 4) {
+        camera.far = far
+        camera.updateProjectionMatrix()
+      }
     }
     scene.environmentIntensity = THREE.MathUtils.lerp(0.4, 0.08, world.night)
 

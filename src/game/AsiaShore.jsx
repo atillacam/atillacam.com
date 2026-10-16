@@ -14,7 +14,6 @@ import { Flag } from './Istanbul.jsx'
 import StaticMerge from './StaticMerge.jsx'
 import Halo from './Halo.jsx'
 import { FerrisWheel } from './Lunapark.jsx'
-import { JetskiDock, SlalomCourse } from './Jetski.jsx'
 
 // Asya Yakası: sokaklı bir mahalle. Binalar zemin katta dükkân ve tente, katlarda balkon, kiremit ya da
 // korkuluklu düz çatı; gece pencerelerin bir kısmı ve dükkânlar yanar. Meydanda dilek çeşmesi, sahilde
@@ -595,64 +594,213 @@ function MosqueYard() {
   )
 }
 
+// Cami: klasik Osmanlı planı. Kare harim, sekizgen kasnak üstünde ana kubbe, dört yanda yarım kubbe,
+// köşelerde ağırlık kuleleri, önde (güneyde, şadırvana bakan) beş kubbeli son cemaat revakı ve iki şerefeli
+// iki minare. Kemerli pencereler gece içeriden yanar. Avlu MosqueYard'da.
+const MOSQUE = { size: 16, wall: 8, z: -6 } // z: avlu merkezine göre harimin merkezi (arkaya yaslı)
+const STONE = '#ece6d8'
+const LEAD = '#7f8c99'
+const GOLD = '#d6a53a'
+
+// Kemerli pencere: dikdörtgen + yarım daire (x-y düzleminde, +z'ye bakar)
+function archGeometry(w, h) {
+  const s = new THREE.Shape()
+  s.moveTo(-w / 2, 0)
+  s.lineTo(w / 2, 0)
+  s.lineTo(w / 2, h - w / 2)
+  s.absarc(0, h - w / 2, w / 2, 0, Math.PI, false)
+  s.lineTo(-w / 2, 0)
+  return new THREE.ExtrudeGeometry(s, { depth: 0.08, bevelEnabled: false, curveSegments: 8 })
+}
+
 function Mosque() {
   const { x, z } = ASIA_MOSQUE
-  const y = heightAt(x, z) - 0.5
-  const stone = '#e8e2d4'
-  const lead = '#7d8a96'
+  const y = heightAt(x, z)
+  const half = MOSQUE.size / 2
+  const windows = useRef()
+  const windowGeo = useMemo(() => archGeometry(1, 2), [])
+  const windowMat = useMemo(() => new THREE.MeshStandardMaterial({ color: '#2b3442', emissive: '#ffcf86', emissiveIntensity: 0, roughness: 0.4 }), [])
+
+  // Pencereler: harimin dört yüzünde iki sıra, kasnakta bir halka
+  const panes = useMemo(() => {
+    const list = []
+    for (let f = 0; f < 4; f++) {
+      const yaw = (f * Math.PI) / 2
+      const nx = Math.sin(yaw)
+      const nz = Math.cos(yaw)
+      for (const row of [1.4, 4.6]) {
+        for (let i = -2; i <= 2; i++) {
+          if (f === 0 && row < 2 && i === 0) continue // giriş kapısı
+          const t = i * 2.8
+          list.push({ x: nx * (half + 0.01) + nz * t, y: row, z: nz * (half + 0.01) - nx * t, yaw, s: row < 2 ? 1 : 0.85 })
+        }
+      }
+    }
+    for (let i = 0; i < 16; i++) {
+      const yaw = (i / 16) * Math.PI * 2
+      list.push({ x: Math.sin(yaw) * 5.62, y: MOSQUE.wall + 0.85, z: Math.cos(yaw) * 5.62, yaw, s: 0.45 })
+    }
+    return list
+  }, [half])
+  useLayoutEffect(() => {
+    const m = new THREE.Matrix4()
+    const q = new THREE.Quaternion()
+    panes.forEach((p, i) => {
+      q.setFromAxisAngle(_up, p.yaw)
+      windows.current.setMatrixAt(i, m.compose(_p.set(p.x, p.y, p.z), q, _s.set(p.s, p.s, 1)))
+    })
+    windows.current.instanceMatrix.needsUpdate = true
+    windows.current.computeBoundingSphere()
+  }, [panes])
+  useFrame(() => {
+    windowMat.emissiveIntensity = world.night * 2.2
+  })
+
+  const minarets = [-1, 1].map((s) => [s * (half + 1.6), half - 1])
+  const turrets = [-1, 1].flatMap((sx) => [-1, 1].map((sz) => [sx * (half - 0.9), sz * (half - 0.9)]))
+  const semis = [0, 1, 2, 3].map((f) => (f * Math.PI) / 2)
+  const porch = { z: half + 2.3, depth: 4.6, h: 4.2 }
+
   return (
-    <group position={[x, y, z]}>
+    <group position={[x, y, z + MOSQUE.z]}>
       <RigidBody type="fixed" colliders={false}>
-        <CuboidCollider args={[8, 6, 8]} position={[0, 6, 0]} />
-        {[-1, 1].map((s) => (
-          <CylinderCollider key={s} args={[14, 0.9]} position={[s * 11, 14, -11 * s]} />
+        <CuboidCollider args={[half, MOSQUE.wall / 2 + 2, half]} position={[0, MOSQUE.wall / 2 + 2, 0]} />
+        <CuboidCollider args={[half, porch.h / 2, porch.depth / 2]} position={[0, porch.h / 2, porch.z]} />
+        {minarets.map(([mx, mz]) => (
+          <CylinderCollider key={mx} args={[13, 1.1]} position={[mx, 13, mz]} />
         ))}
       </RigidBody>
       <StaticMerge>
-        <mesh position={[0, 4.5, 0]} castShadow receiveShadow>
-          <boxGeometry args={[16, 9, 16]} />
-          <meshStandardMaterial color={stone} roughness={0.85} />
+        {/* Kaide ve harim */}
+        <mesh position={[0, 0.25, 1.5]} receiveShadow>
+          <boxGeometry args={[MOSQUE.size + 1.2, 0.5, MOSQUE.size + porch.depth + 2]} />
+          <meshStandardMaterial color="#d8d0bf" roughness={0.9} />
         </mesh>
-        <mesh position={[0, 9.6, 0]} castShadow>
-          <cylinderGeometry args={[6.4, 7, 1.2, 24]} />
-          <meshStandardMaterial color={stone} roughness={0.85} />
+        <mesh position={[0, MOSQUE.wall / 2, 0]} castShadow receiveShadow>
+          <boxGeometry args={[MOSQUE.size, MOSQUE.wall, MOSQUE.size]} />
+          <meshStandardMaterial color={STONE} roughness={0.85} />
         </mesh>
-        <mesh position={[0, 10.2, 0]} castShadow>
-          <sphereGeometry args={[6.2, 28, 14, 0, Math.PI * 2, 0, Math.PI / 2]} />
-          <meshStandardMaterial color={lead} roughness={0.5} metalness={0.3} />
+        {/* Saçak ve kat silmesi */}
+        {[3.2, MOSQUE.wall].map((h) => (
+          <mesh key={h} position={[0, h, 0]} castShadow>
+            <boxGeometry args={[MOSQUE.size + 0.5, 0.3, MOSQUE.size + 0.5]} />
+            <meshStandardMaterial color="#d9d0bd" roughness={0.85} />
+          </mesh>
+        ))}
+        {/* Giriş kapısı: derin kemerli niş */}
+        <mesh position={[0, 1.6, half + 0.02]}>
+          <boxGeometry args={[2.2, 3.2, 0.1]} />
+          <meshStandardMaterial color="#5b3b26" roughness={0.7} />
         </mesh>
-        {[0, 1, 2, 3].map((i) => {
-          const a = (i * Math.PI) / 2
-          return (
-            <mesh key={i} position={[Math.cos(a) * 7.6, 9, Math.sin(a) * 7.6]} castShadow>
-              <sphereGeometry args={[3, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
-              <meshStandardMaterial color={lead} roughness={0.5} metalness={0.3} />
+        {/* Sekizgen kasnak, ana kubbe, kubbe kasnağı silmesi */}
+        <mesh position={[0, MOSQUE.wall + 0.9, 0]} castShadow>
+          <cylinderGeometry args={[5.6, 5.9, 1.8, 16]} />
+          <meshStandardMaterial color={STONE} roughness={0.85} />
+        </mesh>
+        <mesh position={[0, MOSQUE.wall + 1.8, 0]} castShadow>
+          <sphereGeometry args={[5.5, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
+          <meshStandardMaterial color={LEAD} roughness={0.45} metalness={0.35} />
+        </mesh>
+        {/* Yarım kubbeler: kasnağa yaslanır */}
+        {semis.map((a) => (
+          <mesh key={a} position={[Math.sin(a) * 4.2, MOSQUE.wall + 0.2, Math.cos(a) * 4.2]} rotation={[0, a, 0]} castShadow>
+            <sphereGeometry args={[3, 20, 10, 0, Math.PI, 0, Math.PI / 2]} />
+            <meshStandardMaterial color={LEAD} roughness={0.45} metalness={0.35} />
+          </mesh>
+        ))}
+        {/* Köşe ağırlık kuleleri */}
+        {turrets.map(([tx, tz]) => (
+          <group key={tx + ',' + tz} position={[tx, MOSQUE.wall, tz]}>
+            <mesh position={[0, 1, 0]} castShadow>
+              <cylinderGeometry args={[0.75, 0.85, 2, 8]} />
+              <meshStandardMaterial color={STONE} roughness={0.85} />
             </mesh>
-          )
-        })}
-        <mesh position={[0, 16.9, 0]}>
-          <cylinderGeometry args={[0.12, 0.12, 1.4, 6]} />
-          <meshStandardMaterial color="#d6a53a" metalness={0.8} roughness={0.3} />
-        </mesh>
-        {[-1, 1].map((s) => (
-          <group key={s} position={[s * 11, 0, -11 * s]}>
-            <mesh position={[0, 12, 0]} castShadow>
-              <cylinderGeometry args={[0.75, 0.9, 24, 12]} />
-              <meshStandardMaterial color={stone} roughness={0.85} />
+            <mesh position={[0, 2, 0]} castShadow>
+              <sphereGeometry args={[0.8, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2]} />
+              <meshStandardMaterial color={LEAD} roughness={0.45} metalness={0.35} />
             </mesh>
-            {[15, 21].map((h) => (
-              <mesh key={h} position={[0, h, 0]} castShadow>
-                <cylinderGeometry args={[1.15, 1.15, 0.5, 12]} />
-                <meshStandardMaterial color={stone} roughness={0.85} />
-              </mesh>
+            <mesh position={[0, 3.05, 0]}>
+              <coneGeometry args={[0.12, 0.6, 6]} />
+              <meshStandardMaterial color={GOLD} metalness={0.8} roughness={0.3} />
+            </mesh>
+          </group>
+        ))}
+        {/* Ana kubbe alemi */}
+        <mesh position={[0, MOSQUE.wall + 7.6, 0]}>
+          <cylinderGeometry args={[0.08, 0.08, 1.2, 6]} />
+          <meshStandardMaterial color={GOLD} metalness={0.8} roughness={0.3} />
+        </mesh>
+        <mesh position={[0, MOSQUE.wall + 8.1, 0]}>
+          <sphereGeometry args={[0.28, 12, 8]} />
+          <meshStandardMaterial color={GOLD} metalness={0.8} roughness={0.3} />
+        </mesh>
+        <mesh position={[0, MOSQUE.wall + 8.75, 0]}>
+          <torusGeometry args={[0.32, 0.07, 6, 16, Math.PI * 1.4]} />
+          <meshStandardMaterial color={GOLD} metalness={0.8} roughness={0.3} />
+        </mesh>
+        {/* Son cemaat revakı: sütunlar, kemer kirişi, düz dam, beş küçük kubbe */}
+        {[-7.4, -4.44, -1.48, 1.48, 4.44, 7.4].map((cx) => (
+          <mesh key={cx} position={[cx, porch.h / 2, porch.z + porch.depth / 2 - 0.4]} castShadow>
+            <cylinderGeometry args={[0.26, 0.3, porch.h, 10]} />
+            <meshStandardMaterial color="#f6f2ea" roughness={0.6} />
+          </mesh>
+        ))}
+        <mesh position={[0, porch.h + 0.25, porch.z]} castShadow>
+          <boxGeometry args={[MOSQUE.size, 0.5, porch.depth]} />
+          <meshStandardMaterial color={STONE} roughness={0.85} />
+        </mesh>
+        {[-6, -3, 0, 3, 6].map((cx) => (
+          <mesh key={cx} position={[cx, porch.h + 0.5, porch.z]} castShadow>
+            <sphereGeometry args={[1.35, 14, 7, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            <meshStandardMaterial color={LEAD} roughness={0.45} metalness={0.35} />
+          </mesh>
+        ))}
+        {/* Minareler: kare kaide, ince gövde, iki şerefe, kurşun külah, alem */}
+        {minarets.map(([mx, mz]) => (
+          <group key={mx} position={[mx, 0, mz]}>
+            <mesh position={[0, 2, 0]} castShadow>
+              <boxGeometry args={[2.2, 4, 2.2]} />
+              <meshStandardMaterial color={STONE} roughness={0.85} />
+            </mesh>
+            <mesh position={[0, 4.4, 0]} castShadow>
+              <cylinderGeometry args={[0.9, 1.25, 0.8, 12]} />
+              <meshStandardMaterial color={STONE} roughness={0.85} />
+            </mesh>
+            <mesh position={[0, 13.6, 0]} castShadow>
+              <cylinderGeometry args={[0.72, 0.85, 17.6, 16]} />
+              <meshStandardMaterial color={STONE} roughness={0.85} />
+            </mesh>
+            {[14.5, 20.2].map((h) => (
+              <group key={h} position={[0, h, 0]}>
+                <mesh castShadow>
+                  <cylinderGeometry args={[1.3, 0.8, 0.6, 16]} />
+                  <meshStandardMaterial color={STONE} roughness={0.85} />
+                </mesh>
+                <mesh position={[0, 0.65, 0]}>
+                  <torusGeometry args={[1.25, 0.05, 4, 24]} />
+                  <meshStandardMaterial color="#d9d0bd" roughness={0.8} />
+                </mesh>
+              </group>
             ))}
-            <mesh position={[0, 26.3, 0]} castShadow>
-              <coneGeometry args={[0.9, 4.6, 12]} />
-              <meshStandardMaterial color={lead} roughness={0.5} metalness={0.3} />
+            <mesh position={[0, 22.6, 0]} castShadow>
+              <cylinderGeometry args={[0.62, 0.62, 1.6, 16]} />
+              <meshStandardMaterial color={STONE} roughness={0.85} />
+            </mesh>
+            <mesh position={[0, 25.6, 0]} castShadow>
+              <coneGeometry args={[0.75, 4.4, 16]} />
+              <meshStandardMaterial color={LEAD} roughness={0.45} metalness={0.35} />
+            </mesh>
+            <mesh position={[0, 28.2, 0]}>
+              <sphereGeometry args={[0.18, 10, 6]} />
+              <meshStandardMaterial color={GOLD} metalness={0.8} roughness={0.3} />
             </mesh>
           </group>
         ))}
       </StaticMerge>
+      <instancedMesh ref={windows} args={[windowGeo, windowMat, panes.length]} />
+      {/* Gece: şerefeler ve giriş ışıkları */}
+      {minarets.flatMap(([mx, mz]) => [14.5, 20.2].map((h) => <Halo key={mx + ':' + h} position={[mx, h + 0.4, mz]} scale={3.2} />))}
+      <Halo position={[0, 3.6, half + 1]} scale={4} />
     </group>
   )
 }
@@ -826,8 +974,6 @@ export default function AsiaShore() {
       <Mosque />
       <MosqueYard />
       <FerrisWheel />
-      <JetskiDock />
-      <SlalomCourse />
     </>
   )
 }

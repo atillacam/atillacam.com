@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { profile } from '../content.js'
 import { ACHIEVEMENTS, progressOf, useStore } from '../store.js'
-import { AREAS, BRIDGE, COLLECTIBLES, GOLF_PAR, LAKE, PATHS, RACE, RING_RADIUS, SKY_RINGS, SLALOM, STRAIT, SUMO, WORLD } from '../game/layout.js'
+import { AREAS, BRIDGE, COLLECTIBLES, GOLF_PAR, LAKE, PATHS, RACE, RING_RADIUS, SKY_RINGS, STRAIT, SUMO, WORLD } from '../game/layout.js'
 import { input, teleport, trigger, vehicleState } from '../game/input.js'
 import { initAudio } from '../audio.js'
 import { useT } from '../i18n.js'
@@ -239,7 +239,7 @@ function HeliButton() {
   const { t } = useT()
   const mode = useStore((s) => s.mode)
   const racing = useStore((s) => s.race.active || s.race.countdown > 0)
-  if (racing || mode === 'jetski' || mode === 'wheel') return null
+  if (racing || mode === 'wheel') return null
   return (
     <button
       className={mode === 'car' ? 'whisper-button heli-button' : 'whisper-button heli-button active'}
@@ -358,48 +358,6 @@ function RingsHud() {
       </small>
       <button className="link" onClick={() => useStore.getState().cancelRings()}>
         {t('close')}
-      </button>
-    </div>
-  )
-}
-
-// Jet-ski: slalom süresi, kapı sayısı, sıradaki kapıya ok ve kıyıya dönüş
-function JetskiHud() {
-  const { t } = useT()
-  const mode = useStore((s) => s.mode)
-  const next = useStore((s) => s.slalom.next)
-  const best = useStore((s) => s.slalomBest)
-  const time = useRef()
-  const arrow = useRef()
-  const update = useCallback((now) => {
-    const { slalom: live } = useStore.getState()
-    if (time.current) time.current.textContent = live.next ? formatTime(now - live.start) : '0:00.00'
-    if (arrow.current) {
-      const gate = SLALOM[Math.min(live.next, SLALOM.length - 1)]
-      const { x, z } = vehicleState.position
-      const targetYaw = Math.atan2(gate.x - x, gate.z - z)
-      arrow.current.style.transform = 'rotate(' + (((vehicleState.cameraYaw - targetYaw) * 180) / Math.PI - 90) + 'deg)'
-    }
-  }, [])
-  useTicker(mode === 'jetski', update)
-  if (mode !== 'jetski') return null
-  return (
-    <div className="game-hud rings jetski-hud">
-      <span>
-        🌊 {t('jetski')} · {t('slalom')}
-      </span>
-      <strong>
-        <span className="jetski-arrow" ref={arrow} aria-hidden="true">
-          ➤
-        </span>{' '}
-        <span ref={time}>0:00.00</span>
-      </strong>
-      <small>
-        {next ? `${next} / ${SLALOM.length}` : t('jetskiStart')} · {t('driftBest')}: {best ? formatTime(best) : '—'}
-      </small>
-      <small className="jetski-hint">{t('jetskiHint')}</small>
-      <button className="link" onClick={() => useStore.getState().endJetski()}>
-        {t('jetskiExit')}
       </button>
     </div>
   )
@@ -690,7 +648,6 @@ function GameHud() {
       <TaxiHud />
       <RingsHud />
       <SumoHud />
-      <JetskiHud />
       <WheelHud />
       <div className="speedo" aria-hidden="true">
         <strong ref={speed}>0</strong>

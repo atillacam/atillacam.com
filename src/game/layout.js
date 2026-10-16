@@ -47,8 +47,6 @@ export const DONDURMA = { x: 241.5, z: 44 }
 export const TRAM_LINE = { x: 247, from: -104, to: 14 }
 // Lunapark (Asya, kuzey blok): dev dönme dolap. Teker x eksenine dik düzlemde döner, denizden tam görünür
 export const WHEEL = { x: 265, z: 96, hub: 15, radius: 11.5, cabins: 12, ride: 26 } // ride: bir tur (sn)
-// Jet-ski kiralama: Asya kumsalında kulübe, deniz kenarında iskele (binilen yer)
-export const JETSKI = { hut: { x: 240.6, z: -47 }, launch: { x: 228.5, z: -44, yaw: Math.PI }, top: 24, boost: 31 }
 // Asya sahil bulvarı (kumsal tarafı): ağaç sırası, sokak lambaları (StreetLamps düzeni) ve boş kalması gereken yerler
 export const PROMENADE = {
   treeX: STRAIT.beachEast + 3.2,
@@ -58,12 +56,8 @@ export const PROMENADE = {
     { x: TEA_GARDEN.x, z: TEA_GARDEN.z, r: 10 },
     { x: DONDURMA.x, z: DONDURMA.z, r: 5 },
     { x: STRAIT.beachEast - 4, z: -26, r: 6 }, // deniz feneri
-    { x: JETSKI.hut.x, z: JETSKI.hut.z, r: 6 },
   ],
 }
-// Slalom: Boğaz boyunca güneye (+z) uzanan şamandıra kapıları; kapılar sırayla, kuzeyden güneye geçilir.
-// Kapılar kanalın iki yakasında sırayla (yolcu vapurlarının rotasından uzakta), köprü ayaklarının arasından geçer.
-export const SLALOM = [-30, -14, 2, 16, 44, 60, 76, 92, 108, 122].map((z, i) => ({ x: i % 2 ? 207 : 165, z, half: 4.5 }))
 
 export const OUTER = 78 // dış bölgelerin çapraz uzaklığı (x ve z)
 export const RING_RADIUS = 66 // çevre yarış yolu
@@ -102,8 +96,8 @@ export const AREAS = [
   { id: 'career', label: 'areaCareer', center: [-106, 0, 0], radius: 18, color: COLORS.amber, spawn: [-84, 1.2, 0], yaw: Math.PI, pad: 'alley', outer: true },
   { id: 'bowling', label: 'areaBowling', center: [108, 0, 0], radius: 18, color: '#ff8a3d', spawn: [86, 1.2, 0], yaw: 0, pad: 'alley', outer: true },
   { id: 'lookout', label: 'areaLookout', center: [78, 0, -78], radius: 14, color: COLORS.violet, spawn: [60, 1.2, -60], yaw: Math.PI / 4, pad: 'hill', outer: true },
-  { id: 'asia', label: 'areaAsia', center: [282, 0, 30], radius: 16, color: '#2ec4b6', spawn: [268, 1.2, 30], yaw: 0, outer: true },
   { id: 'lunapark', label: 'areaLunapark', center: [265, 0, 96], radius: 14, color: '#ff6fae', spawn: [252, 1.2, 96], yaw: 0, outer: true },
+  { id: 'asia', label: 'areaAsia', center: [282, 0, 30], radius: 16, color: '#2ec4b6', spawn: [268, 1.2, 30], yaw: 0, outer: true },
   { id: 'stunt', label: 'areaStunt', center: [0, 0, 108], radius: 20, color: '#ff5d5d', spawn: [-18, 1.2, 108], yaw: 0, pad: 'asphalt', outer: true },
 ]
 
@@ -171,7 +165,6 @@ export const SPOTS = [
   { id: 'wish', label: 'spotWish', action: 'spotWishAction', position: [282, 0, 37.5], color: '#7ad7ff' },
   { id: 'tea', label: 'spotTea', action: 'spotTeaAction', position: [TEA_GARDEN.x + 5.2, 0, TEA_GARDEN.z], color: '#c8302c' },
   { id: 'wheel', label: 'spotWheel', action: 'spotWheelAction', position: [255.5, 0, 96], color: '#ff6fae' },
-  { id: 'jetski', label: 'spotJetski', action: 'spotJetskiAction', position: [242.6, 0, -41.5], color: '#2ec4b6' },
   { id: 'taxi', label: 'spotTaxi', action: 'spotTaxiAction', position: [6, 0, 5], color: '#f2c230' },
   { id: 'helipad', label: 'spotHelipad', action: 'spotHelipadAction', position: [13, 0, -30], color: '#7ad7ff' },
   { id: 'sumo', label: 'areaSumo', action: 'spotSumoAction', position: [23, 0, -23], color: '#e84a5f' },
@@ -365,7 +358,6 @@ export const CLEARINGS = [
   ...ASIA_BUILDINGS.map((b) => ({ x: b.x, z: b.z, r: Math.max(b.w, b.d) * 0.75 })),
   { x: ASIA_MOSQUE.x, z: ASIA_MOSQUE.z, r: 17 },
   { x: WHEEL.x, z: WHEEL.z, r: 16 },
-  { x: JETSKI.hut.x, z: JETSKI.hut.z, r: 4 },
   { x: ISTANBUL.galata.x, z: ISTANBUL.galata.z, r: 7 },
   ...AREAS.map((a) => ({ x: a.center[0], z: a.center[2], r: a.radius + 3 })),
   { x: 0, z: -9, r: 11 },

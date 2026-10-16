@@ -18,7 +18,7 @@ const LAMP_FIX = { 'Material.001': { color: '#3b404c', roughness: 0.6, metalness
 // ışığı görmediği hücreleri hiç çizmesin (frustum culling). Ölçüldü: 60 m çağrıyı yalnızca %2 azaltıp
 // çizilen üçgeni %50 artırıyor; 30 m daha dengeli.
 const CELL = 30
-function Instances({ url, items, castShadow = true, receiveShadow = true, wind = 0, overrides }) {
+function Instances({ url, items, castShadow = true, receiveShadow = true, wind = 0, overrides, maxDistance = 135 }) {
   const { scene } = useGLTF(url)
   const parts = useMemo(() => {
     const list = []
@@ -32,7 +32,8 @@ function Instances({ url, items, castShadow = true, receiveShadow = true, wind =
         material = o.material.clone()
         Object.entries(fix).forEach(([k, val]) => (k === 'color' ? material.color.set(val) : (material[k] = val)))
       }
-      material = material.clone()
+      // GLB'den gelen Physical malzeme (ekstra ışık hesapları) yerine aynı görünümlü Standard: daha ucuz gölgelendirici
+      material = material.isMeshPhysicalMaterial ? THREE.MeshStandardMaterial.prototype.copy.call(new THREE.MeshStandardMaterial(), material) : material.clone()
       // Adı yaprak/çalı/çimen olan malzemeler doğrudan mevsimle renk değiştirir
       const foliage = /leaf|bush|grass/i.test(material.name)
       material.onBeforeCompile = (shader) => {
@@ -126,12 +127,40 @@ function Instances({ url, items, castShadow = true, receiveShadow = true, wind =
       if (!map.has(key)) map.set(key, [])
       map.get(key).push(it)
     }
-    return [...map.values()]
+    // Her hücrenin merkezi ve kapsama yarıçapı (uzaklık testi için)
+    return [...map.values()].map((list) => {
+      const cx = list.reduce((a, it) => a + it.x, 0) / list.length
+      const cz = list.reduce((a, it) => a + it.z, 0) / list.length
+      const r = Math.max(...list.map((it) => Math.hypot(it.x - cx, it.z - cz))) + 4
+      return { list, cx, cz, r }
+    })
   }, [items])
 
-  return chunks.map((chunk, ci) =>
-    parts.map((p, pi) => <InstancedChunk key={`${ci}-${pi}`} part={p} items={chunk} castShadow={castShadow} receiveShadow={receiveShadow} />),
-  )
+  // Uzaklık sınırı: kameradan maxDistance'tan uzak hücreler çizilmez (sis zaten soldurur); 4 karede bir
+  const groups = useRef([])
+  const tick = useRef(0)
+  useFrame(({ camera }) => {
+    if (tick.current++ % 4) return
+    const { x, z } = camera.position
+    chunks.forEach((c, ci) => {
+      const on = Math.hypot(c.cx - x, c.cz - z) - c.r < maxDistance
+      const g = groups.current[ci]
+      if (g && g.visible !== on) g.visible = on
+    })
+  })
+
+  return chunks.map((chunk, ci) => (
+    <group
+      key={ci}
+      ref={(el) => {
+        groups.current[ci] = el
+      }}
+    >
+      {parts.map((p, pi) => (
+        <InstancedChunk key={pi} part={p} items={chunk.list} castShadow={castShadow} receiveShadow={receiveShadow} />
+      ))}
+    </group>
+  ))
 }
 
 const _m = new THREE.Matrix4()
@@ -195,11 +224,11 @@ export default function Vegetation({ quality = 'high' }) {
       <Instances url={MODEL_URLS.tree} items={byKind(trees, 'tree')} wind={0.006} />
       <Instances url={MODEL_URLS.maple} items={byKind(trees, 'maple')} wind={0.005} overrides={MAPLE_FIX} />
       <Instances url={MODEL_URLS.oak} items={byKind(trees, 'oak')} wind={0.006} />
-      <Instances url={MODEL_URLS.bush} items={bushes} wind={0.05} />
-      <Instances url={MODEL_URLS.rock} items={rocks} />
-      <Instances url={MODEL_URLS.grass} items={byKind(decor, 'grass')} castShadow={false} wind={0.35} />
-      <Instances url={MODEL_URLS.flower} items={byKind(decor, 'flower')} castShadow={false} wind={0.6} />
-      <Instances url={MODEL_URLS.wall} items={walls} />
+      <Instances url={MODEL_URLS.bush} items={bushes} wind={0.05} maxDistance={80} />
+      <Instances url={MODEL_URLS.rock} items={rocks} maxDistance={80} />
+      <Instances url={MODEL_URLS.grass} items={byKind(decor, 'grass')} castShadow={false} wind={0.35} maxDistance={55} />
+      <Instances url={MODEL_URLS.flower} items={byKind(decor, 'flower')} castShadow={false} wind={0.6} maxDistance={55} />
+      <Instances url={MODEL_URLS.wall} items={walls} maxDistance={100} />
       <Instances url={MODEL_URLS.lamp} items={lamps} overrides={LAMP_FIX} />
       <LampBulbs lamps={lamps} />
 

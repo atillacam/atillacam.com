@@ -342,7 +342,7 @@ function Statue() {
     const v = p.other.rigidBody?.linvel() ?? { x: 0, y: 0, z: 0 }
     // Tip değişiminden hemen sonra kütle henüz hesaplanmadığı için itmeyi doğrudan hız olarak veriyoruz;
     // yukarıdaki parçalar daha çok savrulur, böylece heykel devrilerek dağılır
-    const speed = Math.max(Math.hypot(v.x, v.z), 6)
+    const speed = Math.max(Math.hypot(v.x, v.z), 3)
     const dx = v.x / (Math.hypot(v.x, v.z) || 1)
     const dz = v.z / (Math.hypot(v.x, v.z) || 1)
     parts.current.forEach((rb) => {
@@ -369,7 +369,8 @@ function Statue() {
       {/* Kaide */}
       <RigidBody type="fixed" colliders={false}>
         <CuboidCollider args={[1.5, 0.2, 1.5]} position={[x, y + 0.2, z]} />
-        <CylinderCollider sensor args={[2.5, 4.2]} position={[x, y + 2.5, z]} onIntersectionEnter={wake} />
+        {/* Yalnızca heykelin kendisine (kollar dahil) değince: yanından geçmek devirmez */}
+        <CylinderCollider sensor args={[2, 1.45]} position={[x, base + 2, z]} onIntersectionEnter={wake} />
       </RigidBody>
       <RoundedBox args={[3, 0.4, 3]} radius={0.08} position={[x, y + 0.2, z]} castShadow receiveShadow>
         <meshStandardMaterial color="#8f8a80" roughness={0.9} />

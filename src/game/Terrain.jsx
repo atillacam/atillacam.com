@@ -80,7 +80,7 @@ function buildDashes() {
   const count = 70
   const g = new THREE.PlaneGeometry(0.25, 2.2)
   g.rotateX(-Math.PI / 2)
-  const mesh = new THREE.InstancedMesh(g, new THREE.MeshStandardMaterial({ color: '#f2efe6', roughness: 0.8 }), count)
+  const mesh = new THREE.InstancedMesh(g, new THREE.MeshStandardMaterial({ color: '#f2efe6', roughness: 0.8, polygonOffset: true, polygonOffsetFactor: -4 }), count)
   const m = new THREE.Matrix4()
   const q = new THREE.Quaternion()
   for (let i = 0; i < count; i++) {

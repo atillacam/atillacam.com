@@ -568,9 +568,7 @@ export default function Vehicle() {
 
     // Helikopter modunda araba park hâlinde: kamera, ses ve canlı durum helikopterde
     if (store.mode !== 'car') {
-      // Jet-ski motoru araba motor sesini kullanır (daha tiz)
-      if (store.mode === 'jetski') updateEngine(Math.abs(vehicleState.speed) * 1.25, vehicleState.jetThrottle ?? 0, 0, true)
-      else updateEngine(0, 0)
+      updateEngine(0, 0)
       updateAmbience(worldTime.night, worldTime.wet ?? 0, Math.abs(vehicleState.speed) * 0.6)
       return
     }

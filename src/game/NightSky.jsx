@@ -238,7 +238,7 @@ function ShootingStars() {
       const az = Math.random() * Math.PI * 2
       const el = 0.45 + Math.random() * 0.5
       const cam = state.camera.position
-      s.head.set(cam.x + Math.cos(az) * Math.cos(el) * 320, cam.y + Math.sin(el) * 320, cam.z + Math.sin(az) * Math.cos(el) * 320)
+      s.head.set(cam.x + Math.cos(az) * Math.cos(el) * 190, cam.y + Math.sin(el) * 190, cam.z + Math.sin(az) * Math.cos(el) * 190)
       s.dir.set(-Math.sin(az) + (Math.random() - 0.5) * 0.6, -0.45, Math.cos(az) + (Math.random() - 0.5) * 0.6).normalize()
     }
     s.life -= dt
