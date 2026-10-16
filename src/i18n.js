@@ -6,7 +6,9 @@ const STRINGS = {
   tr: {
     start: 'Keşfetmeye başla',
     loading: 'Dünya hazırlanıyor',
-    classicLink: 'Acelen mi var? Klasik görünüme geç →',
+    classicLink: 'Hızlı klasik görünüme geç →',
+    introProjects: 'Projelerimi gör',
+    introContact: 'İletişime geç',
     hintKeys: 'WASD / oklar ile sür · Enter ile etkileşim',
     hintTouch: 'Sol alttaki joystick ile sür.',
     menu: 'Site menüsü',
@@ -291,7 +293,9 @@ const STRINGS = {
   en: {
     start: 'Start exploring',
     loading: 'Building the world',
-    classicLink: 'In a hurry? Switch to the classic view →',
+    classicLink: 'Switch to the fast classic view →',
+    introProjects: 'See my projects',
+    introContact: 'Get in touch',
     hintKeys: 'Drive with WASD / arrows · Enter to interact',
     hintTouch: 'Drive with the joystick at the bottom left.',
     menu: 'Site menu',

@@ -105,7 +105,15 @@ function Intro() {
         <button ref={button} className="button primary big" onClick={begin} disabled={!ready}>
           {ready ? t('start') : `${t('loading')} · ${shown}%`}
         </button>
-        <button className="link" onClick={() => setView('classic')}>
+        <div className="intro-actions">
+          <button className="button ghost" onClick={() => useStore.getState().openClassic('projects')}>
+            {t('introProjects')}
+          </button>
+          <button className="button ghost" onClick={() => useStore.getState().openClassic('contact')}>
+            {t('introContact')}
+          </button>
+        </div>
+        <button className="link" onClick={() => setView('classic', true)}>
           {t('classicLink')}
         </button>
         <p className="hint">{isTouchDevice() ? t('hintTouch') : t('hintKeys')}</p>
@@ -122,7 +130,8 @@ function Hud() {
   const toggleDayNight = useStore((s) => s.toggleDayNight)
   const togglePanel = useStore((s) => s.togglePanel)
   const panel = useStore((s) => s.panel)
-  const unlockedCount = useStore((s) => Object.keys(s.unlocked).length)
+  // Yalnızca hâlâ var olan başarımlar sayılır (kaldırılan eski başarımlar sayacı şişirmesin)
+  const unlockedCount = useStore((s) => ACHIEVEMENTS.filter((a) => s.unlocked[a.id]).length)
   const cores = useStore((s) => (s.progress.collector ?? NONE).length)
   const { L } = useT()
 
@@ -1270,7 +1279,7 @@ function MenuPanel() {
         <button onClick={() => openModal({ type: 'credits' })}>
           <Icon name="cube" /> {t('credits')}
         </button>
-        <button onClick={() => setView('classic')}>
+        <button onClick={() => setView('classic', true)}>
           <Icon name="globe" /> {t('classicView')}
         </button>
       </div>

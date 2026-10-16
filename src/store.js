@@ -77,6 +77,26 @@ function writeJSON(key, value) {
   }
 }
 
+const VIEW_KEY = 'atillacam-view'
+// Açılış görünümü: önce adres (?klasik, /klasik, ?3d), sonra kullanıcının kayıtlı tercihi, sonra cihaz.
+// Telefon, küçük tablet ve zayıf cihazlar hızlı klasik görünümle açılır: 3D paketi (Three.js) hiç indirilmez.
+// 3D dünyaya geçiş her zaman bir düğme uzakta; seçim hatırlanır.
+function initialView() {
+  try {
+    const query = new URLSearchParams(window.location.search)
+    if (query.has('klasik') || window.location.pathname.startsWith('/klasik')) return 'classic'
+    if (query.has('3d')) return '3d'
+    const saved = localStorage.getItem(VIEW_KEY)
+    if (saved === '3d' || saved === 'classic') return saved
+    const touch = window.matchMedia('(pointer: coarse)').matches && Math.min(window.screen.width, window.screen.height) < 820
+    const slow = navigator.connection?.saveData || (navigator.deviceMemory && navigator.deviceMemory <= 2)
+    if (touch || slow) return 'classic'
+  } catch {
+    // depolama ya da medya sorgusu yoksa varsayılan
+  }
+  return '3d'
+}
+
 function detectLanguage() {
   try {
     const saved = localStorage.getItem('portfolio-lang')
@@ -129,7 +149,8 @@ const idleRings = { active: false, start: 0, next: 0 }
 const idleSumo = { active: false, countdown: 0, start: 0, out: [], result: null, time: 0 }
 
 export const useStore = create((set, get) => ({
-  view: '3d', // '3d' | 'classic'
+  view: initialView(), // '3d' | 'classic'
+  classicAnchor: null, // klasik görünüme geçince kaydırılacak bölüm (projects, contact)
   lang: detectLanguage(),
   quality: settings.quality, // 'high' | 'low'
   ready: false,
@@ -191,7 +212,19 @@ export const useStore = create((set, get) => ({
     writeJSON(SETTINGS_KEY, { quality: s.quality, muted: s.muted, music: s.music, fpsCap: s.fpsCap, carId: s.carId, carColor: s.carColor, equipped: s.equipped })
   },
 
-  setView: (view) => set({ view, modal: null, panel: null }),
+  // remember: kullanıcının kendi seçimi (düğme) sonraki ziyaretlerde de geçerli olur
+  setView: (view, remember = false) => {
+    set({ view, modal: null, panel: null })
+    if (remember) {
+      try {
+        localStorage.setItem(VIEW_KEY, view)
+      } catch {
+        // yok say
+      }
+    }
+  },
+  // Giriş kartından doğrudan bir bölüme: klasik görünümü açar ve o bölüme kaydırır
+  openClassic: (anchor) => set({ view: 'classic', classicAnchor: anchor, modal: null, panel: null }),
   setLang: (lang) => {
     set({ lang })
     try {

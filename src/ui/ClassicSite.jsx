@@ -84,7 +84,7 @@ function Nav({ webgl }) {
       <div className="nav-actions">
         <LangSwitch />
         {webgl && (
-          <button className="button small primary" onClick={() => setView('3d')}>
+          <button className="button small primary" onClick={() => setView('3d', true)}>
             <Icon name="cube" size={16} /> <span className="hide-sm">{t('back3d')}</span>
           </button>
         )}
@@ -163,7 +163,7 @@ function Hero({ webgl }) {
             <Icon name="mail" size={18} /> {t('heroContact')}
           </a>
           {webgl && (
-            <button className="button ghost" onClick={() => setView('3d')}>
+            <button className="button ghost" onClick={() => setView('3d', true)}>
               <Icon name="cube" size={18} /> {t('heroWorld')}
             </button>
           )}
@@ -361,6 +361,17 @@ export default function ClassicSite({ webgl }) {
   const { t, L } = useT()
   const setView = useStore((s) => s.setView)
   useReveal()
+  // Giriş kartından gelindiyse istenen bölüme kaydır
+  useEffect(() => {
+    const anchor = useStore.getState().classicAnchor
+    if (!anchor) return
+    // Sayfa yerleşimi otursun diye kısa gecikme; yumuşak kaydırma geçişte yarıda kalabiliyor, doğrudan atla
+    const id = setTimeout(() => {
+      useStore.setState({ classicAnchor: null })
+      document.getElementById(anchor)?.scrollIntoView({ block: 'start', behavior: 'instant' })
+    }, 80)
+    return () => clearTimeout(id)
+  }, [])
   return (
     <div className="classic">
       <a className="skip-link" href="#projects">
@@ -415,7 +426,7 @@ export default function ClassicSite({ webgl }) {
             </a>
           ))}
           {webgl && (
-            <button className="link-button" onClick={() => setView('3d')}>
+            <button className="link-button" onClick={() => setView('3d', true)}>
               {t('heroWorld')}
             </button>
           )}

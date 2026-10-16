@@ -42,9 +42,8 @@ export default function App() {
   }, [lang])
 
   useEffect(() => {
-    // ?klasik ya da /klasik (arama motorları için hazır HTML olarak üretilen sayfa)
-    const wantsClassic = new URLSearchParams(window.location.search).has('klasik') || window.location.pathname.startsWith('/klasik')
-    if (!webgl || wantsClassic) setView('classic')
+    // WebGL yoksa 3D açılamaz (açılış görünümü store.js'de: adres, tercih ve cihaza göre)
+    if (!webgl) setView('classic')
   }, [webgl, setView])
 
   if (view === 'classic') return <ClassicSite webgl={webgl} />

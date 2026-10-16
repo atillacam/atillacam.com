@@ -314,6 +314,16 @@ kbd {
   top: 16px;
   right: 16px;
 }
+.intro-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+.intro-actions .button {
+  flex: 1 1 140px;
+}
 .intro-card {
   max-width: 480px;
   width: 100%;
