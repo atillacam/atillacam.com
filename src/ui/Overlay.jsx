@@ -1448,7 +1448,24 @@ function Garage() {
       <div className="garage-cars">
         {CARS.map((c) => (
           <button key={c.id} className={carId === c.id ? 'active' : ''} onClick={() => setCar(c.id)} aria-pressed={carId === c.id}>
-            {L(c.name)}
+            <strong>{L(c.name)}</strong>
+            {/* Güç, hız ve yol tutuş çubukları (1-5) */}
+            <span className="car-stats">
+              {[
+                ['statPower', c.rating.power],
+                ['statSpeed', c.rating.speed],
+                ['statGrip', c.rating.grip],
+              ].map(([key, value]) => (
+                <span key={key} className="car-stat">
+                  <small>{t(key)}</small>
+                  <span className="bar" aria-label={value + '/5'}>
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <i key={n} className={n <= value ? 'on' : ''} />
+                    ))}
+                  </span>
+                </span>
+              ))}
+            </span>
           </button>
         ))}
       </div>

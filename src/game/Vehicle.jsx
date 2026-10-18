@@ -11,6 +11,8 @@ import { bakedGeometry } from './geometry.js'
 import TurboFlame from './TurboFlame.jsx'
 import { fontBlack } from './fonts.js'
 import { buildRacer, paintHex, FINISHES, PAINTS } from './cars.js'
+import { carSpec } from './catalog.js'
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { SIMIT } from './shop.js'
 import { Underglow, RoofItem } from './Cosmetics.jsx'
 import { useStore } from '../store.js'
@@ -207,6 +209,35 @@ function yawQuaternion(yaw) {
   return _quat.setFromEuler(_euler.set(0, yaw, 0))
 }
 
+// Jantlı tekerlek: yuvarlak profilli lastik (halka) + gümüş jant diski ve 5 kol; dönüş ekseni z
+const TYRE = new THREE.MeshStandardMaterial({ color: '#1c1d22', roughness: 0.85 })
+const RIM = new THREE.MeshStandardMaterial({ color: '#d9dde3', metalness: 0.85, roughness: 0.25 })
+function cleanWheel(r, w) {
+  const profile = [
+    [0.6, -0.5],
+    [0.9, -0.5],
+    [1, -0.34],
+    [1, 0.34],
+    [0.9, 0.5],
+    [0.6, 0.5],
+  ].map(([pr, py]) => new THREE.Vector2(pr * r, py * w))
+  const tyre = new THREE.LatheGeometry(profile, 32).rotateX(Math.PI / 2)
+  const parts = [new THREE.CylinderGeometry(r * 0.62, r * 0.62, w * 0.44, 24).rotateX(Math.PI / 2), new THREE.CylinderGeometry(r * 0.16, r * 0.16, w * 0.9, 12).rotateX(Math.PI / 2)]
+  for (let k = 0; k < 5; k++) parts.push(new THREE.BoxGeometry(r * 1.12, r * 0.14, w * 0.66).rotateZ((k / 5) * Math.PI * 2))
+  const rim = mergeGeometries(parts.map((p) => p.toNonIndexed()))
+  const group = new THREE.Group()
+  for (const [geometry, material] of [
+    [tyre, TYRE],
+    [rim, RIM],
+  ]) {
+    const mesh = new THREE.Mesh(geometry, material)
+    mesh.castShadow = true
+    group.add(mesh)
+  }
+  group.userData.tilt = IDENTITY
+  return group
+}
+
 // GLB'den gövde ve tekerlekleri ayır; tekerlek geometrisini kendi merkezine taşı ki dönebilsin
 function useCarModel() {
   const { scene } = useGLTF(CAR_URL)
@@ -253,6 +284,22 @@ function useCarModel() {
         body.add(mesh)
       }
     })
+    // Modelin tekerlekleri tam yuvarlak değil (dönerken yalpalıyordu): aynı ölçüde, düz akslı jantlı tekerlek çizilir
+    for (const key of Object.keys(wheels)) {
+      // Ölçü yalnızca kullanılan köşelerden (bölünmüş arka aks yarısında diğer yarının köşeleri de durur)
+      const g = wheels[key].geometry
+      const pos = g.attributes.position
+      const used = g.index ? new Set(g.index.array) : Array.from({ length: pos.count }, (_, i) => i)
+      let r = 0
+      let z0 = Infinity
+      let z1 = -Infinity
+      for (const i of used) {
+        r = Math.max(r, Math.hypot(pos.getX(i), pos.getY(i)))
+        z0 = Math.min(z0, pos.getZ(i))
+        z1 = Math.max(z1, pos.getZ(i))
+      }
+      wheels[key] = cleanWheel(r, z1 - z0)
+    }
     return { body, wheels, glass, paint }
   }, [scene])
 }
@@ -452,14 +499,16 @@ export default function Vehicle() {
     const speed = vehicle.currentVehicleSpeed()
     // Simit gücü: kısa süreli hız (yarışta geçersiz, sıralama adil kalsın)
     const simit = store.simitUntil > performance.now() && !store.race.active && !store.race.countdown ? SIMIT.power : 1
-    const maxSpeed = (boost ? MAX_BOOST_SPEED : MAX_SPEED) * simit
+    // Seçili aracın özellikleri (garaj): azami hız, motor gücü, direksiyon
+    const spec = carSpec(store.carId)
+    const maxSpeed = (boost ? (MAX_BOOST_SPEED * spec.boost) / 25 : (MAX_SPEED * spec.top) / 17) * simit
     // Ters yönde gaz verilirse önce fren yap
     const reversing = throttle !== 0 && Math.sign(throttle) !== Math.sign(speed) && Math.abs(speed) > 1
     let engine = 0
     if (!reversing && throttle !== 0) {
       const limit = throttle > 0 ? maxSpeed : maxSpeed * 0.5
       const headroom = THREE.MathUtils.clamp(1 - Math.abs(speed) / limit, 0, 1)
-      engine = throttle * ENGINE_FORCE * (boost ? BOOST_MULTIPLIER : 1) * simit * Math.min(1, headroom * 3)
+      engine = throttle * ENGINE_FORCE * spec.power * (boost ? BOOST_MULTIPLIER : 1) * simit * Math.min(1, headroom * 3)
     }
     // El freni (B/Q): arka tekerlekler kilitlenip tutuş azalır → kontrollü drift
     const handbrake = brake && Math.abs(speed) > 3
@@ -468,7 +517,7 @@ export default function Vehicle() {
     vehicleState.handbrake = handbrake
 
     // Hızlandıkça direksiyon açısı azalır: yüksek hızda kontrol kolaylaşır
-    const steerLimit = THREE.MathUtils.lerp(MAX_STEER, 0.22, Math.min(Math.abs(speed) / MAX_BOOST_SPEED, 1))
+    const steerLimit = THREE.MathUtils.lerp((MAX_STEER * spec.steer) / 0.48, 0.22, Math.min(Math.abs(speed) / MAX_BOOST_SPEED, 1))
     steer.current = THREE.MathUtils.lerp(steer.current, steerInput * steerLimit, 0.2)
 
     for (let i = 0; i < WHEELS.length; i++) {

@@ -3160,3 +3160,37 @@ body[data-tour] .speedo,
 body[data-tour] .minimap {
   display: none;
 }
+
+/* Garaj: araç kartlarında güç / hız / yol tutuş çubukları */
+.garage-cars button {
+  display: grid;
+  gap: 6px;
+  text-align: left;
+}
+.car-stats {
+  display: grid;
+  gap: 3px;
+}
+.car-stat {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  align-items: center;
+  gap: 6px;
+}
+.car-stat small {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.car-stat .bar {
+  display: flex;
+  gap: 3px;
+}
+.car-stat .bar i {
+  width: 14px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.14);
+}
+.car-stat .bar i.on {
+  background: var(--accent, #5b6cff);
+}

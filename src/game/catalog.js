@@ -3,10 +3,25 @@
 // Garajdaki araçlar. Yeni bir GLB araç eklemek için:
 // 1) models-src/ içine koy, scripts/optimize-models.mjs'e `car: true` ayarıyla ekle (tekerlek adları keepNames'te)
 // 2) Buraya { id, name, url } satırı ekle. Fizik ölçüleri (aks ve iz genişliği) tüm araçlarda ortaktır.
+// spec: power (motor gücü çarpanı), top / boost (azami hız, m/s), steer (en büyük direksiyon açısı)
+// rating: garajda gösterilen değerler (1-5): güç, hız, yol tutuş
 export const CARS = [
-  { id: 'ae86', name: { tr: 'Klasik Hatchback', en: 'Classic Hatchback' }, url: '/models/car.glb' },
-  { id: 'racer', name: { tr: 'Spor Coupé', en: 'Sports Coupé' }, procedural: true },
+  {
+    id: 'ae86',
+    name: { tr: 'Klasik Hatchback', en: 'Classic Hatchback' },
+    url: '/models/car.glb',
+    spec: { power: 1, top: 17, boost: 25, steer: 0.5 },
+    rating: { power: 3, speed: 3, grip: 5 },
+  },
+  {
+    id: 'racer',
+    name: { tr: 'Spor Coupé', en: 'Sports Coupé' },
+    procedural: true,
+    spec: { power: 1.3, top: 21, boost: 29, steer: 0.42 },
+    rating: { power: 5, speed: 5, grip: 3 },
+  },
 ]
+export const carSpec = (id) => (CARS.find((c) => c.id === id) ?? CARS[0]).spec
 
 // finish: yüzey (metal | chrome | matte; yoksa modelin kendi değeri)
 // price: garaj dükkânındaki fiyat (yoksa ücretsiz); secret: yalnızca ödülle açılır
