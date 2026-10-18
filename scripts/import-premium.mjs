@@ -28,13 +28,14 @@ const MODELS = [
   {
     id: 'amg-one',
     file: 'transparency_mercedes_amg_one/scene.gltf',
-    forward: 0, // otomatik (farların tarafı)
+    forward: 1, // ön +z (stop lambaları -z'de; farlar malzemesi iki uçta da kullanıldığı için otomatik tespit yanılıyordu)
     length: 3.4,
     tris: 80000,
     drop: /(interior|stitches|speakers|belt|underbody|trim001)/,
     wheels: /(tire|rim|hubdecal)/,
     paint: /amgprojone_paint$/,
     opaque: /(amgprojone_paint|amgprojone_carbon)$/,
+    tint: { amgprojone_grey: [0.32, 0.33, 0.36] }, // dokusuz saf beyaz geliyor: gerçek gri
     headlight: /headlight/,
     error: 0.008,
     hideInside: /(plastic|carbon|grey)$/, // opak gövdenin içinde kalan motor ve şasi parçaları
@@ -66,6 +67,7 @@ for (const cfg of MODELS) {
       const c = mat.getBaseColorFactor()
       mat.setBaseColorFactor([c[0], c[1], c[2], 1])
     }
+    if (cfg.tint?.[name]) mat.setBaseColorFactor([...cfg.tint[name], 1]).setMetallicFactor(0.6).setRoughnessFactor(0.35)
     if (cfg.paint.test(name)) {
       mat.setName('premium_paint').setBaseColorTexture(null).setBaseColorFactor([1, 1, 1, 1]).setAlphaMode('OPAQUE').setMetallicFactor(0.55).setRoughnessFactor(0.28)
     }
