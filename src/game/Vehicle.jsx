@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { CuboidCollider, RigidBody, useBeforePhysicsStep, useRapier } from '@react-three/rapier'
 import { Text, useGLTF } from '@react-three/drei'
@@ -12,7 +12,7 @@ import TurboFlame from './TurboFlame.jsx'
 import { fontBlack } from './fonts.js'
 import { buildRacer, paintHex, FINISHES, PAINTS } from './cars.js'
 import { CARS as CAR_LIST, carSpec } from './catalog.js'
-import { KENNEY_URL, playerCar } from './kenney.js'
+import { KENNEY_URL, playerCar, premiumUrl } from './kenney.js'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { SIMIT } from './shop.js'
 import { Underglow, RoofItem } from './Cosmetics.jsx'
@@ -206,6 +206,13 @@ function visualSuspension(length) {
   return THREE.MathUtils.clamp(length ?? REST_LENGTH, REST_LENGTH - 0.07, REST_LENGTH + 0.05)
 }
 
+// Premium araç modelini yükler ve hazır olunca bildirir (görsel çizmez)
+function PremiumLoader({ id, onLoad }) {
+  const { scene } = useGLTF(premiumUrl(id))
+  useEffect(() => onLoad(id, scene), [id, scene, onLoad])
+  return null
+}
+
 function yawQuaternion(yaw) {
   return _quat.setFromEuler(_euler.set(0, yaw, 0))
 }
@@ -368,7 +375,20 @@ export default function Vehicle() {
   const { scene: kenneyScene } = useGLTF(KENNEY_URL)
   const kenneyId = CAR_LIST.find((c) => c.id === carId)?.kenney
   const kenneyCar = useMemo(() => (kenneyId ? playerCar(kenneyScene, kenneyId) : null), [kenneyScene, kenneyId])
-  const car = carId === 'racer' ? racer : (kenneyCar ?? glbCar)
+  // Premium (gerçekçi) araçlar ayrı dosyada, yalnızca seçilince (ya da arka planda ön yüklenince) iner
+  const premiumId = CAR_LIST.find((c) => c.id === carId)?.premium
+  // Model ayrı bir bileşende kendi Suspense'i içinde yüklenir: sahne askıya alınmaz, inene kadar varsayılan araç görünür
+  const [premiumScenes, setPremiumScenes] = useState({})
+  const premiumScene = premiumId ? premiumScenes[premiumId] : null
+  const premiumCar = useMemo(() => (premiumScene ? playerCar(premiumScene, premiumId) : null), [premiumScene, premiumId])
+  const onPremium = useCallback((id, loaded) => setPremiumScenes((all) => (all[id] ? all : { ...all, [id]: loaded })), [])
+  const car = carId === 'racer' ? racer : (premiumCar ?? kenneyCar ?? glbCar)
+  // Yüksek kalitede premium araçlar sahne açıldıktan biraz sonra arka planda yüklenir (garajda beklemeden geçilsin)
+  useEffect(() => {
+    if (useStore.getState().quality !== 'high') return
+    const id = setTimeout(() => CAR_LIST.filter((c) => c.premium).forEach((c) => useGLTF.preload(premiumUrl(c.premium))), 8000)
+    return () => clearTimeout(id)
+  }, [])
   const roof = useMemo(() => roofOf(car.body), [car])
 
   // Seçilen boya rengini uygula
@@ -620,7 +640,7 @@ export default function Vehicle() {
         const s = visualSuspension(vehicle.wheelSuspensionLength(i))
         // Kenney araçlarında tekerlek görselleri modelin kendi aks yerlerinde (fizik noktalarından biraz içeride)
         const wp = car.wheelPos?.[i]
-        group.position.set(wp ? wp.x : c.x, c.y - s, wp ? wp.z : c.z)
+        group.position.set(wp ? wp.x : c.x, c.y - s + (wp?.y ?? 0), wp ? wp.z : c.z)
         group.rotation.set(0, (vehicle.wheelSteering(i) ?? 0) * VISUAL_STEER, 0)
         group.children[0].children[0].rotation.z = vehicle.wheelRotation(i) ?? 0
       } else {
@@ -845,6 +865,11 @@ export default function Vehicle() {
       <planeGeometry args={[3.1, 1.9]} />
       <meshBasicMaterial map={getBlobTexture()} transparent depthWrite={false} opacity={0.5} polygonOffset polygonOffsetFactor={-4} />
     </mesh>
+    {premiumId && !premiumScene && (
+      <Suspense fallback={null}>
+        <PremiumLoader id={premiumId} onLoad={onPremium} />
+      </Suspense>
+    )}
     <RigidBody ref={body} name="vehicle" colliders={false} position={SPAWN.position} rotation={[0, SPAWN.yaw, 0]} canSleep={false} angularDamping={1.2} linearDamping={0.05} ccd>
       <CuboidCollider
         ref={collider}

@@ -94,5 +94,21 @@
     "license": "CC0-1.0 (http://creativecommons.org/publicdomain/zero/1.0/)",
     "source": "https://kenney-assets.itch.io/car-kit",
     "title": "Car Kit"
+  },
+  {
+    "key": "premium-sls",
+    "file": "premium/sls.glb",
+    "author": "Dave Love SketchFab (https://sketchfab.com/Tyler_Dave)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/2010-mercedes-sls-amg-fa3fd5eeea674f37bb03283f2c53d563",
+    "title": "2010 Mercedes SLS AMG"
+  },
+  {
+    "key": "premium-amg-one",
+    "file": "premium/amg-one.glb",
+    "author": "Dave Love SketchFab (https://sketchfab.com/Tyler_Dave)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/transparency-mercedes-amg-one-31e09c5fe7a04ef2b47f998485de9cf6",
+    "title": "Transparency Mercedes AMG One"
   }
 ]

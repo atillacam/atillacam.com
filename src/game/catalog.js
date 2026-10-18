@@ -76,6 +76,23 @@ export const CARS = [
     spec: { power: 1.5, top: 24, boost: 33, steer: 0.43 },
     rating: { power: 5, speed: 5, grip: 4 },
   },
+  // Premium: gerçekçi modeller (Sketchfab, CC BY); boyanabilir, ayrı dosyadan yüklenir
+  {
+    id: 'gullwing',
+    premium: 'sls',
+    name: { tr: 'Martı Kanat GT', en: 'Gullwing GT' },
+    price: 12000,
+    spec: { power: 1.45, top: 23, boost: 32, steer: 0.46 },
+    rating: { power: 5, speed: 5, grip: 4 },
+  },
+  {
+    id: 'hyper',
+    premium: 'amg-one',
+    name: { tr: 'Hiper Prototip', en: 'Hyper Prototype' },
+    price: 20000,
+    spec: { power: 1.6, top: 25, boost: 35, steer: 0.45 },
+    rating: { power: 5, speed: 5, grip: 5 },
+  },
 ]
 export const carSpec = (id) => (CARS.find((c) => c.id === id) ?? CARS[0]).spec
 
