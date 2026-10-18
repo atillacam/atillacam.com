@@ -1,15 +1,14 @@
 import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { CuboidCollider, RigidBody } from '@react-three/rapier'
-import { Text } from '@react-three/drei'
+import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
+import { KENNEY_URL, npcCar } from './kenney.js'
 import { BRIDGE, ROUNDABOUTS, TRAFFIC } from './layout.js'
 import { heightAt } from './terrain.js'
 import { vehicleState } from './input.js'
 import { world } from './time.js'
 import { useStore } from '../store.js'
-import { fontBlack } from './fonts.js'
-import StaticMerge from './StaticMerge.jsx'
 
 // Çevre yolunda kendi şeridinde dolaşan araçlar. Önlerinde oyuncu ya da başka araç
 // varsa yavaşlayıp durur, yol açılınca devam eder. Yarış sırasında yoldan çekilir.
@@ -21,69 +20,16 @@ const HIDDEN_Y = -40
 const _q = new THREE.Quaternion()
 const _up = new THREE.Vector3(0, 1, 0)
 
-function CarModel({ color, taxi, lights }) {
-  return (
-    <StaticMerge>
-      <mesh position={[0, 0.55, 0]} castShadow receiveShadow>
-        <boxGeometry args={[2.3, 0.5, 1.12]} />
-        <meshStandardMaterial color={color} roughness={0.45} metalness={0.2} />
-      </mesh>
-      <mesh position={[-0.15, 0.98, 0]} castShadow>
-        <boxGeometry args={[1.2, 0.4, 0.98]} />
-        <meshStandardMaterial color={color} roughness={0.45} metalness={0.2} />
-      </mesh>
-      {/* Camlar */}
-      <mesh position={[-0.15, 1.0, 0]}>
-        <boxGeometry args={[1.22, 0.26, 1.0]} />
-        <meshStandardMaterial color="#1c2430" roughness={0.15} metalness={0.4} />
-      </mesh>
-      {/* Tekerlekler */}
-      {[
-        [0.72, 0.56],
-        [0.72, -0.56],
-        [-0.72, 0.56],
-        [-0.72, -0.56],
-      ].map(([x, z]) => (
-        <mesh key={`${x}${z}`} position={[x, 0.3, z]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-          <cylinderGeometry args={[0.3, 0.3, 0.2, 14]} />
-          <meshStandardMaterial color="#1d1f24" roughness={0.85} />
-        </mesh>
-      ))}
-      {/* Farlar ve stop lambaları */}
-      {[0.36, -0.36].map((z) => (
-        <group key={z}>
-          <mesh position={[1.16, 0.6, z]} material={lights.head}>
-            <boxGeometry args={[0.04, 0.12, 0.24]} />
-          </mesh>
-          <mesh position={[-1.16, 0.62, z]} material={lights.tail}>
-            <boxGeometry args={[0.04, 0.1, 0.24]} />
-          </mesh>
-        </group>
-      ))}
-      {taxi && (
-        <group position={[-0.1, 1.27, 0]}>
-          <mesh>
-            <boxGeometry args={[0.24, 0.16, 0.56]} />
-            <meshStandardMaterial color="#16181d" roughness={0.5} />
-          </mesh>
-          {[1, -1].map((side) => (
-            <Text
-              key={side}
-              font={fontBlack}
-              fontSize={0.11}
-              color="#f2c230"
-              position={[side * 0.125, 0, 0]}
-              rotation={[0, side * (Math.PI / 2), 0]}
-              anchorX="center"
-              anchorY="middle"
-            >
-              TAKSİ
-            </Text>
-          ))}
-        </group>
-      )}
-    </StaticMerge>
-  )
+// Trafik aracı: Kenney modeli (tek doku, tek malzeme); tekerlekler araç hızıyla döner
+function CarModel({ model, lights, s }) {
+  const { scene } = useGLTF(KENNEY_URL)
+  const group = useMemo(() => npcCar(scene, model, lights), [scene, model, lights])
+  useFrame((_, delta) => {
+    const dt = THREE.MathUtils.clamp(delta, 0, 0.05)
+    const turn = ((s.speed ?? 0) * dt) / group.userData.radius
+    for (const w of group.userData.spinners) w.rotation.z -= turn
+  })
+  return <primitive object={group} />
 }
 
 function NpcCar({ spec, s, cars, lights }) {
@@ -136,8 +82,8 @@ function NpcCar({ spec, s, cars, lights }) {
 
   return (
     <RigidBody ref={body} name="npc" type="kinematicPosition" colliders={false} position={[Math.cos(spec.angle) * spec.lane, HIDDEN_Y, Math.sin(spec.angle) * spec.lane]}>
-      <CuboidCollider args={[1.15, 0.55, 0.58]} position={[0, 0.65, 0]} />
-      <CarModel color={spec.color} taxi={spec.taxi} lights={lights} />
+      <CuboidCollider args={[1.25, 0.6, 0.72]} position={[0, 0.7, 0]} />
+      <CarModel model={spec.model} lights={lights} s={s} />
     </RigidBody>
   )
 }
@@ -232,14 +178,14 @@ function loopAt(d, out) {
 }
 
 const BRIDGE_COLORS = [
-  { color: '#d8322f' },
-  { color: '#f2c230', taxi: true },
-  { color: '#2f6fe0' },
-  { color: '#f2f2f0' },
-  { color: '#2fae8a' },
-  { color: '#24262c' },
-  { color: '#e0a98a' },
-  { color: '#f2c230', taxi: true },
+  { model: 'sedan' },
+  { model: 'taxi' },
+  { model: 'suv' },
+  { model: 'van' },
+  { model: 'delivery' },
+  { model: 'police' },
+  { model: 'ambulance' },
+  { model: 'truck' },
 ]
 
 function BridgeCar({ s, cars, lights }) {
@@ -280,8 +226,8 @@ function BridgeCar({ s, cars, lights }) {
   })
   return (
     <RigidBody ref={body} name="npc" type="kinematicPosition" colliders={false} position={[0, -40, 0]}>
-      <CuboidCollider args={[1.15, 0.55, 0.58]} position={[0, 0.65, 0]} />
-      <CarModel color={s.color} taxi={s.taxi} lights={lights} />
+      <CuboidCollider args={[1.25, 0.6, 0.72]} position={[0, 0.7, 0]} />
+      <CarModel model={s.model} lights={lights} s={s} />
     </RigidBody>
   )
 }

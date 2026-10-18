@@ -490,6 +490,7 @@ export const useStore = create((set, get) => ({
   // Takma / çıkarma (id null = çıkar). Boya için garajdaki renk değişir.
   equip: (category, id) => {
     if (category === 'paint') return get().setCarColor(id)
+    if (category === 'car') return get().setCar(id)
     const { owned, equipped } = get()
     if (id && !isFree(category, id) && !owned.includes(`${category}:${id}`)) return
     set({ equipped: { ...equipped, [category]: id ?? DEFAULT_EQUIPPED[category] } })
@@ -590,6 +591,8 @@ export const useStore = create((set, get) => ({
 
   // ---------- Garaj, far, kamera ----------
   setCar: (carId) => {
+    // Satılık araç önce alınmalı
+    if (!isFree('car', carId) && !get().owned.includes('car:' + carId)) return
     set({ carId })
     get().unlock('garage')
     get().persist()

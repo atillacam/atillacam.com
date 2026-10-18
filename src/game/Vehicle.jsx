@@ -11,7 +11,8 @@ import { bakedGeometry } from './geometry.js'
 import TurboFlame from './TurboFlame.jsx'
 import { fontBlack } from './fonts.js'
 import { buildRacer, paintHex, FINISHES, PAINTS } from './cars.js'
-import { carSpec } from './catalog.js'
+import { CARS as CAR_LIST, carSpec } from './catalog.js'
+import { KENNEY_URL, playerCar } from './kenney.js'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { SIMIT } from './shop.js'
 import { Underglow, RoofItem } from './Cosmetics.jsx'
@@ -363,7 +364,11 @@ export default function Vehicle() {
   const taxi = useStore((s) => s.taxi.active)
   const glow = useStore((s) => s.equipped.glow)
   const roofItem = useStore((s) => s.equipped.roof)
-  const car = carId === 'racer' ? racer : glbCar
+  // Kenney araçları ortak dosyadan (cars.glb); seçili araç değişince yeniden kurulur
+  const { scene: kenneyScene } = useGLTF(KENNEY_URL)
+  const kenneyId = CAR_LIST.find((c) => c.id === carId)?.kenney
+  const kenneyCar = useMemo(() => (kenneyId ? playerCar(kenneyScene, kenneyId) : null), [kenneyScene, kenneyId])
+  const car = carId === 'racer' ? racer : (kenneyCar ?? glbCar)
   const roof = useMemo(() => roofOf(car.body), [car])
 
   // Seçilen boya rengini uygula
@@ -613,7 +618,9 @@ export default function Vehicle() {
       if (split || i < 2) {
         const c = vehicle.wheelChassisConnectionPointCs(i)
         const s = visualSuspension(vehicle.wheelSuspensionLength(i))
-        group.position.set(c.x, c.y - s, c.z)
+        // Kenney araçlarında tekerlek görselleri modelin kendi aks yerlerinde (fizik noktalarından biraz içeride)
+        const wp = car.wheelPos?.[i]
+        group.position.set(wp ? wp.x : c.x, c.y - s, wp ? wp.z : c.z)
         group.rotation.set(0, (vehicle.wheelSteering(i) ?? 0) * VISUAL_STEER, 0)
         group.children[0].children[0].rotation.z = vehicle.wheelRotation(i) ?? 0
       } else {
@@ -915,3 +922,4 @@ function getBlobTexture() {
 }
 
 useGLTF.preload(CAR_URL)
+useGLTF.preload(KENNEY_URL)

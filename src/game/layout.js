@@ -312,10 +312,10 @@ export const TAXI_PLACES = [
 
 // Çevre yolunda dolaşan araçlar. Sağdan trafik: açı artarak giden (dir 1) iç şeritte, ters yöndeki dış şeritte
 export const TRAFFIC = [
-  { lane: RING_RADIUS - 1.75, dir: 1, angle: 0.4, color: '#f2c230', taxi: true },
-  { lane: RING_RADIUS - 1.75, dir: 1, angle: 0.4 + Math.PI, color: '#d8322f' },
-  { lane: RING_RADIUS + 1.75, dir: -1, angle: 2.2, color: '#f2f2f0' },
-  { lane: RING_RADIUS + 1.75, dir: -1, angle: 2.2 + Math.PI, color: '#2f6fe0' },
+  { lane: RING_RADIUS - 1.75, dir: 1, angle: 0.4, model: 'taxi' },
+  { lane: RING_RADIUS - 1.75, dir: 1, angle: 0.4 + Math.PI, model: 'sedan' },
+  { lane: RING_RADIUS + 1.75, dir: -1, angle: 2.2, model: 'van' },
+  { lane: RING_RADIUS + 1.75, dir: -1, angle: 2.2 + Math.PI, model: 'suv' },
 ]
 
 // Asya Yakası silüeti: tepedeki cami (kubbe + iki minare) ve yamaçlara yayılan binalar.

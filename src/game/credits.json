@@ -86,5 +86,13 @@
     "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
     "source": "https://sketchfab.com/3d-models/white-flower-9e025b18a39741a4a38b197cee3cdcac",
     "title": "white flower"
+  },
+  {
+    "key": "cars",
+    "file": "cars.glb",
+    "author": "Kenney (https://www.kenney.nl)",
+    "license": "CC0-1.0 (http://creativecommons.org/publicdomain/zero/1.0/)",
+    "source": "https://kenney-assets.itch.io/car-kit",
+    "title": "Car Kit"
   }
 ]

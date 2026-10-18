@@ -3194,3 +3194,23 @@ body[data-tour] .minimap {
 .car-stat .bar i.on {
   background: var(--accent, #5b6cff);
 }
+.car-price {
+  margin-left: 8px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  background: rgba(242, 194, 48, 0.18);
+  color: #f2c230;
+}
+.car-price.short {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--muted);
+}
+.garage-cars button.locked {
+  opacity: 0.85;
+}
+.garage-note {
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}

@@ -1,4 +1,4 @@
-import { PAINTS } from './catalog.js'
+import { CARS, PAINTS } from './catalog.js'
 
 // Garaj dükkânı: oyunlarda kazanılan ₺ ile yalnızca görünüm satın alınır.
 // Performans satılmaz: yarış ve dünya sıralaması herkes için adil kalır.
@@ -14,6 +14,8 @@ export const SHOP_CATEGORIES = [
 ]
 
 export const SHOP_ITEMS = {
+  // Araçlar garajdan satın alınır (dükkân sekmelerinde görünmez)
+  car: CARS.map((c) => ({ id: c.id, name: c.name, price: c.price ?? 0 })),
   // Satılık boyalar önce (fiyata göre), ücretsizler sonra
   paint: PAINTS.filter((p) => !p.secret)
     .map((p) => ({ id: p.id, name: p.name, price: p.price ?? 0, color: p.hex, finish: p.finish }))

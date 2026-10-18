@@ -1442,13 +1442,27 @@ function Garage() {
   const setCarColor = useStore((s) => s.setCarColor)
   const goldUnlocked = useStore((s) => !!s.unlocked.logoHunter)
   const owned = useStore((s) => s.owned)
+  const wallet = useStore((s) => s.wallet)
+  const lang = useStore((s) => s.lang)
+  const current = CARS.find((c) => c.id === carId)
+  // Satılık araç: alınmışsa seçilir, para yetiyorsa satın alınır
+  const choose = (c) => {
+    const locked = c.price && !owned.includes('car:' + c.id)
+    if (!locked) return setCar(c.id)
+    const store = useStore.getState()
+    if (store.buy('car', c.id)) store.toast('🚗', L(c.name))
+    else store.toast('💸', t('garageNeedMoney'))
+  }
   return (
     <div className="garage">
       <h3>{t('garage')}</h3>
       <div className="garage-cars">
         {CARS.map((c) => (
-          <button key={c.id} className={carId === c.id ? 'active' : ''} onClick={() => setCar(c.id)} aria-pressed={carId === c.id}>
-            <strong>{L(c.name)}</strong>
+          <button key={c.id} className={(carId === c.id ? 'active' : '') + (c.price && !owned.includes('car:' + c.id) ? ' locked' : '')} onClick={() => choose(c)} aria-pressed={carId === c.id}>
+            <strong>
+              {L(c.name)}
+              {c.price && !owned.includes('car:' + c.id) ? <span className={wallet >= c.price ? 'car-price' : 'car-price short'}>{formatMoney(c.price, lang)}</span> : null}
+            </strong>
             {/* Güç, hız ve yol tutuş çubukları (1-5) */}
             <span className="car-stats">
               {[
@@ -1469,7 +1483,8 @@ function Garage() {
           </button>
         ))}
       </div>
-      <div className="garage-paints" role="group" aria-label={t('carColor')}>
+      {current?.kenney ? <p className="garage-note">{t('garageFactoryPaint')}</p> : null}
+      <div className="garage-paints" role="group" aria-label={t('carColor')} hidden={!!current?.kenney}>
         {PAINTS.filter((p) => (p.secret ? goldUnlocked : !p.price || owned.includes(`paint:${p.id}`))).map((p) => (
           <button
             key={p.id}

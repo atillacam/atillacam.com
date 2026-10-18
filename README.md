@@ -35,6 +35,7 @@ Atilla Çam'ın kişisel web sitesi. Ziyaretçiler fizik tabanlı bir arabayla a
 - **Helikopter halka parkuru:** pistten kalk, haritanın üzerindeki 10 halkadan sırayla geç (kılavuz ok, rekor süresi)
 - **Sumo arenası:** eğimli platformda üç çarpışan arabayı dışarı it; son kalan kazanır
 - **Lunapark:** Asya Yakası'nda gece renk renk yanan dev dönme dolap; kabinden bir tur boyunca Boğaz manzarası
+- **Garaj ve trafik araçları:** Kenney Car Kit (CC0) modelleri tek sıkıştırılmış dosyada (`scripts/import-cars.mjs`); garajda güç, hız ve yol tutuşu farklı 9 araç (bazıları cüzdanla satın alınır), trafikte taksi, sedan, SUV, panelvan, kargo, polis, ambulans ve kamyonet
 - **Cüzdan ve garaj dükkânı:** taksi, sumo, halka parkuru, yarış, golf ve başarımlardan ₺ kazan; boya (krom, mat, metalik), neon taban (polis, gün batımı, nabız, gökkuşağı), iz efektleri (alev, yıldız tozu, lale yaprakları), korna (tır, nostaljik tramvay, vapur), tavan (altın taç, Türk bayrağı, çakar) ve turbo alevi rengi satın al. Yalnızca görünüm satılır, yarışlar adil kalır
 - **Simitçi:** ₺15'e simit al, 15 saniye simit gücü (yarışta geçersiz)
 - **Navigasyon:** yol ağı üzerinde GPS rotası (yerde akan ok şeridi + yön oku), keşfedildikçe açılan harita sisi
