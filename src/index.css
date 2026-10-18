@@ -3214,3 +3214,11 @@ body[data-tour] .minimap {
   font-size: 0.8rem;
   color: var(--muted);
 }
+.shop-car-stats {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+.shop-preview.shop-car {
+  font-size: 1.8rem;
+}

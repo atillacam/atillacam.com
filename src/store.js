@@ -183,7 +183,8 @@ export const useStore = create((set, get) => ({
   drift: { combo: 0, active: false },
   soccerSession: 0, // bu ziyaretteki goller
   cinematic: 0, // > performance.now() ise sinematik kamera
-  carId: settings.carId,
+  // Satın alınmamış bir araç kayıtlıysa ücretsiz araca dönülür
+  carId: isFree('car', settings.carId) || (saved.owned ?? []).includes('car:' + settings.carId) ? settings.carId : 'ae86',
   carColor: settings.carColor,
   wallet: saved.wallet ?? 0, // ₺ bakiye
   owned: saved.owned ?? [], // satın alınan eşyalar ('kategori:id')

@@ -382,7 +382,11 @@ export default function Vehicle() {
   const premiumScene = premiumId ? premiumScenes[premiumId] : null
   const premiumCar = useMemo(() => (premiumScene ? playerCar(premiumScene, premiumId) : null), [premiumScene, premiumId])
   const onPremium = useCallback((id, loaded) => setPremiumScenes((all) => (all[id] ? all : { ...all, [id]: loaded })), [])
-  const car = carId === 'racer' ? racer : (premiumCar ?? kenneyCar ?? glbCar)
+  // Seçilen araç hazır değilse (premium model iniyor) bir önceki araç görünmeye devam eder: anlık yanlış araç çıkmaz
+  const wanted = carId === 'racer' ? racer : premiumId ? premiumCar : (kenneyCar ?? glbCar)
+  const [lastCar, setLastCar] = useState(null)
+  if (wanted && wanted !== lastCar) setLastCar(wanted)
+  const car = wanted ?? lastCar ?? glbCar
   // Yüksek kalitede premium araçlar sahne açıldıktan biraz sonra arka planda yüklenir (garajda beklemeden geçilsin)
   useEffect(() => {
     if (useStore.getState().quality !== 'high') return

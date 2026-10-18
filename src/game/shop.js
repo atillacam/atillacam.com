@@ -5,6 +5,7 @@ import { CARS, PAINTS } from './catalog.js'
 // Her kategoride en fazla bir eşya takılı olur (boya garajdaki renk seçimidir).
 
 export const SHOP_CATEGORIES = [
+  { id: 'car', name: { tr: 'Araçlar', en: 'Cars' } },
   { id: 'paint', name: { tr: 'Boya', en: 'Paint' } },
   { id: 'glow', name: { tr: 'Neon taban', en: 'Underglow' } },
   { id: 'trail', name: { tr: 'İz efekti', en: 'Trail' } },
@@ -14,8 +15,8 @@ export const SHOP_CATEGORIES = [
 ]
 
 export const SHOP_ITEMS = {
-  // Araçlar garajdan satın alınır (dükkân sekmelerinde görünmez)
-  car: CARS.map((c) => ({ id: c.id, name: c.name, price: c.price ?? 0 })),
+  // Araçlar: dükkânda ve garajda satın alınır; rating güç / hız / yol tutuş (1-5)
+  car: CARS.map((c) => ({ id: c.id, name: c.name, price: c.price ?? 0, rating: c.rating, premium: !!c.premium })),
   // Satılık boyalar önce (fiyata göre), ücretsizler sonra
   paint: PAINTS.filter((p) => !p.secret)
     .map((p) => ({ id: p.id, name: p.name, price: p.price ?? 0, color: p.hex, finish: p.finish }))

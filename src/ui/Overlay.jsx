@@ -613,7 +613,7 @@ const ICONS = {
   'trail-tulip': '🌷',
 }
 // Bu kategorilerde her zaman bir seçim takılıdır (çıkarılamaz, varsayılana dönülür)
-const FIXED_CATEGORIES = ['paint', 'horn', 'flame']
+const FIXED_CATEGORIES = ['car', 'paint', 'horn', 'flame']
 
 // Garaj dükkânı: kategoriler, eşya kartları, satın al / tak / çıkar
 function ShopPanel() {
@@ -623,7 +623,8 @@ function ShopPanel() {
   const owned = useStore((s) => s.owned)
   const equipped = useStore((s) => s.equipped)
   const carColor = useStore((s) => s.carColor)
-  const [category, setCategory] = useState('paint')
+  const carId = useStore((s) => s.carId)
+  const [category, setCategory] = useState('car')
   if (!open) return null
   const store = useStore.getState()
   const items = SHOP_ITEMS[category]
@@ -644,13 +645,15 @@ function ShopPanel() {
       <div className="shop-grid">
         {items.map((item) => {
           const has = !item.price || owned.includes(`${category}:${item.id}`)
-          const on = category === 'paint' ? carColor === item.id : equipped[category] === item.id
+          const on = category === 'car' ? carId === item.id : category === 'paint' ? carColor === item.id : equipped[category] === item.id
           const afford = wallet >= item.price
           const swatch = SWATCHES[item.color] ?? (category === 'flame' ? `radial-gradient(circle at 30% 50%, ${item.inner} 0 18%, ${item.color} 45%, transparent 75%), #0b0f1c` : item.color)
           return (
             <article key={item.id} className={on ? 'shop-item on' : 'shop-item'}>
               <div className={`shop-preview shop-${category}${item.finish ? ' finish-' + item.finish : ''}`} style={swatch ? { '--swatch': swatch } : undefined}>
-                {category === 'horn' ? (
+                {category === 'car' ? (
+                  <span aria-hidden="true">{item.premium ? '🏎️' : '🚗'}</span>
+                ) : category === 'horn' ? (
                   <button className="link" onClick={() => playHonk(item.id)} aria-label={`${t('listen')}: ${L(item.name)}`}>
                     🔊
                   </button>
@@ -659,6 +662,11 @@ function ShopPanel() {
                 ) : null}
               </div>
               <strong>{L(item.name)}</strong>
+              {item.rating && (
+                <span className="shop-car-stats">
+                  {t('statPower')} {item.rating.power} · {t('statSpeed')} {item.rating.speed} · {t('statGrip')} {item.rating.grip}
+                </span>
+              )}
               <small>{on ? t('equippedLabel') : has ? (item.price ? t('ownedLabel') : t('freeLabel')) : formatMoney(item.price, lang)}</small>
               {!has ? (
                 <button className="shop-action buy" disabled={!afford} onClick={() => store.buy(category, item.id)} title={afford ? undefined : t('notEnough')}>

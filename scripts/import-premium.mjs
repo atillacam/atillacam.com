@@ -21,7 +21,8 @@ const MODELS = [
     forward: 1, // ön +z
     length: 3.4,
     tris: 42000,
-    drop: /^(INT_|DAMAGE_GLASS|Mechanics)/,
+    drop: /^(INT_|DAMAGE_GLASS|Mechanics|Rim_Blurred)/, // bulanık jant diskleri lastiği örtüyordu
+    glass: /^Glass_/,
     wheels: /^(Rim|Tyre|Brake_Disk)/,
     paint: /^Carpaint/,
   },
@@ -33,6 +34,8 @@ const MODELS = [
     tris: 80000,
     drop: /(interior|stitches|speakers|belt|underbody|trim001)/,
     wheels: /(tire|rim|hubdecal)/,
+    wheelNodes: /amgprojone_(tire|rim)/, // jant malzemesinin adında "rim" geçmiyor: parça adına bakılır
+    glass: /(clearglass|glass_005)/,
     paint: /amgprojone_paint$/,
     opaque: /(amgprojone_paint|amgprojone_carbon)$/,
     tint: { amgprojone_grey: [0.32, 0.33, 0.36] }, // dokusuz saf beyaz geliyor: gerçek gri
@@ -52,6 +55,15 @@ const countTris = (root) => root.listMeshes().reduce((a, m) => a + m.listPrimiti
 for (const cfg of MODELS) {
   const doc = await io.read(SRC + cfg.file)
   const root = doc.getRoot()
+  // Tekerlek parçalarını işaretle: mesh düğümleri Object_NN adını taşır, "rim/tire" adı ata düğümdedir (düzleştirmede kaybolur)
+  if (cfg.wheelNodes) {
+    const mark = (node, inherited) => {
+      const hit = inherited || cfg.wheelNodes.test(node.getName())
+      if (hit && node.getMesh()) node.getMesh().setName('wheelpart_' + node.getName())
+      for (const child of node.listChildren()) mark(child, hit)
+    }
+    for (const node of root.listScenes()[0].listChildren()) mark(node, false)
+  }
   await doc.transform(flatten())
   for (const node of root.listNodes()) if (node.getMesh()) clearNodeTransform(node)
 
@@ -67,6 +79,7 @@ for (const cfg of MODELS) {
       const c = mat.getBaseColorFactor()
       mat.setBaseColorFactor([c[0], c[1], c[2], 1])
     }
+    if (cfg.glass?.test(name)) mat.setBaseColorTexture(null).setAlphaMode('BLEND').setBaseColorFactor([0.04, 0.06, 0.08, 0.62]).setMetallicFactor(0.3).setRoughnessFactor(0.04).setDoubleSided(false)
     if (cfg.tint?.[name]) mat.setBaseColorFactor([...cfg.tint[name], 1]).setMetallicFactor(0.6).setRoughnessFactor(0.35)
     if (cfg.paint.test(name)) {
       mat.setName('premium_paint').setBaseColorTexture(null).setBaseColorFactor([1, 1, 1, 1]).setAlphaMode('OPAQUE').setMetallicFactor(0.55).setRoughnessFactor(0.28)
@@ -106,7 +119,10 @@ for (const cfg of MODELS) {
     const sb = getBounds(root.listScenes()[0])
     const hx = (sb.max[0] - sb.min[0]) / 2
     const top = sb.max[1]
-    for (const mesh of root.listMeshes())
+    for (const mesh of root.listMeshes()) {
+      // Tekerlek parçaları (jantlar) gövde kenarına yakın: ayıklanmaz
+      const nodeName = mesh.listParents().find((p) => p.propertyType === 'Node')?.getName() ?? ''
+      if (cfg.wheelNodes?.test(nodeName) || mesh.getName().startsWith('wheelpart_')) continue
       for (const prim of mesh.listPrimitives()) {
         if (!cfg.hideInside.test(prim.getMaterial()?.getName() ?? '')) continue
         // Üçgen düzeyinde: ağırlık merkezi iç bölgede kalan üçgenler atılır
@@ -130,6 +146,7 @@ for (const cfg of MODELS) {
         if (keep.length === 0) prim.dispose()
         else prim.setIndices(doc.createAccessor().setType('SCALAR').setArray(new Uint32Array(keep)))
       }
+    }
   }
 
   // Tekerlekleri dörde böl: her çeyrek kendi düğümü ve kendi köşe kopyasıyla
@@ -146,8 +163,10 @@ for (const cfg of MODELS) {
   }
   for (const mesh of root.listMeshes()) {
     if (Object.values(quad).includes(mesh)) continue
+    const nodeName = mesh.listParents().find((p) => p.propertyType === 'Node')?.getName() ?? ''
+    const byNode = cfg.wheelNodes?.test(nodeName) || mesh.getName().startsWith('wheelpart_')
     for (const prim of mesh.listPrimitives()) {
-      if (!cfg.wheels.test(prim.getMaterial()?.getName() ?? '')) continue
+      if (!byNode && !cfg.wheels.test(prim.getMaterial()?.getName() ?? '')) continue
       const pos = prim.getAttribute('POSITION')
       const idx = prim.getIndices()
       const groups = {}
