@@ -5,6 +5,7 @@ import { AREAS, COLLECTIBLES, GOLF_PAR, HIDDEN_LOGOS } from './game/layout.js'
 import { DEFAULT_EQUIPPED, REWARDS, SIMIT, findItem, isFree } from './game/shop.js'
 import { boarding } from './game/ferry.js'
 import { bottomCabin } from './game/wheel.js'
+import { TOUR_STOPS } from './game/tour.js'
 
 const COLLECTIBLE_COUNT = COLLECTIBLES.length
 const AREA_COUNT = AREAS.length
@@ -178,6 +179,7 @@ export const useStore = create((set, get) => ({
   sumoBest: saved.sumoBest ?? 0, // en hızlı sumo zaferi (ms, 0 = yok)
   sumo: idleSumo,
   wheelRide: null, // { cabin, start }: dönme dolapta tur
+  tour: null, // { step, at }: rehberli tur (kamera durakları gezer, araç park hâlinde)
   drift: { combo: 0, active: false },
   soccerSession: 0, // bu ziyaretteki goller
   cinematic: 0, // > performance.now() ise sinematik kamera
@@ -394,7 +396,7 @@ export const useStore = create((set, get) => ({
 
   // area: son girilen bölge (harita, keşif); zone: şu an içinde olunan bölge (oyun göstergeleri)
   zone: null,
-  mode: 'car', // 'car' | 'heli' | 'landing' | 'wheel'
+  mode: 'car', // 'car' | 'heli' | 'landing' | 'wheel' | 'tour'
   enterArea: (id) => {
     set({ area: id, zone: id })
     get().addToSet('explorer', id)
@@ -417,6 +419,7 @@ export const useStore = create((set, get) => ({
     if (!started || race.active || race.countdown || sumo.active) return
     // Dönme dolaptan V ile de inilir
     if (mode === 'wheel') return get().endWheel()
+    if (mode === 'tour') return get().endTour()
     if (mode === 'car') {
       if (taxi.active) get().endTaxi()
       set({ mode: 'heli' })
@@ -533,6 +536,19 @@ export const useStore = create((set, get) => ({
     return ms
   },
   cancelRings: () => set({ rings: idleRings }),
+
+  // ---------- Rehberli tur ----------
+  startTour: () => {
+    const { started, race, mode, ferryRide } = get()
+    if (!started || race.active || race.countdown || ferryRide || (mode !== 'car' && mode !== 'tour')) return
+    if (get().taxi.active) get().endTaxi()
+    set({ mode: 'tour', tour: { step: 0, at: performance.now() / 1000 }, panel: null, modal: null, rings: idleRings, sumo: idleSumo, navTarget: null })
+  },
+  tourStep: (step) => {
+    if (!get().tour) return
+    set({ tour: { step: Math.max(0, Math.min(TOUR_STOPS.length - 1, step)), at: performance.now() / 1000 } })
+  },
+  endTour: () => set({ mode: 'car', tour: null }),
 
   // ---------- Dönme dolap ----------
   startWheel: () => {

@@ -3010,3 +3010,153 @@ kbd {
   height: 100%;
   object-fit: cover;
 }
+
+/* Hızlı menü (üst orta) */
+.quick-nav {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 4px;
+  padding: 5px;
+  border-radius: 14px;
+  background: var(--surface);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--border);
+  z-index: 11;
+}
+.quick-nav > button {
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: transparent;
+  white-space: nowrap;
+}
+.quick-nav > button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.quick-nav .quick-tour {
+  background: var(--accent, #5b6cff);
+  color: #fff;
+}
+.quick-nav .quick-tour:hover {
+  background: var(--accent, #5b6cff);
+  filter: brightness(1.1);
+}
+.quick-games {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  min-width: 300px;
+  padding: 6px;
+  border-radius: 14px;
+  background: var(--surface);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--border);
+}
+.quick-games button {
+  padding: 8px 10px;
+  border-radius: 8px;
+  text-align: left;
+  font-weight: 700;
+  font-size: 0.84rem;
+  color: var(--text);
+  background: transparent;
+}
+.quick-games button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+@media (max-width: 1100px) {
+  .quick-nav {
+    top: 72px;
+  }
+}
+@media (max-width: 760px) {
+  .quick-nav {
+    display: none;
+  }
+}
+
+/* Rehberli tur kartı (alt orta) */
+.tour-card {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  width: min(560px, calc(100vw - 32px));
+  padding: 18px 20px 16px;
+  border-radius: 18px;
+  background: var(--surface);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--border);
+  z-index: 20;
+  animation: tour-in 0.35s ease;
+}
+.tour-card header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.tour-card h2 {
+  margin: 6px 0 4px;
+  font-size: 1.35rem;
+}
+.tour-card p {
+  margin: 0 0 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.tour-dots {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.tour-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  transition: all 0.25s ease;
+}
+.tour-dots span.done {
+  background: rgba(255, 255, 255, 0.45);
+}
+.tour-dots span.on {
+  width: 22px;
+  border-radius: 4px;
+  background: var(--accent, #5b6cff);
+}
+.tour-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.intro-card .tour-start {
+  width: 100%;
+  margin-top: 8px;
+  background: rgba(91, 108, 255, 0.16);
+  border: 1px solid rgba(91, 108, 255, 0.55);
+  color: #fff;
+  font-weight: 800;
+}
+@keyframes tour-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 12px);
+  }
+}
+body[data-tour] .hud-bottom-left,
+body[data-tour] .speedo,
+body[data-tour] .minimap {
+  display: none;
+}

@@ -5,7 +5,7 @@ import { useFrame } from '@react-three/fiber'
 import { CuboidCollider, CylinderCollider, RigidBody } from '@react-three/rapier'
 import { Billboard, Text } from '@react-three/drei'
 import { AREAS, SPOTS } from './layout.js'
-import { fontBold } from './fonts.js'
+import { fontBlack, fontBold } from './fonts.js'
 import { useStore } from '../store.js'
 import { useT } from '../i18n.js'
 import { playClick } from '../audio.js'
@@ -57,11 +57,43 @@ const beamFragment = /* glsl */ `
   }
 `
 
+// Bilgi baloncuğu: yuvarlak köşeli koyu kart + alttan portalı gösteren uç (x-y düzleminde, merkez kartın ortası)
+function bubbleShape(w, h, r) {
+  const s = new THREE.Shape()
+  const x0 = -w / 2
+  const y0 = -h / 2
+  s.moveTo(x0 + r, y0)
+  s.lineTo(-0.18, y0)
+  s.lineTo(0, y0 - 0.22)
+  s.lineTo(0.18, y0)
+  s.lineTo(-x0 - r, y0)
+  s.absarc(-x0 - r, y0 + r, r, -Math.PI / 2, 0)
+  s.lineTo(-x0, -y0 - r)
+  s.absarc(-x0 - r, -y0 - r, r, 0, Math.PI / 2)
+  s.lineTo(x0 + r, -y0)
+  s.absarc(x0 + r, -y0 - r, r, Math.PI / 2, Math.PI)
+  s.lineTo(x0, y0 + r)
+  s.absarc(x0 + r, y0 + r, r, Math.PI, Math.PI * 1.5)
+  return s
+}
+const PANEL = new THREE.MeshBasicMaterial({ color: '#121829', transparent: true, opacity: 0.92, depthWrite: false, toneMapped: false })
+const KEY_W = 1.05
+const PANEL_KEY = new THREE.MeshBasicMaterial({ color: '#2a3350', toneMapped: false })
+
 function Spot({ spot }) {
   const { t, L } = useT()
   const ring = useRef()
   const label = useRef()
   const active = useStore((s) => s.spot?.id === spot.id)
+  const title = spot.rawLabel ? L(spot.label) : t(spot.label)
+  const action = t(spot.action)
+  // Kart genişliği yazıdan tahmin edilir; sağda ENTER tuşu için yer ayrılır
+  const card = useMemo(() => {
+    const w = Math.max(title.length * 0.36 * 0.6, action.length * 0.22 * 0.55) + 0.75 + KEY_W
+    const h = 1.02
+    return { w, h, geometry: new THREE.ShapeGeometry(bubbleShape(w, h, 0.2), 6) }
+  }, [title, action])
+  const accent = useMemo(() => new THREE.MeshBasicMaterial({ color: spot.color, toneMapped: false }), [spot.color])
   const uniforms = useMemo(
     () => ({ uColor: { value: new THREE.Color(spot.color) }, uIntensity: { value: 0.8 }, uTime: { value: 0 } }),
     [spot.color],
@@ -131,11 +163,23 @@ function Spot({ spot }) {
         />
       </mesh>
       <Billboard ref={label} position={[0, 2.9, 0]}>
-        <Text font={fontBold} fontSize={0.42} color="#121726" outlineWidth={0.045} outlineColor="#ffffff" anchorY="bottom" maxWidth={6} textAlign="center">
-          {spot.rawLabel ? L(spot.label) : t(spot.label)}
+        <mesh geometry={card.geometry} material={PANEL} renderOrder={5} />
+        {/* Sol kenarda renkli şerit */}
+        <mesh position={[-card.w / 2 + 0.16, 0, 0.005]} material={accent} renderOrder={6}>
+          <planeGeometry args={[0.07, card.h - 0.34]} />
+        </mesh>
+        <Text font={fontBlack} fontSize={0.36} color="#ffffff" anchorX="left" anchorY="bottom" position={[-card.w / 2 + 0.36, 0.0, 0.01]} renderOrder={7}>
+          {title}
         </Text>
-        <Text font={fontBold} fontSize={0.26} color="#3a4157" outlineWidth={0.035} outlineColor="#ffffff" anchorY="top" position={[0, -0.06, 0]}>
-          {active ? t('pressEnter') : t(spot.action)}
+        <Text font={fontBold} fontSize={0.22} color="#b9c3dc" anchorX="left" anchorY="top" position={[-card.w / 2 + 0.36, -0.05, 0.01]} renderOrder={7}>
+          {action}
+        </Text>
+        {/* ENTER tuşu: portalın içindeyken renklenir */}
+        <mesh position={[card.w / 2 - KEY_W / 2 - 0.12, 0, 0.005]} material={active ? accent : PANEL_KEY} renderOrder={6}>
+          <planeGeometry args={[KEY_W - 0.1, 0.42]} />
+        </mesh>
+        <Text font={fontBlack} fontSize={0.19} color={active ? '#121829' : '#b9c3dc'} anchorX="center" anchorY="middle" position={[card.w / 2 - KEY_W / 2 - 0.12, 0, 0.012]} renderOrder={8} letterSpacing={0.06}>
+          ENTER
         </Text>
       </Billboard>
     </group>

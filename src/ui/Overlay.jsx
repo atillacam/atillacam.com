@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { profile } from '../content.js'
 import { ACHIEVEMENTS, progressOf, useStore } from '../store.js'
-import { AREAS, BRIDGE, COLLECTIBLES, GOLF_PAR, LAKE, PATHS, RACE, RING_RADIUS, SKY_RINGS, STRAIT, SUMO, WORLD } from '../game/layout.js'
+import { AREAS, BRIDGE, COLLECTIBLES, GOLF_PAR, LAKE, PATHS, RACE, RING_RADIUS, SKY_RINGS, SPOTS, STRAIT, SUMO, WORLD } from '../game/layout.js'
 import { input, teleport, trigger, vehicleState } from '../game/input.js'
+import { TOUR_STOPS } from '../game/tour.js'
 import { initAudio } from '../audio.js'
 import { useT } from '../i18n.js'
 import { formatTime } from '../format.js'
@@ -105,6 +106,16 @@ function Intro() {
         <button ref={button} className="button primary big" onClick={begin} disabled={!ready}>
           {ready ? t('start') : `${t('loading')} · ${shown}%`}
         </button>
+        <button
+          className="button tour-start"
+          disabled={!ready}
+          onClick={() => {
+            begin()
+            useStore.getState().startTour()
+          }}
+        >
+          ▶ {t('tourIntro')}
+        </button>
         <div className="intro-actions">
           <button className="button ghost" onClick={() => useStore.getState().openClassic('projects')}>
             {t('introProjects')}
@@ -144,6 +155,7 @@ function Hud() {
           <small>{L(profile.title)}</small>
         </span>
       </header>
+      <QuickNav />
       <nav className="hud-actions" aria-label={t('menu')}>
         <WalletButton />
         <button onClick={() => togglePanel('map')} title={`${t('map')} (M)`} aria-pressed={panel === 'map'}>
@@ -248,7 +260,7 @@ function HeliButton() {
   const { t } = useT()
   const mode = useStore((s) => s.mode)
   const racing = useStore((s) => s.race.active || s.race.countdown > 0)
-  if (racing || mode === 'wheel') return null
+  if (racing || mode === 'wheel' || mode === 'tour') return null
   return (
     <button
       className={mode === 'car' ? 'whisper-button heli-button' : 'whisper-button heli-button active'}
@@ -369,6 +381,139 @@ function RingsHud() {
         {t('close')}
       </button>
     </div>
+  )
+}
+
+// Hızlı menü: rehberli tur, ana bölümlere ışınlanma ve oyunlar listesi
+const QUICK = ['projects', 'about', 'contact']
+const GAMES = [
+  { area: 'race', label: 'areaRace' },
+  { spot: 'taxi', label: 'spotTaxi' },
+  { spot: 'helipad', label: 'spotHelipad' },
+  { area: 'sumo', label: 'areaSumo' },
+  { area: 'golf', label: 'areaGolf' },
+  { area: 'bowling', label: 'areaBowling' },
+  { area: 'stunt', label: 'areaStunt' },
+  { area: 'drift', label: 'areaDrift' },
+  { area: 'soccer', label: 'areaSoccer' },
+  { area: 'offroad', label: 'areaOffroad' },
+  { area: 'lunapark', label: 'areaLunapark' },
+]
+function QuickNav() {
+  const { t } = useT()
+  const mode = useStore((s) => s.mode)
+  const [games, setGames] = useState(false)
+  if (mode === 'tour' || mode === 'wheel') return null
+  const goArea = (id) => {
+    const area = AREAS.find((a) => a.id === id)
+    if (!area) return
+    useStore.getState().cancelRace()
+    teleport(area.spawn, area.yaw)
+    setGames(false)
+  }
+  const goSpot = (id) => {
+    const spot = SPOTS.find((s) => s.id === id)
+    if (!spot) return
+    useStore.getState().cancelRace()
+    teleport([spot.position[0], 1.4, spot.position[2]], vehicleState.heading)
+    setGames(false)
+  }
+  return (
+    <nav className="quick-nav" aria-label={t('quickNav')}>
+      <button className="quick-tour" onClick={() => useStore.getState().startTour()}>
+        <span aria-hidden="true">▶</span> {t('tourButton')}
+      </button>
+      {QUICK.map((id) => (
+        <button key={id} onClick={() => goArea(id)}>
+          {t(AREAS.find((a) => a.id === id).label)}
+        </button>
+      ))}
+      <button onClick={() => setGames((g) => !g)} aria-expanded={games}>
+        {t('games')} <span aria-hidden="true">▾</span>
+      </button>
+      {games && (
+        <div className="quick-games" role="menu">
+          {GAMES.map((g) => (
+            <button key={g.label} role="menuitem" onClick={() => (g.area ? goArea(g.area) : goSpot(g.spot))}>
+              {t(g.label)}
+            </button>
+          ))}
+        </div>
+      )}
+    </nav>
+  )
+}
+
+// Rehberli tur kartı: durak başlığı ve açıklaması, ilerleme, ileri/geri; bitişte yönlendirme
+function TourHud() {
+  const { t } = useT()
+  const tour = useStore((s) => s.tour)
+  const mode = useStore((s) => s.mode)
+  const on = mode === 'tour' && !!tour
+  // Tur sırasında alt köşelerdeki göstergeler gizlenir (kart öne çıksın)
+  useEffect(() => {
+    document.body.toggleAttribute('data-tour', on)
+    return () => document.body.removeAttribute('data-tour')
+  }, [on])
+  useEffect(() => {
+    if (!on) return
+    const onKey = (e) => {
+      const { tour: live, tourStep, endTour } = useStore.getState()
+      if (!live) return
+      if (e.key === 'ArrowRight' || e.key === ' ') tourStep(live.step + 1)
+      else if (e.key === 'ArrowLeft') tourStep(live.step - 1)
+      else if (e.key === 'Escape') endTour()
+      else return
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+  }, [on])
+  if (!on) return null
+  const { step } = tour
+  const last = step === TOUR_STOPS.length - 1
+  const { tourStep, endTour, openClassic } = useStore.getState()
+  return (
+    <section className="tour-card" aria-live="polite">
+      <header>
+        <span className="eyebrow">
+          {t('tourButton')} · {step + 1}/{TOUR_STOPS.length}
+        </span>
+        <button className="icon-button" onClick={endTour} aria-label={t('close')}>
+          ✕
+        </button>
+      </header>
+      <h2>{t('tour' + step)}</h2>
+      <p>{t('tour' + step + 'Text')}</p>
+      <div className="tour-dots" aria-hidden="true">
+        {TOUR_STOPS.map((_, i) => (
+          <span key={i} className={i === step ? 'on' : i < step ? 'done' : ''} />
+        ))}
+      </div>
+      {last ? (
+        <div className="tour-actions">
+          <button className="button primary" onClick={() => (endTour(), openClassic('projects'))}>
+            {t('introProjects')}
+          </button>
+          <button className="button ghost" onClick={() => (endTour(), openClassic('contact'))}>
+            {t('introContact')}
+          </button>
+          <button className="button ghost" onClick={endTour}>
+            {t('tourDrive')}
+          </button>
+        </div>
+      ) : (
+        <div className="tour-actions">
+          <button className="button ghost" onClick={() => tourStep(step - 1)} disabled={step === 0}>
+            ← {t('tourPrev')}
+          </button>
+          <button className="button primary" onClick={() => tourStep(step + 1)}>
+            {t('tourNext')} →
+          </button>
+        </div>
+      )}
+    </section>
   )
 }
 
@@ -658,6 +803,7 @@ function GameHud() {
       <RingsHud />
       <SumoHud />
       <WheelHud />
+      <TourHud />
       <div className="speedo" aria-hidden="true">
         <strong ref={speed}>0</strong>
         <span>km/h</span>
