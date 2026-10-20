@@ -1,12 +1,13 @@
 import * as THREE from 'three'
 import { toFloatAttributes } from './geometry.js'
+import { modelUrl } from './modelUrl.js'
 
 // Kenney Car Kit (CC0) araçları: hepsi tek dosyada (scripts/import-cars.mjs), tek doku ve tek malzeme.
 // Modeller +z'ye bakar; oyunda ileri +x. Dönüştürülmüş hâlde: tekerlek merkezleri y = 0'da,
 // her tekerlek kendi merkezine taşınmış (dönebilir), yerleri wheelPos'ta (oyundaki sıra: ön sol, ön sağ, arka sol, arka sağ).
-export const KENNEY_URL = '/models/cars.glb'
+export const KENNEY_URL = modelUrl('/models/cars.glb')
 // Premium araçlar (scripts/import-premium.mjs): her biri ayrı dosya, kök düğümü kendi id'si
-export const premiumUrl = (id) => `/models/premium/${id}.glb`
+export const premiumUrl = (id) => modelUrl(`/models/premium/${id}.glb`)
 
 const TO_GAME = new THREE.Matrix4().makeRotationY(Math.PI / 2)
 const WHEEL_KEYS = { 'wheel-front-left': 0, 'wheel-front-right': 1, 'wheel-back-left': 2, 'wheel-back-right': 3 }

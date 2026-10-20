@@ -2,20 +2,21 @@ import { useMemo } from 'react'
 import * as THREE from 'three'
 import { AREAS, BRIDGE, CLEARINGS, PIER_ROAD_ANGLE, PROMENADE, LAKE, LAMPS, PATHS, RING_RADIUS, RING_WIDTH, SPOTS, STRAIT, WORLD, WORLD_HALF } from './layout.js'
 import { heightAt } from './terrain.js'
+import { modelUrl } from './modelUrl.js'
 
 // Bitki örtüsü, çit, duvar ve lamba yerleşimleri (bileşen değil, saf veri)
 
 export const MODEL_URLS = {
-  tree: '/models/tree.glb',
-  maple: '/models/maple.glb',
-  oak: '/models/oak.glb',
-  bush: '/models/bush.glb',
-  rock: '/models/rock.glb',
-  grass: '/models/grass.glb',
-  flower: '/models/flower.glb',
-  fence: '/models/fence.glb',
-  wall: '/models/wall.glb',
-  lamp: '/models/lamp.glb',
+  tree: modelUrl('/models/tree.glb'),
+  maple: modelUrl('/models/maple.glb'),
+  oak: modelUrl('/models/oak.glb'),
+  bush: modelUrl('/models/bush.glb'),
+  rock: modelUrl('/models/rock.glb'),
+  grass: modelUrl('/models/grass.glb'),
+  flower: modelUrl('/models/flower.glb'),
+  fence: modelUrl('/models/fence.glb'),
+  wall: modelUrl('/models/wall.glb'),
+  lamp: modelUrl('/models/lamp.glb'),
 }
 
 function seeded(seed) {

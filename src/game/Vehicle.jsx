@@ -13,13 +13,14 @@ import { fontBlack } from './fonts.js'
 import { buildRacer, paintHex, FINISHES, PAINTS } from './cars.js'
 import { CARS as CAR_LIST, carSpec } from './catalog.js'
 import { KENNEY_URL, playerCar, premiumUrl } from './kenney.js'
+import { modelUrl } from './modelUrl.js'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { SIMIT } from './shop.js'
 import { Underglow, RoofItem } from './Cosmetics.jsx'
 import { useStore } from '../store.js'
 import { playHonk, playSplash, playThud, setMuted, setMusic, updateAmbience, updateEngine } from '../audio.js'
 
-export const CAR_URL = '/models/car.glb'
+const CAR_URL = modelUrl('/models/car.glb')
 
 // Araç yerel ekseninde ileri = +x, yukarı = +y, sol = -z.
 // Ölçüler optimize edilmiş car.glb'den alındı (scripts/optimize-models.mjs).

@@ -1,4 +1,5 @@
 // Garaj verileri (araçlar, boyalar). Three.js içermez: arayüz ve giriş ekranı 3D motoru yüklemeden kullanır.
+import { modelUrl } from './modelUrl.js'
 
 // Garajdaki araçlar. Yeni bir GLB araç eklemek için:
 // 1) models-src/ içine koy, scripts/optimize-models.mjs'e `car: true` ayarıyla ekle (tekerlek adları keepNames'te)
@@ -9,7 +10,7 @@ export const CARS = [
   {
     id: 'ae86',
     name: { tr: 'Klasik Hatchback', en: 'Classic Hatchback' },
-    url: '/models/car.glb',
+    url: modelUrl('/models/car.glb'),
     spec: { power: 1, top: 17, boost: 25, steer: 0.5 },
     rating: { power: 3, speed: 3, grip: 5 },
   },
