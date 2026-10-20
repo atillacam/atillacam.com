@@ -30,14 +30,15 @@ const SRC = 'models-src'
 const OUT = 'public/models'
 
 // height: hedef yükseklik (m). simplify: korunacak üçgen oranı. texture: en büyük doku kenarı.
+// detail: normal / pürüzlülük / ortam kapatma haritaları için ayrı (daha küçük) kenar; uzaktan fark edilmez, boyutu çok düşürür.
 // removeMaterials: atılacak parçalar. alphaMask: yaprak kartları için şeffaflık modu. keepNames: ayrı kalacak parçalar.
 const MODELS = {
-  car: { file: 'cartoon_car.glb', car: true, simplify: 0.3, error: 0.004, texture: 1024, keepNames: ['front left wheel', 'front right wheel', 'rear wheels'] },
+  car: { file: 'cartoon_car.glb', car: true, simplify: 0.3, error: 0.004, texture: 512, detail: 256, keepNames: ['front left wheel', 'front right wheel', 'rear wheels'] },
   tree: { file: 'tree.glb', height: 6.5, simplify: 0.18, error: 0.05, texture: 256 },
-  maple: { file: 'maple_tree.glb', height: 7.5, simplify: 0.3, error: 0.05, texture: 512, removeMaterials: ['Groundcover_Wood_Mix', 'grass'], alphaMask: ['sugar_maple_leaf'] },
-  oak: { file: 'oak_trees.glb', height: 6, simplify: 0.3, error: 0.05, texture: 512 },
+  maple: { file: 'maple_tree.glb', height: 7.5, simplify: 0.3, error: 0.05, texture: 512, detail: 256, removeMaterials: ['Groundcover_Wood_Mix', 'grass'], alphaMask: ['sugar_maple_leaf'] },
+  oak: { file: 'oak_trees.glb', height: 6, simplify: 0.3, error: 0.05, texture: 512, detail: 256 },
   bush: { file: 'stylized_bush.glb', height: 1.1, simplify: 1, texture: 512 },
-  rock: { file: 'rock.glb', height: 1.8, simplify: 0.08, error: 0.02, texture: 512 },
+  rock: { file: 'rock.glb', height: 1.8, simplify: 0.08, error: 0.02, texture: 512, detail: 256 },
   lamp: { file: 'street_lamb.glb', height: 3.4, simplify: 1, texture: 256 },
   fence: { file: 'wooden_fence.glb', height: 1.3, simplify: 1, texture: 512 },
   wall: { file: 'ruined_rock_fence.glb', height: 1.4, simplify: 1, texture: 512 },
@@ -113,6 +114,9 @@ async function processModel(key, cfg) {
     ...(cfg.simplify < 1 ? [simplify({ simplifier: MeshoptSimplifier, ratio: cfg.simplify, error: cfg.error ?? 0.002 })] : []),
     dedup(),
     prune(),
+    ...(cfg.detail
+      ? [textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [cfg.detail, cfg.detail], quality: 82, slots: /^(normal|metallicRoughness|occlusion)Texture$/ })]
+      : []),
     textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [cfg.texture, cfg.texture], quality: 82 }),
     meshopt({ encoder: MeshoptEncoder, level: 'medium' }),
   )
@@ -133,10 +137,15 @@ async function processModel(key, cfg) {
 fs.mkdirSync(OUT, { recursive: true })
 await MeshoptEncoder.ready
 await MeshoptSimplifier.ready
+// İsteğe bağlı: yalnızca adı verilen modelleri üret (npm run models -- car oak); diğerlerinin atıfları korunur.
+// Başka betiklerin eklediği atıflar (import-cars, import-premium) da her durumda korunur.
+const only = process.argv.slice(2)
+const previous = JSON.parse(fs.readFileSync('src/game/credits.json', 'utf8'))
 const credits = []
 for (const [key, cfg] of Object.entries(MODELS)) {
-  credits.push(await processModel(key, cfg))
+  credits.push(only.length && !only.includes(key) ? previous.find((c) => c.key === key) : await processModel(key, cfg))
 }
+credits.push(...previous.filter((c) => !(c.key in MODELS)))
 // Lisans bilgileri (CC-BY 4.0 atıf zorunluluğu için) sitede gösterilir
 fs.writeFileSync('src/game/credits.json', JSON.stringify(credits, null, 2) + '\n')
 console.log('\nsrc/game/credits.json yazıldı.')
