@@ -1,7 +1,7 @@
 import { useLayoutEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { CuboidCollider, CylinderCollider, RigidBody } from '@react-three/rapier'
-import { Text } from '@react-three/drei'
+import { Text } from './Text.jsx'
 import * as THREE from 'three'
 import { ASIA_BUILDINGS, ASIA_MOSQUE, ASIA_STREETS, MOSQUE_YARD, DONDURMA, ROUNDABOUTS, TEA_GARDEN, TRAM_LINE } from './layout.js'
 import { vehicleState } from './input.js'

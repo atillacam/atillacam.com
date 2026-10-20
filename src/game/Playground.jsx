@@ -1,5 +1,6 @@
 import { CuboidCollider, RigidBody } from '@react-three/rapier'
-import { RoundedBox, Text } from '@react-three/drei'
+import { RoundedBox } from '@react-three/drei'
+import { Text } from './Text.jsx'
 import * as THREE from 'three'
 import { AREAS, COLORS } from './layout.js'
 import { fontBlack } from './fonts.js'

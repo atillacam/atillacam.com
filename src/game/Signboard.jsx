@@ -1,5 +1,6 @@
 import { CylinderCollider, RigidBody } from '@react-three/rapier'
-import { RoundedBox, Text } from '@react-three/drei'
+import { RoundedBox } from '@react-three/drei'
+import { Text } from './Text.jsx'
 import { fontBlack, fontBold } from './fonts.js'
 import StaticMerge from './StaticMerge.jsx'
 

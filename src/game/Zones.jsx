@@ -1,7 +1,7 @@
 import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { BallCollider, CuboidCollider, CylinderCollider, RigidBody } from '@react-three/rapier'
-import { Text } from '@react-three/drei'
+import { Text } from './Text.jsx'
 import * as THREE from 'three'
 import { AREAS, COLORS } from './layout.js'
 import { heightAt } from './terrain.js'

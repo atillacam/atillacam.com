@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { Billboard, Text } from '@react-three/drei'
+import { Billboard } from '@react-three/drei'
+import { Text } from './Text.jsx'
 import * as THREE from 'three'
 import { heightAt } from './terrain.js'
 import { fontBlack, fontRegular } from './fonts.js'

@@ -1,6 +1,6 @@
 import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { Text } from '@react-three/drei'
+import { Text } from './Text.jsx'
 import * as THREE from 'three'
 import { HELIPAD, LAKE, SKY_RINGS } from './layout.js'
 import { heightAt } from './terrain.js'
