@@ -8,6 +8,7 @@ import { initAudio } from '../audio.js'
 import { useT } from '../i18n.js'
 import { formatTime } from '../format.js'
 import { Icon, Logo } from './Icons.jsx'
+import { LangSwitch } from './LangSwitch.jsx'
 import { CARS, PAINTS } from '../game/catalog.js'
 import { SHOP_CATEGORIES, SHOP_ITEMS, SIMIT, formatMoney } from '../game/shop.js'
 import { playHonk } from '../audio.js'
@@ -48,20 +49,6 @@ export default function Overlay() {
       <Modal />
       <Toasts />
     </>
-  )
-}
-
-export function LangSwitch() {
-  const lang = useStore((s) => s.lang)
-  const setLang = useStore((s) => s.setLang)
-  return (
-    <div className="lang-switch" role="group" aria-label="Language">
-      {['tr', 'en'].map((l) => (
-        <button key={l} className={lang === l ? 'active' : ''} onClick={() => setLang(l)} aria-pressed={lang === l}>
-          {l.toUpperCase()}
-        </button>
-      ))}
-    </div>
   )
 }
 

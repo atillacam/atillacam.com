@@ -5,7 +5,7 @@ import { coverUrl, fontsReady } from '../projectArt.js'
 import { useT } from '../i18n.js'
 import { CreditsContent, RepoMeta } from './Sections.jsx'
 import { highlights } from '../stats.js'
-import { LangSwitch } from './Overlay.jsx'
+import { LangSwitch } from './LangSwitch.jsx'
 import { BrandIcon, Icon, Logo } from './Icons.jsx'
 
 const YEAR = new Date().getFullYear()

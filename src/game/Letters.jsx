@@ -1,14 +1,15 @@
 import { useMemo, useRef } from 'react'
-import { useFrame, useLoader } from '@react-three/fiber'
+import { useFrame } from '@react-three/fiber'
 import { CuboidCollider, RigidBody } from '@react-three/rapier'
 import { Text } from './Text.jsx'
 import * as THREE from 'three'
-import { TTFLoader } from 'three/examples/jsm/loaders/TTFLoader.js'
 import { Font } from 'three/examples/jsm/loaders/FontLoader.js'
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js'
 import { profile } from '../content.js'
 import { COLORS } from './layout.js'
-import { fontBlack, fontRegular } from './fonts.js'
+import { fontRegular } from './fonts.js'
+// Harf şekilleri derlemede TTF'den çıkarılır (vite.config.js > ttf-typeface); tarayıcıda font ayrıştırılmaz
+import letterShapes from '../assets/fonts/Nunito-Black.ttf?typeface'
 import { sanitizeNormals } from './geometry.js'
 import { useStore } from '../store.js'
 import { useT } from '../i18n.js'
@@ -22,12 +23,11 @@ const _q = new THREE.Quaternion()
 
 // İsmin harfleri: her biri ayrı fizik nesnesi, araçla devrilebilir
 export default function Letters({ position = [0, 0, -9] }) {
-  const json = useLoader(TTFLoader, fontBlack)
   const { L, lang } = useT()
   const bodies = useRef([])
 
   const letters = useMemo(() => {
-    const font = new Font(json)
+    const font = new Font(letterShapes)
     const chars = [...profile.worldName.toLocaleUpperCase('tr-TR')]
     const items = []
     let cursor = 0
@@ -58,7 +58,7 @@ export default function Letters({ position = [0, 0, -9] }) {
     })
     const offset = (cursor - GAP) / 2
     return items.map((l, i) => ({ ...l, x: l.x - offset, color: PALETTE[i % PALETTE.length] }))
-  }, [json])
+  }, [])
 
   // Hepsi devrildi mi?
   const timer = useRef(0)

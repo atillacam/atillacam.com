@@ -36,6 +36,48 @@ function fontGlyphs(files = ['Nunito-Black', 'Nunito-ExtraBold', 'Nunito-SemiBol
   return [...sets[0]].filter((ch) => sets.every((s) => s.has(ch))).join('')
 }
 
+// `font.ttf?typeface` içe aktarımı: TTF'yi derlemede Three.js typeface JSON'una çevirir (TTFLoader'ın dönüşümüyle aynı).
+// Tarayıcı opentype.js'i (165 KB) indirmez; yalnızca büyük harfler ve rakamlar alınır (3D isim harfleri).
+const TYPEFACE_CHARS = 'ABCÇDEFGĞHIİJKLMNOÖPQRSŞTUÜVWXYZ0123456789'
+function typefaceFonts() {
+  const SUFFIX = '?typeface'
+  return {
+    name: 'ttf-typeface',
+    enforce: 'pre', // Vite'ın varlık (asset) eklentisi .ttf'yi adres olarak almadan önce
+    load(id) {
+      if (!id.endsWith(SUFFIX)) return null
+      const data = readFileSync(id.slice(0, -SUFFIX.length))
+      const font = opentype.parse(data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength))
+      const scale = 100000 / ((font.unitsPerEm || 2048) * 72)
+      const r = Math.round
+      const glyphs = {}
+      for (const ch of TYPEFACE_CHARS) {
+        const glyph = font.charToGlyph(ch)
+        if (!glyph.unicodes.length) continue
+        let o = ''
+        for (const c of glyph.path.commands) {
+          o += (c.type === 'C' ? 'b' : c.type.toLowerCase()) + ' '
+          if (c.x !== undefined) o += r(c.x * scale) + ' ' + r(c.y * scale) + ' '
+          if (c.x1 !== undefined) o += r(c.x1 * scale) + ' ' + r(c.y1 * scale) + ' '
+          if (c.x2 !== undefined) o += r(c.x2 * scale) + ' ' + r(c.y2 * scale) + ' '
+        }
+        glyphs[ch] = { ha: r(glyph.advanceWidth * scale), x_min: r(glyph.xMin * scale), x_max: r(glyph.xMax * scale), o }
+      }
+      const json = {
+        glyphs,
+        familyName: font.getEnglishName('fullName'),
+        ascender: r(font.ascender * scale),
+        descender: r(font.descender * scale),
+        underlinePosition: font.tables.post.underlinePosition,
+        underlineThickness: font.tables.post.underlineThickness,
+        boundingBox: { xMin: font.tables.head.xMin, xMax: font.tables.head.xMax, yMin: font.tables.head.yMin, yMax: font.tables.head.yMax },
+        resolution: 1000,
+      }
+      return `export default ${JSON.stringify(json)}`
+    },
+  }
+}
+
 // `vite preview` canlı sitedeki güvenlik başlıklarıyla (vercel.json) çalışsın ki CSP yerelde de denenebilsin.
 // HSTS ve https yükseltmesi localhost'u bozacağı için dışarıda bırakılır.
 function previewHeaders() {
@@ -70,16 +112,10 @@ function rapierWasmAsset() {
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), rapierWasmAsset()],
+  plugins: [react(), rapierWasmAsset(), typefaceFonts()],
   define: {
     __MODEL_HASHES__: JSON.stringify(modelHashes()),
     __FONT_GLYPHS__: JSON.stringify(fontGlyphs()),
-  },
-  resolve: {
-    alias: [
-      // Three.js'in TTFLoader'ı opentype.js'i CDN'den çeker; yerel paketi kullan ki site dış servise bağımlı olmasın
-      { find: 'https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/+esm', replacement: 'opentype.js/dist/opentype.module.js' },
-    ],
   },
   preview: {
     headers: previewHeaders(),

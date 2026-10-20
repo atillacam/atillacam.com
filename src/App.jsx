@@ -1,10 +1,10 @@
 import { Component, lazy, Suspense, useEffect, useMemo } from 'react'
 import { useStore } from './store.js'
-import Overlay from './ui/Overlay.jsx'
 import ClassicSite from './ui/ClassicSite.jsx'
+import { loadGame, OverlaySlot } from './ui/lazyParts.js'
 
 // 3D kısım ayrı bir pakette: klasik görünüm Three.js'i hiç indirmez
-const Game = lazy(() => import('./game/Game.jsx'))
+const Game = lazy(loadGame)
 
 function supportsWebGL() {
   try {
@@ -57,7 +57,7 @@ export default function App() {
           </Suspense>
         </GameBoundary>
       </div>
-      <Overlay />
+      <OverlaySlot />
     </>
   )
 }
