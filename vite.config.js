@@ -78,6 +78,21 @@ function typefaceFonts() {
   }
 }
 
+// Sayfa yazı tipleri CSS çözümlenene kadar keşfedilmez; derlenmiş WOFF2 dosyaları HTML'de önceden istenir
+// (yazılar geç belirmez ve yazı tipi değişince sayfa kaymaz).
+function preloadFonts() {
+  return {
+    name: 'preload-fonts',
+    apply: 'build',
+    transformIndexHtml(html, { bundle }) {
+      if (!bundle) return html
+      return Object.keys(bundle)
+        .filter((file) => file.endsWith('.woff2'))
+        .map((file) => ({ tag: 'link', attrs: { rel: 'preload', href: `/${file}`, as: 'font', type: 'font/woff2', crossorigin: '' }, injectTo: 'head' }))
+    },
+  }
+}
+
 // `vite preview` canlı sitedeki güvenlik başlıklarıyla (vercel.json) çalışsın ki CSP yerelde de denenebilsin.
 // HSTS ve https yükseltmesi localhost'u bozacağı için dışarıda bırakılır.
 function previewHeaders() {
@@ -112,7 +127,7 @@ function rapierWasmAsset() {
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), rapierWasmAsset(), typefaceFonts()],
+  plugins: [react(), rapierWasmAsset(), typefaceFonts(), preloadFonts()],
   define: {
     __MODEL_HASHES__: JSON.stringify(modelHashes()),
     __FONT_GLYPHS__: JSON.stringify(fontGlyphs()),

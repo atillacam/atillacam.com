@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-10-20T17:59:48.784Z",
+  "fetchedAt": "2026-10-21T15:17:49.058Z",
   "user": {
     "login": "atillacam",
     "publicRepos": 6,
@@ -10,30 +10,30 @@
     "projects": 5,
     "stars": 11,
     "languages": [
-      "JavaScript",
       "Python",
+      "JavaScript",
       "Dart"
     ],
-    "lastPush": "2026-10-20T17:44:38Z"
+    "lastPush": "2026-10-21T13:23:35Z"
   },
   "repos": {
-    "atillacam.com": {
-      "stars": 1,
-      "language": "JavaScript",
-      "pushedAt": "2026-10-20T17:44:38Z",
-      "url": "https://github.com/atillacam/atillacam.com"
-    },
     "daily-streak": {
       "stars": 2,
       "language": "Python",
-      "pushedAt": "2026-10-20T13:17:44Z",
+      "pushedAt": "2026-10-21T13:23:35Z",
       "url": "https://github.com/atillacam/daily-streak"
     },
     "atillacam": {
       "stars": 2,
       "language": null,
-      "pushedAt": "2026-10-20T02:55:46Z",
+      "pushedAt": "2026-10-21T02:50:20Z",
       "url": "https://github.com/atillacam/atillacam"
+    },
+    "atillacam.com": {
+      "stars": 1,
+      "language": "JavaScript",
+      "pushedAt": "2026-10-20T17:59:58Z",
+      "url": "https://github.com/atillacam/atillacam.com"
     },
     "youtube-shorts-generator": {
       "stars": 2,
