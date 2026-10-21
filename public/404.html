@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>Sayfa bulunamadı · Atilla Çam</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+    <!-- Bulunamayan adresler için sayfa (Vercel statik çıktıda 404.html'i kendiliğinden kullanır).
+         CSP satır içi betiğe izin vermez; sayfa yalnızca HTML + CSS'tir. -->
+    <style>
+      :root {
+        --bg: #0a0e1a;
+        --surface: #121829;
+        --border: rgba(255, 255, 255, 0.09);
+        --text: #f2f4fa;
+        --muted: #a2aac0;
+        --faint: #6f7893;
+        --primary: #3d7bff;
+        --primary-glow: rgba(61, 123, 255, 0.35);
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px 16px;
+        background: radial-gradient(ellipse at 50% 0%, #16204a 0%, var(--bg) 60%) var(--bg);
+        color: var(--text);
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        line-height: 1.55;
+      }
+      main {
+        width: 100%;
+        max-width: 460px;
+        padding: 36px 28px;
+        text-align: center;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        box-shadow: 0 20px 50px -20px rgba(0, 0, 0, 0.6);
+      }
+      img {
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+      }
+      .code {
+        margin: 18px 0 0;
+        font-size: 64px;
+        font-weight: 900;
+        line-height: 1;
+        letter-spacing: -0.02em;
+        background: linear-gradient(135deg, #6aa1ff, #2ec4b6);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      h1 {
+        margin: 14px 0 6px;
+        font-size: 22px;
+      }
+      p {
+        margin: 0;
+        color: var(--muted);
+      }
+      .en {
+        margin-top: 4px;
+        color: var(--faint);
+        font-size: 14px;
+      }
+      nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 26px;
+      }
+      a {
+        display: inline-block;
+        padding: 11px 18px;
+        border-radius: 12px;
+        font-weight: 700;
+        text-decoration: none;
+        color: var(--text);
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.05);
+      }
+      a.primary {
+        background: var(--primary);
+        border-color: var(--primary);
+        box-shadow: 0 8px 24px -8px var(--primary-glow);
+      }
+      a:hover,
+      a:focus-visible {
+        filter: brightness(1.12);
+      }
+      a:focus-visible {
+        outline: 2px solid #6aa1ff;
+        outline-offset: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img src="/icon-192.png" alt="Atilla Çam" width="64" height="64" />
+      <p class="code" aria-hidden="true">404</p>
+      <h1>Sayfa bulunamadı</h1>
+      <p>Aradığınız adres taşınmış ya da hiç var olmamış olabilir.</p>
+      <p class="en" lang="en">Page not found — the address may have moved or never existed.</p>
+      <nav>
+        <a class="primary" href="/">Ana sayfa · Home</a>
+        <a href="/klasik">Klasik görünüm · Classic</a>
+      </nav>
+    </main>
+  </body>
+</html>
