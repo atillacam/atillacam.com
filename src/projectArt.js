@@ -109,16 +109,28 @@ export function drawCover(ctx, project, x, y, w, h) {
 
 const covers = new Map()
 // Klasik görünüm için kapak (önbellekli data URL)
+// Kapaklar sırayla, her biri ayrı bir boşta-görevde çizilir; görsele çevirme (toBlob) ana iş parçacığını
+// kilitlemez. Telefonda eşzamanlı toDataURL açılışı ~1 sn kilitliyordu (ölçüldü).
+let queue = Promise.resolve()
+const idle = () => new Promise((resolve) => (window.requestIdleCallback ? requestIdleCallback(() => resolve(), { timeout: 1500 }) : setTimeout(resolve, 16)))
+
 export function coverUrl(project, w = 800, h = 400) {
   const key = project.id + w
-  if (covers.has(key)) return covers.get(key)
-  const canvas = document.createElement('canvas')
-  canvas.width = w
-  canvas.height = h
-  drawCover(canvas.getContext('2d'), project, 0, 0, w, h)
-  const url = canvas.toDataURL('image/png')
-  covers.set(key, url)
-  return url
+  if (!covers.has(key)) {
+    const job = queue.then(idle).then(
+      () =>
+        new Promise((resolve) => {
+          const canvas = document.createElement('canvas')
+          canvas.width = w
+          canvas.height = h
+          drawCover(canvas.getContext('2d'), project, 0, 0, w, h)
+          canvas.toBlob((blob) => resolve(blob ? URL.createObjectURL(blob) : canvas.toDataURL('image/png')), 'image/webp', 0.92)
+        }),
+    )
+    queue = job
+    covers.set(key, job)
+  }
+  return covers.get(key)
 }
 
 // 3D pano yüzü: üst şerit, kapak, yıl ve bağlantı, başlık, özet, teknoloji rozetleri

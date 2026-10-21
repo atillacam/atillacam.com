@@ -6,13 +6,10 @@ import { loadGame, OverlaySlot } from './ui/lazyParts.js'
 // 3D kısım ayrı bir pakette: klasik görünüm Three.js'i hiç indirmez
 const Game = lazy(loadGame)
 
+// Ucuz özellik kontrolü: gerçek bir bağlam açmak telefonda yüzlerce ms sürer. Bağlam yine de açılamazsa
+// (kara listedeki sürücü vb.) 3D tarafı hata verir ve GameBoundary klasik görünüme düşer.
 function supportsWebGL() {
-  try {
-    const canvas = document.createElement('canvas')
-    return !!(canvas.getContext('webgl2') || canvas.getContext('webgl'))
-  } catch {
-    return false
-  }
+  return typeof window !== 'undefined' && !!(window.WebGL2RenderingContext || window.WebGLRenderingContext)
 }
 
 // 3D tarafında beklenmedik bir hata olursa klasik görünüme düş

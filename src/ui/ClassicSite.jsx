@@ -85,7 +85,7 @@ function Nav({ webgl }) {
       <div className="nav-actions">
         <LangSwitch />
         {webgl && (
-          <button className="button small primary" onClick={() => setView('3d', true)}>
+          <button className="button small primary" onClick={() => setView('3d', true)} aria-label={t('back3d')}>
             <Icon name="cube" size={16} /> <span className="hide-sm">{t('back3d')}</span>
           </button>
         )}
@@ -189,9 +189,9 @@ function ProjectCover({ project, title }) {
   useEffect(() => {
     if (project.image) return
     let alive = true
-    fontsReady().then(() => {
-      if (alive) setSrc(coverUrl(project))
-    })
+    fontsReady()
+      .then(() => coverUrl(project))
+      .then((url) => alive && setSrc(url))
     return () => {
       alive = false
     }

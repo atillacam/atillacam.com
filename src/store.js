@@ -138,7 +138,11 @@ function detectQuality() {
 }
 
 const saved = { unlocked: {}, progress: {}, times: [], driftBest: 0, stuntBest: 0, golfBest: 0, taxiBest: 0, ringsBest: 0, sumoBest: 0, wallet: 0, owned: [], ...readJSON(STORAGE_KEY, {}) }
-const settings = { quality: detectQuality(), muted: false, music: true, fpsCap: 60, carId: 'ae86', carColor: 'white', ...readJSON(SETTINGS_KEY, {}) }
+// Ekran kartı tespiti bir WebGL bağlamı açar (telefonda yüzlerce ms): yalnızca 3D açılırken yapılır.
+// Klasik görünümde kalite boş kalır; 3D'ye geçişte (setView) belirlenir.
+const savedSettings = readJSON(SETTINGS_KEY, {})
+const settings = { muted: false, music: true, fpsCap: 60, carId: 'ae86', carColor: 'white', ...savedSettings }
+settings.quality = savedSettings.quality ?? (initialView() === 'classic' ? null : detectQuality())
 settings.equipped = { ...DEFAULT_EQUIPPED, ...settings.equipped }
 let toastId = 0
 
@@ -217,7 +221,7 @@ export const useStore = create((set, get) => ({
 
   // remember: kullanıcının kendi seçimi (düğme) sonraki ziyaretlerde de geçerli olur
   setView: (view, remember = false) => {
-    set({ view, modal: null, panel: null })
+    set({ view, modal: null, panel: null, ...(view !== 'classic' && !get().quality ? { quality: detectQuality() } : {}) })
     if (remember) {
       try {
         localStorage.setItem(VIEW_KEY, view)

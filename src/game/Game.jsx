@@ -117,6 +117,7 @@ export default function Game() {
       frameloop="never"
       camera={{ position: [12, 16, 30], fov: 45, near: 0.3, far: 600 }}
       gl={{ antialias: !high, powerPreference: 'high-performance', toneMapping: THREE.ACESFilmicToneMapping }}
+      role="img"
       aria-label="3D portfolyo dünyası"
     >
       <FrameDriver />
