@@ -33,7 +33,7 @@ const OUT = 'public/models'
 // detail: normal / pürüzlülük / ortam kapatma haritaları için ayrı (daha küçük) kenar; uzaktan fark edilmez, boyutu çok düşürür.
 // removeMaterials: atılacak parçalar. alphaMask: yaprak kartları için şeffaflık modu. keepNames: ayrı kalacak parçalar.
 const MODELS = {
-  car: { file: 'cartoon_car.glb', car: true, simplify: 0.3, error: 0.004, texture: 512, detail: 256, keepNames: ['front left wheel', 'front right wheel', 'rear wheels'] },
+  car: { file: 'cartoon_car.glb', car: true, simplify: 0.15, error: 0.004, texture: 512, detail: 256, keepNames: ['front left wheel', 'front right wheel', 'rear wheels'] },
   tree: { file: 'tree.glb', height: 6.5, simplify: 0.18, error: 0.05, texture: 256 },
   maple: { file: 'maple_tree.glb', height: 7.5, simplify: 0.3, error: 0.05, texture: 512, detail: 256, removeMaterials: ['Groundcover_Wood_Mix', 'grass'], alphaMask: ['sugar_maple_leaf'] },
   oak: { file: 'oak_trees.glb', height: 6, simplify: 0.3, error: 0.05, texture: 512, detail: 256 },

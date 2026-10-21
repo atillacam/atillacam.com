@@ -56,7 +56,7 @@ function fieldTexture() {
 
 // İkosahedron yüzlerinden siyah-beyaz futbol topu deseni
 function ballGeometry(radius) {
-  const g = new THREE.IcosahedronGeometry(radius, 2).toNonIndexed()
+  const g = new THREE.IcosahedronGeometry(radius, 2) // zaten indekssiz (yüz başına köşe)
   const ico = new THREE.IcosahedronGeometry(1, 0)
   const corners = []
   const p = ico.attributes.position
